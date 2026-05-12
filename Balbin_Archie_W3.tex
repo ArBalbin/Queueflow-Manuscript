@@ -1,0 +1,999 @@
+% Balbin_Archie_W3.tex - QueueFlow Capstone Thesis
+% NCF Capstone Format
+\documentclass{research}
+
+\graphicspath{{images/}}
+\addbibresource{Balbin_Archie_W3.bib}
+
+\begin{document}
+
+% ============================================================
+% TITLE PAGE
+% ============================================================
+\begin{titlepage}
+\centering
+\vspace*{1.5in}
+{\LARGE\bfseries QueueFlow: Computer Vision Based Automated Queue Ticket
+Assignment and Real-Time Predictive System for Dynamic Campus
+Service Delivery\par}
+\vfill
+{A Capstone Research\par
+\medskip
+Presented to the Faculty of the\par
+College of Computer Studies\par
+Naga College Foundation, Inc.\par
+Naga City\par}
+\vfill
+{In Partial Fulfillment of\par
+The Requirements for the Degree\par
+Bachelor of Science in Computer Science\par}
+\vfill
+{Balbin, Archie D.\par
+Sanota, Joshua Rovic P.\par}
+\vfill
+{2026\par}
+\end{titlepage}
+
+\setcounter{page}{2}
+
+% ============================================================
+% APPROVAL SHEET
+% ============================================================
+\begin{center}
+NAGA COLLEGE FOUNDATION, INC.\\
+College of Computer Studies\\
+City of Naga
+\end{center}
+\vspace{1.5em}
+\begin{center}
+\textbf{APPROVAL SHEET}
+\end{center}
+\vspace{1.5em}
+
+\noindent This capstone research of \textbf{ARCHIE D. BALBIN} and
+\textbf{JOSHUA ROVIC P. SANOTA}
+entitled \textbf{``QUEUEFLOW: COMPUTER VISION BASED AUTOMATED QUEUE
+TICKET ASSIGNMENT AND REAL-TIME PREDICTIVE SYSTEM FOR DYNAMIC CAMPUS
+SERVICE DELIVERY''} was prepared and submitted in partial fulfillment
+of the requirements for the degree of Bachelor of Science in Computer
+Science. It has been examined and is recommended for acceptance and
+approval for oral examination.
+
+\vspace{2em}
+\begin{center}
+\textbf{[ADVISER NAME]}\\
+Adviser
+\end{center}
+
+\vspace{2em}
+\begin{center}
+\textbf{THESIS COMMITTEE:}
+\end{center}
+
+\vspace{1em}
+\begin{center}
+\textbf{[CHAIRMAN NAME]}\\
+Chairman
+\end{center}
+
+\vspace{1em}
+\begin{minipage}{0.45\textwidth}
+\centering
+\textbf{[PANEL MEMBER 1]}\\
+Panel Member
+\end{minipage}
+\hfill
+\begin{minipage}{0.45\textwidth}
+\centering
+\textbf{[PANEL MEMBER 2]}\\
+Panel Member
+\end{minipage}
+
+\vspace{1.5em}
+\begin{center}
+\textbf{[SECRETARY NAME]}\\
+Panel Secretary
+\end{center}
+
+\vspace{2em}
+\begin{center}
+\textbf{PANEL OF EXAMINERS}
+\end{center}
+
+\noindent Approved by the Committee on Oral Examinations on
+\underline{\hspace{4cm}}.
+
+\vspace{1em}
+\begin{center}
+\textbf{[CHAIRMAN NAME]}\\
+Chairman
+\end{center}
+
+\vspace{1em}
+\begin{minipage}{0.45\textwidth}
+\centering
+\textbf{[PANEL MEMBER 1]}\\
+Panel Member
+\end{minipage}
+\hfill
+\begin{minipage}{0.45\textwidth}
+\centering
+\textbf{[PANEL MEMBER 2]}\\
+Panel Member
+\end{minipage}
+
+\vspace{2em}
+\noindent Accepted and approved in partial fulfillment of the
+requirements for the degree of Bachelor of Science in Computer Science.
+
+\vspace{1.5em}
+\begin{center}
+\textbf{ANNA LORETTA C. ROMULO, MSIT}\\
+Dean
+\end{center}
+
+\newpage
+
+% ============================================================
+% SECRETARY'S CERTIFICATION
+% ============================================================
+\begin{center}
+NAGA COLLEGE FOUNDATION, INC.\\
+College of Computer Studies\\
+City of Naga
+\end{center}
+\vspace{1.5em}
+\begin{center}
+\textbf{SECRETARY'S CERTIFICATION}
+\end{center}
+\vspace{1.5em}
+
+\noindent This capstone research of \textbf{ARCHIE D. BALBIN} and
+\textbf{JOSHUA ROVIC P. SANOTA}
+entitled \textbf{``QUEUEFLOW: COMPUTER VISION BASED AUTOMATED QUEUE
+TICKET ASSIGNMENT AND REAL-TIME PREDICTIVE SYSTEM FOR DYNAMIC CAMPUS
+SERVICE DELIVERY''} was prepared and submitted in partial fulfillment
+of the requirements for the degree of Bachelor of Science in Computer
+Science. It has been examined and is recommended for acceptance and
+approval for oral examination.
+
+\vspace{2em}
+\begin{center}
+\textbf{[SECRETARY NAME]}\\
+Secretary
+\end{center}
+
+\newpage
+
+% ============================================================
+% EDITOR'S CERTIFICATION
+% ============================================================
+\begin{center}
+NAGA COLLEGE FOUNDATION, INC.\\
+College of Computer Studies\\
+City of Naga
+\end{center}
+\vspace{1.5em}
+\begin{center}
+\textbf{EDITOR'S CERTIFICATION}
+\end{center}
+\vspace{1.5em}
+
+\noindent This capstone research of \textbf{ARCHIE D. BALBIN} and
+\textbf{JOSHUA ROVIC P. SANOTA}
+entitled \textbf{``QUEUEFLOW: COMPUTER VISION BASED AUTOMATED QUEUE
+TICKET ASSIGNMENT AND REAL-TIME PREDICTIVE SYSTEM FOR DYNAMIC CAMPUS
+SERVICE DELIVERY''} was prepared and submitted in partial fulfillment
+of the requirements for the degree of Bachelor of Science in Computer
+Science. It has been examined and is recommended for acceptance and
+approval for oral examination.
+
+\vspace{2em}
+\begin{center}
+\textbf{[EDITOR NAME]}\\
+Editor
+\end{center}
+
+\newpage
+
+% ============================================================
+% ACKNOWLEDGMENT
+% ============================================================
+\begin{center}
+\textbf{ACKNOWLEDGMENT}
+\end{center}
+\vspace{1.5em}
+
+\noindent The researchers would like to extend their thanks to \ldots
+
+\newpage
+
+% ============================================================
+% ABSTRACT
+% ============================================================
+\begin{center}
+{\large\textbf{Abstract}}
+\end{center}
+\vspace{1.5em}
+
+\noindent
+\begin{tabular}{p{0.30\textwidth} p{0.63\textwidth}}
+\textbf{Title:} &
+  \textbf{QueueFlow: Computer Vision Based Automated Queue Ticket
+  Assignment and Real-Time Predictive System for Dynamic Campus
+  Service Delivery} \\[0.6em]
+\textbf{Researcher:} &
+  Archie D. Balbin and Joshua Rovic P. Sanota \\[0.6em]
+\textbf{Type of Document:} &
+  Unpublished Undergraduate Capstone Research (2026) \\[0.6em]
+\textbf{Host/Accrediting School:} &
+  Naga College Foundation, Inc. \\[0.6em]
+\textbf{City:} & Naga City \\[0.6em]
+\textbf{Region:} & Region V \\[0.6em]
+\textbf{Year of Completion:} & 2026 \\[0.6em]
+\textbf{Adviser:} & [Adviser Name] \\[0.6em]
+\textbf{Keywords:} &
+  Queue management, computer vision, YOLOv8, person re-identification,
+  predictive analytics, FastAPI, thermal ticket generation, QR code,
+  JWT, M/M/c model, Holt's double exponential smoothing \\
+\end{tabular}
+
+\vspace{2em}
+
+\noindent Queue management in Philippine higher education institutions
+remains predominantly manual, resulting in inefficient counter
+assignments, inconsistent service monitoring, and prolonged student
+wait times during peak periods. This paper presents QueueFlow, a Smart
+Queue Management System that uses You Only Look Once version~8 nano
+(YOLOv8n) with object tracking, OpenCV camera processing, automated
+queue-number assignment, ticket generation, and real-time wait-time
+prediction. The implemented prototype separates the detector from the
+web backend: a camera-connected detector process performs YOLO
+inference, filters duplicate and implausible detections, estimates
+crowd metrics, and pushes tracked-person metadata to a FastAPI backend.
+The backend confirms new queue entrants through a configurable queue
+zone, candidate confirmation window, motion checks, track-ID remapping,
+and hybrid appearance-spatial re-identification before issuing a queue
+number. The intended deployment issues physical queue tickets through a
+thermal printer; for prototype demonstration, the system temporarily
+generates PDF tickets containing the same queue number, QR code, short
+code, and JSON Web Token (JWT). Ticket records are stored in MySQL, and
+students can check live status through a mobile browser or mobile
+tracker. The staff dashboard displays live annotated snapshots, queue
+state, no-show alerts, counter controls, analytics, and forecasts.
+Prediction outputs include current estimated wait time and 5, 15, and
+30~min forecasts using an M/M/c wait-time baseline, short-term trend
+projection, Holt's double exponential smoothing, and a mean-reversion
+long forecast. Developed for Naga College Foundation, Inc.\ (NCF) in
+Naga City, Philippines, QueueFlow is evaluated in terms of queue
+assignment accuracy, re-identification reliability, ticket and token
+validation, prediction accuracy using MAE and MAPE, system latency, and
+user satisfaction.
+
+\newpage
+
+% ============================================================
+% TABLE OF CONTENTS / FIGURES / TABLES
+% ============================================================
+\tableofcontents
+\newpage
+\listoffigures
+\newpage
+\listoftables
+\newpage
+
+% ============================================================
+% CHAPTER 1: INTRODUCTION
+% ============================================================
+\chapter{Introduction}
+
+\section{Background of the Study}
+
+Campus service delivery depends not only on the availability of staff
+and counters, but also on how quickly an office can recognize demand as
+it forms. During enrollment, payment, clearance, and other academic
+transactions, students often gather faster than service personnel can
+manually count, organize, and update the queue. This creates a practical
+problem for both sides of the service process: students have limited
+visibility of their waiting status, while staff have limited real-time
+information for deciding when to serve, skip, recall, or prepare
+additional service capacity.
+
+At Naga College Foundation Inc.\ (NCF), queue congestion is not simply
+a matter of long lines. It affects the continuity of student
+transactions because campus offices such as enrollment, cashiering, and
+library services are part of a connected workflow. A delay in one
+service point can influence the next step a student needs to complete.
+The Commission on Higher Education recognizes accessibility and
+efficient service delivery as important indicators of institutional
+quality~\cite{ched2022}; therefore, improving queue visibility is also
+part of improving the overall student service experience.
+
+Conventional queue systems help arrange people in order, but they
+usually begin only after a student manually asks for a number or after
+staff encode the transaction. These systems can record issued tickets,
+yet they do not automatically observe the actual service area, confirm
+new arrivals from a camera view, prevent duplicate queue entries, or
+estimate how the line may change in the next few minutes. Earlier queue
+management tools also tend to focus on static numbering rather than
+combining automated detection, staff monitoring, student status access,
+and prediction in one workflow~\cite{shah2018,chen2023adaptive}.
+
+QueueFlow is proposed in this study as a computer vision based queue
+management prototype for campus service offices. Instead of relying
+only on manual queue entry, the system uses a camera-connected
+YOLOv8n and OpenCV pipeline to detect persons inside a defined queue
+zone. YOLO is suitable for this task because it performs real-time
+object detection in a single network pass~\cite{redmon2018}, and
+YOLOv8n provides a lightweight model that can be used in practical
+prototype settings~\cite{jocher2022}. QueueFlow extends detection with
+duplicate filtering, candidate confirmation, and hybrid re-entry
+matching so that queue records remain more consistent when people move
+or briefly leave the camera frame.
+
+The queue ticket component of QueueFlow is designed for thermal printer
+deployment, allowing a physical queue ticket to be issued after a queue
+number is assigned. Because the prototype is demonstrated without the
+final printer hardware, the current implementation generates a PDF
+ticket as a temporary substitute. This PDF carries the same operational
+information expected from the thermal ticket, including the queue
+number, short code, and QR link for student status checking.
+
+Beyond ticket generation, QueueFlow connects the detector, queue
+records, staff dashboard, and prediction module through a FastAPI-based
+backend and MySQL database. The prediction module supports current,
+5-minute, 15-minute, and 30-minute wait-time estimates using queuing
+logic and short-term forecasting. Through this design, the study aims
+to provide NCF with a prototype that improves queue visibility,
+supports staff decision-making, and demonstrates how computer vision
+and predictive analytics can be applied to campus service management in
+a Philippine educational institution.
+
+The Review of Related Literature therefore examines the technologies
+and concepts that support each part of the problem identified above.
+Computer vision and YOLO literature address automated queue
+observation, queue management literature explains ticketing and
+identity maintenance, and forecasting literature supports the
+wait-time estimates needed for staff decision-making.
+
+\section{Review of Related Literature}
+
+This section reviews related studies according to the major needs
+identified in the Background of the Study. First, it discusses computer
+vision for recognizing people in service areas. Second, it reviews YOLO
+as the detection approach used by the prototype. Third, it examines
+queue management systems, especially the limitations of manual and
+static ticketing. Finally, it presents predictive analytics as the
+basis for transforming live queue records into current and near-future
+wait-time estimates.
+
+\textbf{Computer Vision for Real-Time Person Detection.}
+Computer vision has emerged as a transformative technology for
+automated crowd monitoring in institutional settings, enabling
+non-intrusive, real-time crowd density estimation and behavioral
+pattern recognition. Modern deep learning approaches process video
+streams to extract meaningful crowd metrics including density maps,
+movement trajectories, and occupancy levels across designated zones
+without compromising individual privacy~\cite{zhang2023}. Kumar
+et~al.~\cite{kumar2022} demonstrated that deep learning-based crowd
+monitoring systems achieve superior accuracy even when handling
+occlusions and varying lighting conditions common in institutional
+environments. Park et~al.~\cite{park2023} explored lightweight model
+architectures achieving processing speeds of 25--30~fps on embedded
+GPU platforms. Privacy-preserving techniques---including pose
+estimation without facial recognition, immediate anonymization at the
+camera level, and encrypted transmission of aggregate
+statistics---are recommended for deployment in public-facing
+institutional service areas~\cite{bergman2023}. These principles
+directly inform QueueFlow's design, which processes bounding box data
+and colour histograms without storing or transmitting raw video.
+
+\textbf{You Only Look Once (YOLO).}
+YOLO represents a breakthrough in real-time object detection by
+processing entire images in a single forward pass through the neural
+network. Unlike conventional detection methods that rely on region
+proposals or sliding windows, YOLO's unified architecture
+simultaneously predicts bounding boxes and class probabilities,
+enabling systems to detect and count people with exceptional speed and
+accuracy~\cite{redmon2018}. The objectness score for each detection is:
+\begin{equation}
+  \text{Confidence}(\text{box}) = \Pr(\text{Object}) \times
+  \text{IoU}(\text{pred},\,\text{truth})
+  \label{eq:yolo_conf}
+\end{equation}
+where $\Pr(\text{Object})$ is the probability that an object exists in
+the cell and IoU represents the intersection over union between
+predicted and ground truth boxes~\cite{jocher2022}.
+
+\textbf{Queue Management Systems.}
+Queue management systems in institutional settings have evolved from
+physical ticket dispensers and manual counting to digital platforms
+with varying degrees of automation. Camera-based queue monitoring
+approaches offer a fundamentally different model by passively detecting
+and tracking all persons who enter a service area, eliminating the
+manual entry requirement entirely~\cite{alahmari2021}.
+Re-identification of returning persons is a technically challenging
+aspect of camera-based systems requiring robust person tracking beyond
+simple frame-to-frame bounding box matching~\cite{rodriguez2024}.
+
+\textbf{Predictive Analytics for Service Demand Forecasting.}
+Predictive analytics transforms queue management from reactive to
+proactive by forecasting demand patterns and identifying potential
+bottlenecks before they materialize. The M/M/c queuing model, as
+established in the foundational queueing theory literature, enables
+calculation of key performance metrics including average wait times,
+queue lengths, and system utilization~\cite{shortle2018fundamentals}. System
+utilization is expressed as:
+\begin{equation}
+  \rho = \frac{\lambda}{c\mu}
+  \label{eq:utilization}
+\end{equation}
+where $\lambda$ is the arrival rate, $\mu$ the service rate, and $c$
+the number of active servers. The M/M/c model processes real-time
+arrival rates from computer vision systems to calculate immediate wait
+times using Little's Law:
+\begin{equation}
+  W = \frac{L}{\lambda}
+  \label{eq:littles_law}
+\end{equation}
+For medium-term forecasting, Holt's double exponential smoothing tracks
+both queue level and trend with separate smoothing parameters~\cite{holt2004forecasting}.
+For the 30~min forecast exposed by the prototype, growth-ratio and
+mean-reversion logic compare early versus recent queue history to
+detect systematic demand changes.
+
+\section{Synthesis of the State-of-the-Art}
+
+The literature reviewed in this chapter supports the central concern
+identified in the Background of the Study: campus service offices need
+better real-time visibility of queue conditions, not merely a list of
+issued numbers. Studies on computer vision show that camera-based
+person detection can reduce dependence on manual observation by
+capturing activity in a service area as it happens. YOLO-based
+approaches are especially relevant because they provide the speed
+needed for live monitoring, making them suitable for a prototype that
+must observe students entering and moving through a defined queue zone.
+
+However, the reviewed studies also show that detection is only the
+first layer of a complete queue management system. A person detector
+can identify bounding boxes, but it does not automatically solve the
+operational problems described in the Background: duplicate entries,
+temporary disappearance from the camera view, skipped queue positions,
+or student access to queue status. This makes tracking, deduplication,
+candidate confirmation, and re-entry matching necessary additions when
+computer vision is applied to actual service-office queues.
+
+Research on queue management and predictive analytics further
+reinforces the need to move beyond static ticket numbering. Traditional
+queue tools can arrange students in order, but they provide limited
+support for staff decisions when demand changes quickly. Queuing theory
+and short-term forecasting address this limitation by translating
+arrival rates, active counters, and queue length into wait-time
+estimates. Multi-horizon prediction is therefore useful because staff
+need both immediate queue status and near-future indicators for
+counter planning.
+
+Taken together, the reviewed works suggest that an effective campus
+queue solution should combine four functions in one workflow:
+camera-based queue entry, reliable queue identity management, ticket
+and status access for students, and predictive information for staff.
+These findings connect directly to QueueFlow's design, which integrates
+YOLOv8n detection, hybrid re-entry matching, thermal-ticket-oriented
+queue number generation with a PDF demonstration fallback, a staff
+dashboard, and current, 5-minute, 15-minute, and 30-minute wait-time
+estimates.
+
+Despite these advances, existing studies remain limited when viewed
+against the specific needs of NCF's campus service context. Many focus
+on crowd counting, general queue applications, or prediction models as
+separate components. Fewer works demonstrate how these components can
+operate together in a Philippine educational institution where queue
+visibility, staff action, student status checking, and practical
+deployment constraints must be handled in a single prototype.
+
+\section{Gap Bridged by the Study}
+
+This study addresses a specific practical gap: there is currently no
+integrated system that combines passive camera-based queue entry using
+YOLO, hybrid multi-tier person re-identification, and multi-algorithm
+multi-horizon wait time prediction, specifically designed for campus
+service delivery in a Philippine educational institution context.
+
+QueueFlow responds to this gap by developing these components in a
+unified architecture: a YOLO-based person detection and tracking
+pipeline with a custom NMS pre-filter and post-frame deduplication
+layer, a hybrid re-entry matching algorithm that combines spatial
+proximity and appearance similarity, thermal-ticket-oriented queue
+number generation with a PDF demonstration fallback, and prediction
+models exposed as current, 5, 15, and 30~min wait-time estimates.
+
+\section{Theoretical Framework}
+
+The theoretical framework of this study is anchored on the queue
+visibility problem described in the Background of the Study. Campus
+service offices need a way to observe student arrival, maintain queue
+order, estimate waiting time, and present useful information to both
+staff and students. QueueFlow addresses this problem through the
+combined application of computer vision, queuing theory, and predictive
+analytics.
+
+\emph{Computer Vision Theory} provides the basis for replacing manual
+line observation with automated person detection. In QueueFlow, this
+theory is applied through YOLOv8n and OpenCV, where camera frames are
+processed to detect persons inside a defined queue zone. YOLO's
+single-pass detection approach supports real-time monitoring because it
+can identify objects quickly within each frame~\cite{redmon2018}.
+For the study, computer vision supplies the first layer of queue
+visibility: it allows the system to recognize possible queue entrants
+without requiring every student to manually register at a counter.
+
+\emph{Queuing Theory}, as formalized in classical queueing
+literature~\cite{shortle2018fundamentals}, explains how arrivals,
+service capacity, and waiting lines behave in a service system. The
+M/M/c model represents a multi-counter service environment in which
+the arrival rate, service rate, and number of active counters influence
+queue length, utilization, and waiting time. Together with Little's
+Law, this theory provides the mathematical basis for estimating waiting
+time, queue length, and counter utilization from real-time arrival and
+service rates. In QueueFlow, queuing theory is connected to the system
+through queue records, active counter settings, and service-time
+assumptions. Once the computer vision layer identifies queue activity,
+queuing theory provides the formulas for estimating how long students
+may wait and how staff decisions about counters may affect service
+flow.
+
+\emph{Predictive Analytics and Forecasting Theory} extends the system
+from observing the present queue to anticipating near-future demand.
+The Background of the Study emphasizes that queue conditions change
+throughout the day, especially during enrollment and payment periods.
+For this reason, QueueFlow uses short-term forecasting with queuing
+logic, trend projection, smoothing, and mean-reversion principles to
+produce current, 5-minute, 15-minute, and 30-minute estimates. These
+forecasts support staff decision-making by giving the dashboard more
+than a static queue count; they provide an early indication of whether
+congestion is likely to increase or decrease~\cite{brown2022,holt2004forecasting}.
+
+Together, these theories form the foundation of QueueFlow's design.
+Computer vision converts camera input into observable queue activity;
+queuing theory converts queue activity and counter capacity into
+service metrics; and predictive analytics converts those metrics into
+near-future wait-time estimates. The resulting information is delivered
+through the staff dashboard, student status access, and queue ticket
+workflow, where the intended deployment uses a thermal printer and the
+current prototype uses PDF tickets as a demonstration fallback.
+
+\section{Conceptual Framework}
+
+The conceptual framework adopts the Input-Process-Output-Outcome
+(IPOO) model to illustrate how raw camera data is transformed through
+the QueueFlow pipeline into actionable queue management intelligence.
+The \emph{Input} consists of a live camera feed, queue-zone settings,
+counter configuration, service-time assumptions, and staff actions.
+The \emph{Process} involves YOLOv8n detection, NMS pre-filtering,
+zone-based filtering, hybrid re-entry matching, candidate accumulation
+over a minimum confirmation window, queue state management including
+no-show detection and position recalculation, ticket generation, and
+multi-horizon prediction. The \emph{Output} delivers a real-time queue
+list with assigned numbers, ticket credentials, individual wait times,
+and prediction cards to both the staff web dashboard and the student
+mobile portal. The \emph{Outcome} is improved queue visibility,
+reduced manual ticket handling, and better staff decision support.
+
+\section{Statement of the Problem}
+
+This study seeks to address the following problems:
+\begin{enumerate}
+  \item What are the current limitations of the manual queue management
+        process at NCF service offices during peak demand periods?
+  \item How can a YOLO-based passive detection pipeline with hybrid
+        re-identification reliably assign and maintain queue numbers
+        without student interaction?
+  \item To what degree of accuracy can the implemented prediction
+        models forecast current, 5~min, 15~min, and 30~min wait times?
+  \item How do service staff and administrators evaluate QueueFlow in
+        terms of usability, detection reliability, ticket generation,
+        and prediction usefulness?
+\end{enumerate}
+
+\section{Assumptions}
+
+Several assumptions underlie the proposed study. First, that the camera
+hardware provides sufficient video quality and coverage of the queue
+zone to enable reliable YOLO person detection under the lighting
+conditions and pedestrian densities typical of NCF service areas.
+Second, that YOLO's tracking mechanism, supplemented by the system's
+spatial re-identification layer, produces sufficiently stable person
+identities across the queue duration. Third, that the three prediction
+models generate forecasts that are actionable and sufficiently accurate
+for staff scheduling and counter management decisions. Fourth, that the
+thermal printer can be configured in the deployment area; where printer
+hardware is unavailable, PDF ticket generation can demonstrate the same
+queue-number, QR-code, and token workflow. Fifth, that service staff and
+administrators possess basic digital literacy to operate the web
+dashboard and interpret the system's outputs.
+
+\section{Scope and Delimitation}
+
+This study focuses on the design, implementation, and evaluation of
+QueueFlow at NCF in Naga City, Philippines, covering the development
+of a YOLOv8n-based detection pipeline, a hybrid re-entry matching
+algorithm, a multi-horizon prediction engine, a FastAPI-based REST~API,
+a MySQL-backed data layer, and a ticket generation module designed for
+thermal-printer deployment. The current demonstration build generates
+PDF tickets with QR codes as a temporary substitute for printed thermal
+tickets. The system is deployed as a single-queue-zone, single-service
+instance. It does not currently support simultaneous multi-zone or
+multi-department management, priority queue differentiation based on
+student status or urgency factors, direct integration with the Campus
+Management System or Student Information System, or IoT sensor
+integration beyond the camera feed and queue ticket printer. The
+evaluation period is restricted to one semester of post-implementation
+operation.
+
+\section{Significance of the Study}
+
+The most immediate beneficiaries of this research are the service staff
+and students of NCF. Service staff gain a real-time queue dashboard
+that eliminates manual counting and provides data-driven insight into
+current queue length, individual wait times, and demand forecasts
+across three time horizons---enabling proactive counter management
+rather than reactive response to visible crowding. Students benefit
+from a passive system that requires no action on their part: upon
+entering the monitored area, a queue number is assigned and immediately
+accessible through any mobile browser using their access token.
+
+For institutional administration, QueueFlow provides queue performance
+records that support evidence-based decisions about staffing, service
+hours, and physical layout. For the academic community, the study
+advances the integration of computer vision, person re-identification,
+ticket generation, and multi-algorithm predictive analytics in service
+queue management.
+
+\section{Definition of Terms}
+
+\textbf{Access Token.} A ticket credential assigned to each confirmed
+queue number. In the implemented prototype, this consists of a short
+code and a JWT-backed validation record that allows the student to
+check queue status without a login account.
+
+\textbf{Candidate Accumulation.} A buffer mechanism requiring a new
+detection to appear consistently for a minimum confirmation window
+before a queue number is assigned, preventing transient detections from
+generating spurious tickets. The prototype uses a configurable default
+of 14 confirmation frames.
+
+\textbf{Holt's Double Exponential Smoothing.} A forecasting method
+based on exponentially weighted moving averages~\cite{holt2004forecasting}
+used for the 15~min prediction, applying separate smoothing parameters
+for queue level ($\alpha = 0.4$) and trend ($\beta = 0.2$) with damping
+factor 0.85 to avoid over-projection.
+
+\textbf{M/M/c Model.} A foundational multi-server queueing model from
+classical queueing theory~\cite{shortle2018fundamentals} used for
+short-term (5--15~min) wait time prediction, calculating
+$W = L/\lambda$ from Little's Law using real-time arrival rates from
+the YOLO detection pipeline.
+
+\textbf{Non-Maximum Suppression (NMS).} Both a standard IoU-based NMS
+pass and a custom X-column/Y-adjacency filter applied to raw YOLO
+outputs before they reach the queue tracker, suppressing duplicate head
+and body boxes YOLO commonly emits for a single person.
+
+\textbf{Queue Zone.} A configurable rectangular region defined by four
+pixel coordinates on the camera frame; only persons whose bounding box
+centre falls within this region are tracked and assigned queue numbers.
+
+\textbf{Thermal Queue Ticket.} The intended physical output of the
+system containing the queue number, QR code, and short code. In the
+prototype demonstration, the same ticket information is generated as a
+PDF while thermal printer hardware is not yet attached.
+
+\textbf{Re-Entry Matching.} A hybrid algorithm that first matches a
+new detection to a missing person by spatial proximity, then by
+appearance histogram similarity, and finally by recency as a last
+resort.
+
+\textbf{You Only Look Once (YOLO).} The YOLOv8n model with
+\texttt{persist=True} tracking, configurable input size, and confidence
+threshold, used to detect and track persons entering the queue zone in
+camera frames.
+
+% ============================================================
+% CHAPTER 2: REVIEW OF RELATED LITERATURE
+% ============================================================
+\chapter{Review of Related Literature}
+
+\section{Computer Vision for Real-Time Person Detection}
+
+The application of computer vision to person detection and crowd
+monitoring in institutional settings has matured significantly over the
+past decade. Modern deep learning architectures process video streams
+to extract crowd metrics including density maps, movement trajectories,
+and occupancy levels without compromising individual
+privacy~\cite{zhang2023}. Park et~al.~\cite{park2023} demonstrated
+that lightweight model architectures optimized for edge devices achieve
+25--30~fps on embedded GPU platforms, making real-time crowd analytics
+feasible within the budget constraints of educational institutions.
+Beyond simple counting, modern systems track individual trajectories
+through service areas, identifying dwell times at service counters and
+queue formation patterns~\cite{nguyen2023}.
+
+Privacy-preserving techniques such as pose estimation without facial
+recognition, camera-level anonymization, and transmission of aggregate
+statistics address ethical concerns inherent in camera-based monitoring
+in educational environments~\cite{bergman2023}.
+
+\section{YOLO-Based Tracking and Deduplication}
+
+YOLO's single-pass detection architecture delivers the speed necessary
+for real-time queue monitoring, processing entire frames in one forward
+pass to simultaneously predict bounding boxes, confidence scores, and
+class labels~\cite{redmon2018}. The YOLOv8 series advances this
+through improved multi-scale feature pyramid networks and anchor-free
+detection heads, achieving state-of-the-art accuracy-speed
+tradeoffs~\cite{jocher2022}.
+
+The duplicate detection problem---where YOLO emits multiple bounding
+boxes for a single person---is particularly pronounced in queue
+environments where people face the camera at close range. Custom
+geometric tests using X-column overlap and Y-adjacency thresholds have
+been proposed as supplements to standard NMS~\cite{rodriguez2024},
+forming the basis of the pre-filter implemented in QueueFlow's
+detection pipeline.
+
+\section{Queue Management and Re-Identification}
+
+Camera-based queue monitoring enables passive, continuous tracking of
+service user arrival order without requiring any student
+interaction~\cite{alahmari2021}. The core challenge beyond detection is
+person re-identification: when a tracked individual temporarily
+disappears from view and reappears with a new track ID, the system must
+recognize them as the same person and restore their original queue
+position rather than assigning a new number~\cite{rodriguez2024}.
+
+Re-identification approaches fall into three categories:
+appearance-based methods using colour histograms or deep feature
+embeddings, spatial-temporal methods using last known position and time
+elapsed, and hybrid methods combining both signals~\cite{chen2023mobile}.
+
+\section{Predictive Analytics for Service Demand Forecasting}
+
+Multi-horizon forecasting provides both immediate and strategic
+insights by generating predictions at different time scales, each
+matched to a specific operational decision type~\cite{brown2022}. The
+M/M/c queuing model provides analytical wait time calculations from
+real-time arrival and service rate measurements, making it suitable for
+current wait-time estimates and near-term tactical
+predictions~\cite{shortle2018fundamentals}.
+
+For the 15~min range, Holt's double exponential
+smoothing~\cite{holt2004forecasting} extends simple exponential
+smoothing by separately tracking queue level and trend. Damping the
+trend component prevents over-projection during transient spikes, a
+practical necessity in campus service environments where queue lengths
+can surge and dissipate quickly. For the 30~min forecast implemented in
+QueueFlow, mean-reversion logic is used to limit long forecast
+uncertainty.
+
+% ============================================================
+% CHAPTER 3: METHODOLOGY
+% ============================================================
+\chapter{Methodology}
+
+\section{Research Design}
+
+This study utilized a Mixed-Methods and Developmental research design
+to systematically develop and evaluate QueueFlow. Quantitative data
+focused on technical performance metrics such as queue number
+assignment accuracy, re-entry matching accuracy, prediction model MAE
+and MAPE across three forecasting horizons, and real-time processing
+latency. Qualitative data was gathered through semi-structured
+interviews exploring the experiences and perceptions of service staff
+and administrators.
+
+\section{Population and Locale}
+
+The study was conducted at Naga College Foundation, Inc.\ (NCF)
+located in Naga City, Camarines Sur, Philippines. NCF was selected as
+the research site because it serves large volumes of student service
+transactions across enrollment, cashiering, and library operations,
+with pronounced peak periods that create the queue management
+challenges QueueFlow is designed to address.
+
+\section{Research Instrument}
+
+The study utilized a researcher-made structured questionnaire employing
+a five-point Likert scale to measure respondents' level of agreement
+with statements related to system usability, detection reliability,
+prediction usefulness, dashboard clarity, and overall satisfaction as
+shown in Table~\ref{tab:likert}.
+
+\begin{table}[!ht]
+  \caption{Likert Scale Interpretation}
+  \label{tab:likert}
+  \centering
+  \begin{tabular}{clcc}
+    \toprule
+    \textbf{Scale} & \textbf{Category} & \textbf{WM Range} &
+    \textbf{Interpretation} \\
+    \midrule
+    5 & Strongly Agree    & 4.21--5.00 & Excellent         \\
+    4 & Agree             & 3.41--4.20 & Very Satisfactory \\
+    3 & Neutral           & 2.61--3.40 & Satisfactory      \\
+    2 & Disagree          & 1.81--2.60 & Poor              \\
+    1 & Strongly Disagree & 1.00--1.80 & Very Poor         \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Ethical Considerations}
+
+This study strictly adheres to ethical standards to protect
+participants' rights, ensure data privacy, and maintain research
+integrity. Participation was entirely voluntary and informed consent
+was obtained from all participants. All personal information was
+anonymized and stored in password-protected systems. The study complied
+with the Data Privacy Act of 2012 (Republic Act No.~10173).
+
+\section{Statistical Treatment of Data}
+
+Data gathered was processed using both descriptive and technical
+performance metrics. Descriptive analysis used the Weighted Mean
+($\text{WM} = \Sigma(f \times w)/N$), Overall Weighted Mean, and
+Percentage to summarize survey responses. System performance was
+evaluated using:
+\begin{equation}
+  \text{MAE} = \frac{\sum |y_{\text{predicted}} - y_{\text{actual}}|}{n}
+  \label{eq:mae}
+\end{equation}
+\begin{equation}
+  \text{MAPE} = \frac{1}{n}\sum\left|
+    \frac{y_{\text{actual}} - y_{\text{predicted}}}{y_{\text{actual}}}
+  \right| \times 100\%
+  \label{eq:mape}
+\end{equation}
+calculated separately for each of the three prediction model horizons.
+
+\section{System Design and Architecture}
+
+QueueFlow is implemented as a FastAPI-based web application with a
+separate camera detector process, a MySQL backend, staff dashboard
+pages, and public queue-status endpoints for students as shown in
+Table~\ref{tab:tools}. The detector process captures frames through
+OpenCV \texttt{VideoCapture}, runs YOLOv8n tracking with configurable
+image size and confidence threshold, filters duplicate and implausible
+bounding boxes, extracts crowd and prediction metrics, and sends
+tracked-person metadata to the backend. The backend then performs
+queue-zone filtering, candidate confirmation, track-ID remapping,
+re-entry matching, queue-state management, and ticket generation. The
+intended ticket output is a thermal queue ticket; the demonstration
+build uses generated PDF tickets with QR codes as a temporary
+substitute.
+
+\begin{table}[!ht]
+  \caption{System Tools and Technologies}
+  \label{tab:tools}
+  \centering
+  \begin{tabular}{p{2.0cm} p{2.5cm} p{7.0cm}}
+    \toprule
+    \textbf{Category} & \textbf{Technology} & \textbf{Rationale} \\
+    \midrule
+    Detection  & YOLOv8n       & Lightweight person detection with persistent tracking \\
+    Backend    & FastAPI       & REST API, dashboard routes, detector upload endpoints, and MJPEG streaming \\
+    Video      & OpenCV (cv2)  & Camera capture, frame preprocessing, annotation, and JPEG encoding \\
+    Tracking   & Custom Python & Queue-zone filtering, track remapping, re-entry matching, and no-show handling \\
+    Prediction & Custom Python & M/M/c baseline, short trend projection, Holt smoothing, and mean reversion \\
+    Ticketing  & Thermal printer; demo PDF & Physical queue ticket output, with PDF/QR substitute for demonstration \\
+    Database   & MySQL         & Queue records, short codes, JWTs, events, and transaction history \\
+    Auth       & Session/JWT  & Staff session login, camera-token validation, and student ticket tokens \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Software Development Process}
+
+The system was developed iteratively using the Agile development
+methodology, organized into sprint-based cycles covering: YOLO pipeline
+setup and NMS pre-filter development; re-entry matching algorithm
+design and debugging; no-show detection implementation; prediction
+model development and accuracy tuning; FastAPI REST~API and staff
+dashboard development; thermal-ticket workflow design with temporary
+PDF ticket generation for demonstration; and student queue-status
+integration testing.
+
+\section{Validation and Testing Methods}
+
+System validation was conducted through four primary approaches.
+\emph{Alpha Testing} was conducted internally by the developers to
+identify and resolve functional issues. \emph{Beta Testing} released
+the system to a limited group of service staff at NCF to observe
+real-world interaction and collect feedback. \emph{Usability
+Evaluation} employed the structured Likert-scale questionnaire
+administered to service staff and administrators after a minimum of
+two weeks of regular system use. \emph{Performance Testing} evaluated
+processing latency, prediction accuracy using MAE and MAPE against
+ground-truth wait times, re-entry matching accuracy verified against
+direct observation logs, and ticket flow validation from queue
+assignment to QR/short-code status lookup.
+
+% ============================================================
+% CHAPTER 4: SYNTHESIS MATRIX
+% ============================================================
+\chapter{Synthesis Matrix of Related Literature}
+
+Table~\ref{tab:synthesis} presents a synthesis matrix summarizing the
+reviewed literature, the methodology of each study, key findings, and
+the gaps identified that motivated the present work.
+
+\begin{table}[!ht]
+  \caption{Synthesis Matrix of Related Literature}
+  \label{tab:synthesis}
+  \centering
+  \small
+  \begin{tabular}{p{2.5cm} c p{2.5cm} p{3.0cm} p{4.0cm}}
+    \toprule
+    \textbf{Author/s} & \textbf{Year} & \textbf{Topic/Focus} &
+    \textbf{Findings} & \textbf{Gap/Limitation} \\
+    \midrule
+    Zhang et al.~\cite{zhang2023} & 2023 &
+      CV crowd density monitoring &
+      Non-intrusive crowd metrics without privacy compromise &
+      No queue-specific deduplication or re-identification \\[0.3em]
+    Kumar et al.~\cite{kumar2022} & 2022 &
+      Person detection in occluded environments &
+      High counting accuracy in crowded scenarios &
+      No queue number assignment or re-entry matching \\[0.3em]
+    Park et al.~\cite{park2023} & 2023 &
+      Lightweight vision for edge deployment &
+      25--30~fps on embedded platforms &
+      No application to queue management \\[0.3em]
+    Redmon \& Farhadi~\cite{redmon2018} & 2018 &
+      YOLO real-time object detection &
+      Simultaneous bounding box and class prediction &
+      No queue-specific deduplication \\[0.3em]
+    Jocher et al.~\cite{jocher2022} & 2022 &
+      YOLOv8 multi-scale detection &
+      State-of-the-art accuracy-speed tradeoff &
+      Duplicate boxes in close-range scenarios \\[0.3em]
+    Alahmari \& Alharbi~\cite{alahmari2021} & 2021 &
+      Camera-based queue monitoring &
+      Non-intrusive continuous queue tracking &
+      No hybrid re-identification; no multi-horizon prediction \\[0.3em]
+    Chen \& Guo~\cite{chen2023mobile} & 2023 &
+      Mobile queue status display &
+      Reduced physical congestion through mobile monitoring &
+      No YOLO-based passive entry \\[0.3em]
+    Brown et al.~\cite{brown2022} & 2022 &
+      Multi-horizon queue forecasting &
+      Three-tiered prediction supports tactical decisions &
+      Not integrated with live YOLO feed \\[0.3em]
+    Shortle et al.~\cite{shortle2018fundamentals} & 2018 &
+      Foundational queueing theory and M/M/c &
+      M/M/c and Little's Law enable wait-time calculation &
+      No integration with CV inputs \\[0.3em]
+    Holt~\cite{holt2004forecasting} & 2004 &
+      Exponential smoothing for trend forecasting &
+      Weighted moving averages capture level and trend &
+      No queue-specific application \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ============================================================
+% BIBLIOGRAPHY
+% ============================================================
+\printbibliography
+
+% ============================================================
+% CURRICULUM VITAE
+% ============================================================
+\chapter*{Curriculum Vitae}
+\addcontentsline{toc}{chapter}{Curriculum Vitae}
+
+% ============================================================
+% APPENDICES
+% ============================================================
+\chapter*{Appendices}
+\addcontentsline{toc}{chapter}{Appendices}
+
+\end{document}

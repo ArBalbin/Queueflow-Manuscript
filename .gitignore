@@ -1,0 +1,23 @@
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.out
+*.run.xml
+*.toc
+*.synctex.gz
+*-SAVE-ERROR
+Balbin_Archie_W3.pdf
+
+# Local editor settings
+.vscode/
+
+# OS files
+Thumbs.db
+.DS_Store
