@@ -1,8 +1,10 @@
 % Balbin_Archie_W3.tex - QueueFlow Capstone Thesis
+% !TEX root = Balbin_Archie_W3.tex
 % NCF Capstone Format
 \documentclass{research}
 
 \usepackage{float}
+\usepackage{longtable}
 
 \graphicspath{{images/}}
 \addbibresource{Balbin_Archie_W3.bib}
@@ -242,35 +244,34 @@ Editor
 
 \vspace{2em}
 
-\noindent Queue management in Philippine higher education institutions
-remains predominantly manual, resulting in inefficient counter
-assignments, inconsistent service monitoring, and prolonged student
-wait times during peak periods. This paper presents QueueFlow, a Smart
-Queue Management System that uses You Only Look Once version~8 nano
-(YOLOv8n) with object tracking, OpenCV camera processing, automated
-queue-number assignment, ticket generation, and real-time wait-time
-prediction. The implemented prototype separates the detector from the
-web backend: a camera-connected detector process performs YOLO
-inference, filters duplicate and implausible detections, estimates
-crowd metrics, and pushes tracked-person metadata to a FastAPI backend.
-The backend confirms new queue entrants through a configurable queue
-zone, candidate confirmation window, motion checks, track-ID remapping,
-and hybrid appearance-spatial re-identification before issuing a queue
-number. The system implements a printer-agnostic ticket protocol that
-can render the same queue number, QR code, short code, and JSON Web
-Token (JWT) as either a thermal-printed ticket in deployment or a PDF
-ticket in the prototype demonstration. Ticket records are stored in
-MySQL, and students can check live status through a mobile client. The
-staff dashboard displays live annotated snapshots, queue
-state, no-show alerts, counter controls, analytics, and forecasts.
-Prediction outputs include current estimated wait time and 5, 15, and
-30~min forecasts using an M/M/c wait-time baseline, short-term trend
+\noindent Queueing in many campus service offices is still handled by
+staff observation, manual numbering, and verbal updates at the counter.
+During enrollment, payment, and clearance periods, this makes it
+difficult for students to know their turn and for staff to judge how
+quickly the line is changing. QueueFlow was developed as a capstone
+prototype for this setting. It combines a YOLOv8n detector, OpenCV
+camera processing, automatic queue-number assignment, ticket issuance,
+and short-horizon wait-time forecasting. The prototype runs the camera
+detector separately from the FastAPI backend: the detector sends
+tracked-person metadata, duplicate-filtered detections, crowd counts,
+and annotated snapshots, while the backend confirms entrants inside a
+calibrated queue zone before issuing a number. Confirmation uses a
+candidate window, motion checks, track-ID remapping, and a hybrid
+appearance-spatial re-entry rule so that brief exits from the camera
+view do not immediately produce duplicate queue tickets. QueueFlow also
+uses a printer-agnostic ticket payload containing the queue number, QR
+link, short code, and JSON Web Token (JWT), which can be rendered as a
+thermal ticket in deployment or as a PDF ticket in the prototype build.
+Queue records are stored in MySQL, students can check ticket status
+from a mobile client, and staff can monitor live snapshots, no-show
+alerts, counter actions, analytics, and forecasts through the dashboard.
+The forecasting component reports the current estimated wait time and
+5-, 15-, and 30-minute projections using an M/M/c baseline, local trend
 projection, Holt's double exponential smoothing, and a mean-reversion
-long forecast. Developed for Naga College Foundation, Inc.\ (NCF) in
-Naga City, Philippines, QueueFlow is evaluated in terms of queue
-assignment accuracy, re-identification reliability, ticket and token
-validation, prediction accuracy using MAE and MAPE, system latency, and
-user satisfaction.
+adjustment. The study evaluates the Naga College Foundation, Inc.\
+(NCF) prototype through queue assignment accuracy, re-identification
+reliability, ticket and token validation, prediction error using MAE
+and MAPE, system latency, and user satisfaction.
 
 \newpage
 
@@ -291,15 +292,14 @@ user satisfaction.
 
 \section{Background of the Study}
 
-Campus service delivery depends not only on the availability of staff
-and counters, but also on how quickly an office can recognize demand as
-it forms. During enrollment, payment, clearance, and other academic
-transactions, students often gather faster than service personnel can
-manually count, organize, and update the queue. This creates a practical
-problem for both sides of the service process: students have limited
-visibility of their waiting status, while staff have limited real-time
-information for deciding when to serve, skip, recall, or prepare
-additional service capacity.
+In a busy campus office, the queue is not only a line of students; it
+is also an early signal of how much pressure the office is about to
+handle. During enrollment, payment, clearance, and related transactions,
+students may arrive faster than staff can manually count, organize, and
+update them. The result is a familiar but difficult situation: students
+wait without a clear view of their status, while staff make service,
+skip, recall, and counter decisions with only partial real-time
+information.
 
 This problem is not unique to Naga College Foundation, Inc.\ (NCF).
 Recent reports from Philippine higher education institutions document
@@ -314,44 +314,41 @@ queue display and the manual recording of transaction order, indicates
 the same kind of inefficient service delivery that the literature
 identifies as a recurring issue in Philippine HEIs.
 
-At NCF, queue congestion is not simply a matter of long lines. It
-affects the continuity of student transactions because campus offices
-such as enrollment, cashiering, and library services are part of a
-connected workflow. A delay in one service point can influence the next
-step a student needs to complete. The Commission on Higher Education
-recognizes accessibility and efficient service delivery as important
-indicators of institutional quality~\cite{ched2022}; therefore,
-improving queue visibility is also part of improving the overall
-student service experience.
+At NCF, congestion also affects the continuity of student transactions.
+Enrollment, cashiering, and library services are separate offices, but
+students often experience them as one connected process. A delay at one
+window can affect the next step that the student needs to complete. The
+Commission on Higher Education recognizes accessibility and efficient
+service delivery as indicators of institutional quality~\cite{ched2022};
+for this reason, improving queue visibility is treated in this study as
+part of improving the student service experience, not merely as a
+counter-management task.
 
-Conventional queue systems help arrange people in order, but they
-usually begin only after a student manually asks for a number or after
-staff encode the transaction. These systems can record issued tickets,
-yet they do not automatically observe the actual service area, confirm
-new arrivals from a camera view, prevent duplicate queue entries, or
-estimate how the line may change in the next few minutes. Earlier queue
-management tools also tend to focus on static numbering rather than
-combining automated detection, staff monitoring, student status access,
-and prediction in one workflow.
+Conventional queue systems are useful once a student has requested a
+number or once staff have encoded the transaction. Their limitation is
+that they normally begin after the office has already recognized the
+arrival. They can store issued tickets, but they do not usually observe
+the service area, confirm new arrivals from a camera view, reduce
+duplicate queue entries, or estimate near-term changes in the line. The
+gap is therefore not only ticket issuance; it is the missing link among
+arrival detection, staff monitoring, student status access, and
+prediction.
 
-QueueFlow is proposed in this study as a computer vision based queue
-management prototype for campus service offices. Instead of relying
-only on manual queue entry, the system uses a camera-connected
-YOLOv8n and OpenCV pipeline to detect persons inside a defined queue
-zone. YOLO is suitable for this task because it performs real-time
-object detection in a single network pass~\cite{redmon2018}, and
-YOLOv8n provides a lightweight model that is well-supported by stable
-production tooling, persistent tracking, and broad community
-benchmarking~\cite{jocher2023,wang2025lightweight}. Newer YOLO variants
-such as YOLOv9, YOLOv10, YOLOv11, and the attention-centric YOLOv12
-introduce additional architectural innovations~\cite{jocher2024yolo11,
-tian2025yolov12}, but for a single-class person-detection task on
-prototype-grade hardware in a controlled queue zone, the speed,
-stability, and tracking integration of YOLOv8n outweigh the marginal
-accuracy gains of newer variants. Comparative real-time surveillance
-evaluations have also shown that YOLOv11 and YOLOv8 remain competitive
-with YOLOv12 specifically for person detection in challenging spots,
-supporting the choice of the v8n nano model for this study.
+QueueFlow responds to this gap through a camera-connected queue
+management prototype for campus service offices. Instead of waiting for
+a manual entry, it uses YOLOv8n and OpenCV to detect persons inside a
+defined queue zone. YOLO is appropriate for this use case because it
+performs object detection in a single network pass~\cite{redmon2018}.
+YOLOv8n was selected because it is light enough for prototype-grade
+hardware while still supporting persistent tracking and stable
+deployment tooling~\cite{jocher2023,wang2025lightweight}. Newer YOLO
+variants, including YOLOv11 and YOLOv12, introduce architectural
+improvements~\cite{jocher2024yolo11,tian2025yolov12}; however, this
+study prioritizes stable single-class person detection in a controlled
+queue zone over marginal accuracy gains that may require more
+computing resources. The selection therefore reflects the constraints
+of the prototype environment rather than a general claim that YOLOv8n
+is superior in all settings.
 
 QueueFlow extends detection with duplicate filtering, candidate
 confirmation, and hybrid re-entry matching so that queue records remain
@@ -585,38 +582,34 @@ deployment constraints must be handled in a single prototype.
 
 \section{Gap Bridged by the Study}
 
-This study addresses a specific practical gap identified from the
-literature reviewed in Section~1.2. While existing studies discuss
-queue monitoring, computer vision, person detection, re-identification,
-and wait-time prediction, they do not report an integrated system that
-combines passive camera-based queue entry using YOLO, hybrid multi-tier
-person re-identification, and multi-algorithm, multi-horizon wait-time
-prediction specifically designed for campus service delivery in a
-Philippine higher education institution context. The Philippine HEI
-smart-queueing work that has been published, including the system
-reported by Concepcion et~al.~\cite{concepcion2026smart}, operates
-through web-based ticketing and appointment booking rather than passive
-computer-vision detection of student arrivals.
+The literature reviewed in Section~1.2 shows strong work on individual
+parts of the problem: queue monitoring, object detection,
+re-identification, and wait-time forecasting. What remains less
+developed is a campus-service prototype that joins these parts into
+one operating workflow for a Philippine higher education institution.
+Existing Philippine HEI work, including the system reported by
+Concepcion et~al.~\cite{concepcion2026smart}, is centered on
+web-based ticketing and appointment booking. It does not begin with
+passive camera-based recognition of arrivals in the service area.
 
-QueueFlow bridges this gap by developing these components within a
-unified system architecture. It implements a YOLO-based person
-detection and tracking pipeline supported by a custom non-maximum
-suppression pre-filter and post-frame deduplication layer to improve
-queue entrant detection. It also applies a hybrid re-entry matching
-algorithm that combines spatial proximity, appearance similarity, and
-recency to reduce duplicate queue assignments when a person temporarily
-leaves and returns to the queue area.
+QueueFlow narrows this gap by connecting the arrival, identity,
+ticket, and prediction tasks inside one system architecture. The
+prototype uses YOLO-based person detection and tracking, then adds a
+custom non-maximum-suppression pre-filter and post-frame deduplication
+layer to reduce duplicate queue entrants. For cases where a person
+leaves and later returns, the re-entry matcher compares spatial
+proximity, appearance similarity, and recency before deciding whether
+to restore an earlier queue number or issue a new one.
 
-In addition, the system implements a printer-agnostic ticket protocol
-comprising a queue number, short code, QR link, and JWT-backed
-validation record. The intended deployment renders this protocol as a
-thermal-printed ticket; the demonstration build renders the same
-payload as a PDF. QueueFlow also exposes wait-time prediction outputs
-for the current queue condition and for 5-minute, 15-minute, and
-30-minute horizons. Through this integration, the study bridges the gap
-between existing queue management research and the need for a
-practical, automated, campus-oriented queue monitoring system for
-students and administrative staff in a Philippine HEI context.
+The same workflow also produces a printer-agnostic ticket payload with
+a queue number, short code, QR link, and JWT-backed validation record.
+The intended deployment prints the payload through a thermal printer,
+while the demonstration build renders the same data as a PDF ticket.
+Finally, the dashboard reports the current wait estimate together with
+5-, 15-, and 30-minute forecasts. The contribution is therefore the
+practical integration of detection, queue identity, ticket validation,
+and prediction for students and administrative staff in an NCF service
+office setting.
 
 \section{Theoretical Framework}
 
@@ -676,26 +669,27 @@ forecasts support staff decision-making by giving the dashboard more
 than a static queue count; they provide an early indication of whether
 congestion is likely to increase or decrease.
 
-Together, these theories form the foundation of QueueFlow's design.
-Computer vision converts camera input into observable queue activity;
-queuing theory converts queue activity and counter capacity into
-service metrics; predictive analytics provides the conceptual
-framework for anticipatory decision-making; and forecasting theory
-supplies the mathematical methods that turn metrics into near-future
-wait-time estimates. The resulting information is delivered through
-the staff dashboard, mobile client for student status access, and queue
-ticket workflow, where the intended deployment uses a thermal printer
-and the current prototype uses PDF tickets as a demonstration fallback
-rendered from the same ticket protocol.
+These theories divide the QueueFlow problem into workable parts.
+Computer vision supplies the observable queue activity. Queuing theory
+relates that activity to service capacity and waiting time. Predictive
+analytics frames the dashboard as a decision-support tool rather than
+only a display screen. Forecasting theory supplies the methods used to
+estimate near-future waiting conditions. The resulting information is
+shown through the staff dashboard, the student status interface, and
+the queue ticket workflow. The intended deployment prints tickets on a
+thermal printer, while the prototype demonstrates the same ticket
+payload through PDF rendering.
 
 \section{Conceptual Framework}
+\label{sec:conceptual-framework}
 
-This study uses the Input-Process-Output-Outcome (IPOO) model as the
-conceptual framework for developing QueueFlow. The IPOO framework
-demonstrates how camera-based queue observations, system configuration,
-staff actions, and service assumptions are transformed through a
-computer-vision and prediction pipeline into functional outputs that
-support the intended queue management outcomes.
+The conceptual framework uses the Input-Process-Output-Outcome (IPOO)
+model to show how QueueFlow turns campus service-office conditions into
+usable queue information. Camera observations, queue-zone settings,
+counter configuration, staff actions, and service-time assumptions are
+treated as inputs. The system then processes those inputs through
+detection, filtering, re-entry matching, ticketing, and prediction
+before producing the outputs used by staff and students.
 
 Figure~\ref{fig:conceptual-framework} presents the IPOO-based
 conceptual framework of the QueueFlow system, showing the relationship
@@ -747,7 +741,7 @@ offices rather than remaining locked to its initial settings.
 
 \section{Statement of the Problem}
 
-This study seeks to address the following problems:
+The study is guided by the following research problems:
 \begin{enumerate}
   \item What are the current limitations of the manual queue management
         process at NCF service offices during peak demand periods, as
@@ -773,7 +767,7 @@ This study seeks to address the following problems:
 
 \section{Assumptions}
 
-This study is based on the following assumptions:
+The following assumptions delimit the proposed evaluation:
 
 \textbf{Camera visibility and queue-zone coverage.} The camera hardware
 provides sufficient video quality and coverage of the queue zone to
@@ -803,17 +797,17 @@ dashboard and interpret the system's outputs.
 
 \section{Scope and Delimitation}
 
-This study centers on the design, implementation, and evaluation of
-QueueFlow at NCF in Naga City, Philippines. The scope covers the
-development of a YOLOv8n-based detection pipeline, a hybrid re-entry
-matching algorithm, a multi-horizon prediction engine, a FastAPI-based
-REST~API, a MySQL-backed data layer, and a printer-agnostic ticket
-generation module. The intended deployment renders the ticket on a
+The scope covers the design, implementation, and evaluation of
+QueueFlow at NCF in Naga City, Philippines. Included in the prototype
+are the YOLOv8n detection pipeline, hybrid re-entry matching,
+multi-horizon prediction, FastAPI REST~API, MySQL-backed data layer,
+staff dashboard, mobile status access, and printer-agnostic ticket
+generation. The intended deployment renders the ticket through a
 thermal printer; the current demonstration build renders the same
 ticket payload as a PDF for evaluation purposes.
 
-The study is limited to a single-queue-zone, single-service prototype
-deployment. It does not currently support simultaneous multi-zone or
+The prototype is limited to a single queue zone and one selected
+service office. It does not currently support simultaneous multi-zone or
 multi-department management, priority queue differentiation based on
 student status or urgency factors, direct integration with the Campus
 Management System or Student Information System, or IoT sensor
@@ -823,10 +817,10 @@ operation.
 
 \section{Significance of the Study}
 
-This study examines the development and potential impact of QueueFlow
-as a computer-vision-based queue monitoring and ticketing system for NCF
-service offices, highlighting its significance to the following
-stakeholders:
+QueueFlow is intended to be useful not only as a software prototype but
+also as a campus-service support tool. Its expected significance is
+described for the groups that will either operate the system, receive
+service through it, or use its records for improvement.
 
 \textbf{Service Staff.} Service staff gain a real-time queue dashboard
 that reduces manual counting and provides data-driven insight into
@@ -847,11 +841,12 @@ campus-oriented prototype that demonstrates how automation, computer
 vision, and predictive analytics can support service delivery and
 student-facing operations.
 
-\textbf{Academic Community and Future Researchers.} The study advances
-the integration of computer vision, person re-identification, ticket
-generation, and multi-algorithm predictive analytics in service queue
-management within the Philippine HEI context, providing a foundation
-for related research and system improvements.
+\textbf{Academic Community and Future Researchers.} The work provides a
+local reference for combining computer vision, re-identification,
+ticket generation, and predictive analytics in Philippine HEI service
+queues. Future researchers may extend it to multi-camera zones,
+priority queues, direct campus-system integration, or alternative
+detection and forecasting models.
 
 \section{Definition of Terms}
 
@@ -912,46 +907,184 @@ variants---YOLOv9 through YOLOv12~\cite{tian2025yolov12}---are not used
 in this study; the rationale is discussed in Section~1.3.
 
 % ============================================================
-% CHAPTER 2: METHODS
+% CHAPTER 2: METHODOLOGY
 % ============================================================
 \chapter{Methodology}
 
+This chapter explains how QueueFlow will be built, deployed, and
+evaluated in the NCF service-office setting. It covers the research
+design, respondents and locale, sampling procedure, data gathering,
+research instruments, validation of the questionnaire, ethical
+safeguards, statistical treatment, system architecture, development
+process, and testing plan.
+
 \section{Research Design}
 
-This study utilized a Mixed-Methods and Developmental research design
-to systematically develop and evaluate QueueFlow. Quantitative data
-focused on technical performance metrics such as queue number
-assignment accuracy, re-entry matching accuracy, prediction model MAE
-and MAPE across three forecasting horizons, and real-time processing
-latency. Qualitative data was gathered through semi-structured
-interviews exploring the experiences and perceptions of service staff
-and administrators.
+The study combines developmental work with mixed-methods evaluation.
+The developmental part covers the actual construction of QueueFlow,
+while the evaluation part checks whether the prototype performs well
+enough for a campus service-office setting. Quantitative evidence comes
+from the system logs, observer records, and survey ratings. These data
+are used to measure queue assignment accuracy, re-identification
+reliability, ticket and token validation, detection-to-ticket latency,
+and wait-time prediction error through Mean Absolute Error (MAE) and
+Mean Absolute Percentage Error (MAPE). The five-point Likert survey
+then captures how service staff, administrators, and student users rate
+dashboard usability, layout clarity, and the usefulness of the
+prediction outputs after regular exposure to the prototype.
+Qualitative evidence comes from short semi-structured interviews, which
+allow respondents to explain operational concerns, useful features, and
+improvements that are difficult to capture through ratings alone.
 
-\section{Population and Sampling}
+The engineering work is organized around the prototype components that
+carry the main technical risk: YOLOv8n detection, hybrid re-entry
+matching, ticket-payload generation, multi-horizon prediction, the
+FastAPI backend, the staff dashboard, and the mobile status interface.
+Each component is built through the Agile sprint cycle described in
+Section~\ref{sec:sdp} and illustrated in Figure~\ref{fig:agile-cycle}.
+Its output is checked against the design principles in
+Section~\ref{sec:design-arch}. Quantitative results and qualitative
+accounts are analyzed side by side so that the final discussion can
+compare measured performance with the actual experience of the users.
 
-The study involved service staff, administrators, and selected student
-users who directly interact with campus service queues. Respondents
-were selected through purposive sampling because their experience with
-queue formation, counter management, ticket handling, and status
-checking provides the most relevant basis for evaluating QueueFlow's
-usability, reliability, and usefulness.
+\section{Population and Locale of the Study}
 
-\section{Research Locale}
+The research site is Naga College Foundation, Inc.\ (NCF) in Naga
+City, Camarines Sur, Philippines. NCF is an appropriate setting because
+student transactions in enrollment, cashiering, and library-related
+services create visible peak periods where manual queue handling is
+placed under pressure. The prototype will be installed in one service
+office area chosen with NCF administration. That office serves as the
+single-queue-zone test site defined in the Scope and Delimitation of
+Chapter~1.
 
-The study was conducted at Naga College Foundation, Inc.\ (NCF)
-located in Naga City, Camarines Sur, Philippines. NCF was selected as
-the research site because it serves large volumes of student service
-transactions across enrollment, cashiering, and library operations,
-with pronounced peak periods that create the queue management
-challenges QueueFlow is designed to address.
+Three respondent groups are included because they encounter the queue
+from different positions. Service staff represent the counter-level
+users who receive students and process transactions. Administrators and
+IT personnel represent the group responsible for oversight, deployment,
+and service-office policy. Currently enrolled NCF students represent
+the queue participants who receive a ticket and check their status
+during the evaluation period.
+
+\section{Sample and Sampling Technique}
+
+Sampling is adapted to the size and role of each respondent group
+rather than applying one procedure to all participants. This allows the
+evaluation to include the operational perspective of staff, the
+management perspective of administrators, and the user experience of
+students.
+
+\textbf{Service staff.} Because the population of staff directly
+involved in queue-based transactions in the selected service office is
+relatively small and bounded, total enumeration is used; all eligible
+staff will be invited to participate. The inclusion criterion is at
+least two weeks of regular interaction with the system in their normal
+work role during the evaluation period.
+
+\textbf{Administrators.} Total enumeration is likewise used for this
+group, since the population of administrators and IT personnel with
+oversight of the selected service office is small. The inclusion
+criterion is direct supervisory involvement with the service office
+during the evaluation period.
+
+\textbf{Students.} Because the student population is large, the sample
+size for this group is determined using Slovin's formula at a 5\%
+margin of error:
+\begin{equation}
+  n = \frac{N}{1 + Ne^2}
+  \label{eq:slovin}
+\end{equation}
+where $n$ is the required sample size, $N$ is the population of NCF
+students who interact with the targeted service office during the
+evaluation period, and $e$ is the margin of error, set at 0.05. Student
+respondents will then be drawn through stratified purposive sampling
+across year levels to ensure that the resulting sample reflects the
+diversity of users who experience the queue. The inclusion criterion is
+at least one completed transaction involving a QueueFlow-issued ticket
+during the evaluation period.
+
+\textbf{Exclusion criterion.} Across all three groups, any prospective
+respondent below 18 years of age is excluded. The age criterion is
+enforced through a screening question that immediately precedes the
+informed consent form, and any prospective respondent indicating an age
+below 18 is thanked for their interest and not enrolled.
+
+\section{Data Gathering Procedure}
+
+Data gathering is divided into three phases so that the manual
+baseline, live system behavior, and user feedback are not mixed
+together prematurely. The sequence also makes it possible to compare
+what staff normally do, what QueueFlow records during use, and what
+participants report after using the prototype.
+
+\textbf{Phase 1: Pre-Deployment Setup and Operational Baseline.} Prior
+to deployment, the researchers will coordinate with the office head of
+the selected service office to confirm the camera placement, queue zone
+calibration, counter configuration, and service-time assumptions.
+During this phase, the researchers will also conduct informal
+observation of the existing manual queue handling process, recording
+approximate queue lengths and qualitative accounts from staff regarding
+the patterns of congestion most commonly encountered. These baseline
+accounts establish the qualitative reference against which the
+QueueFlow-mediated process is later compared.
+
+\textbf{Phase 2: System Deployment and Performance Logging.} After
+alpha and beta testing in Section~2.10, the system will be deployed for
+regular operation in the selected service office for the evaluation
+period. During this phase, two parallel streams of data will be
+captured. First, the system will automatically log every detection
+event, queue assignment, re-entry matching decision, ticket issuance,
+prediction output, and dashboard interaction, with associated
+timestamps. Second, an independent observer will maintain a manual
+ground-truth log during defined observation windows, recording each
+actual queue entrant, each genuine re-entry event, and the actual wait
+time measured from queue zone entry to counter arrival. The automated
+logs and the manual ground-truth log together support the technical
+performance metrics specified in Section~2.7.
+
+\textbf{Phase 3: Post-Evaluation Survey and Interviews.} After the
+evaluation period, the validated questionnaire in Section~2.5 will be
+administered to the three respondent groups identified in Section~2.3.
+A subset of respondents from each group will be invited to a short
+semi-structured interview, scheduled at their convenience and lasting
+approximately twenty minutes. Interview audio will be recorded only
+with consent and transcribed, after which the recordings will be
+deleted. Both survey responses and interview transcripts will be
+anonymized before analysis.
 
 \section{Research Instrument}
 
-The study utilized a researcher-made structured questionnaire employing
-a five-point Likert scale to measure respondents' level of agreement
-with statements related to system usability, detection reliability,
-prediction usefulness, dashboard clarity, and overall satisfaction as
-shown in Table~\ref{tab:likert}.
+Four instruments provide the evidence for the study: the QueueFlow
+operational log, the observer's ground-truth log, a researcher-made
+Likert questionnaire, and a short semi-structured interview guide.
+
+\textbf{Operational and ground-truth logs.} The operational log is
+generated automatically by the system and records every detection,
+queue assignment, re-entry decision, ticket issuance, prediction
+output, dashboard action, and associated timestamps. The manual
+ground-truth log is a paper or digital record maintained by an
+independent observer during defined observation windows in Phase~2.
+Together these two logs provide the data needed to compute queue
+assignment accuracy, re-identification reliability, MAE and MAPE for
+wait-time prediction, detection-to-ticket latency, and ticket and token
+validation rates.
+
+\textbf{Likert-scale questionnaire.} The questionnaire is structured
+into five dimensions that correspond directly to Statement of the
+Problem No.~4 in Chapter~1: usability of the dashboard, mobile client,
+and ticket workflow; perceived detection reliability of the queue entry
+process; perceived usefulness of the current, 5-, 15-, and 30-minute
+wait-time predictions; clarity of the dashboard layout, live snapshot,
+analytics cards, and counter controls; and overall satisfaction with
+the system. Each dimension contains several items rated on the
+five-point scale shown in Table~\ref{tab:likert}.
+
+\textbf{Semi-structured interview guide.} A short interview guide is
+prepared to explore usability problems, perceived benefits of the
+prediction outputs, situations in which staff would override system
+suggestions, and recommendations for future improvement. The guide is
+used flexibly, with the interviewer free to follow up on respondent
+comments.
 
 \begin{table}[!ht]
   \caption{Likert Scale Interpretation}
@@ -962,33 +1095,145 @@ shown in Table~\ref{tab:likert}.
     \textbf{Scale} & \textbf{Category} & \textbf{WM Range} &
     \textbf{Interpretation} \\
     \midrule
-    5 & Strongly Agree    & 4.21--5.00 & Excellent         \\
-    4 & Agree             & 3.41--4.20 & Very Satisfactory \\
-    3 & Neutral           & 2.61--3.40 & Satisfactory      \\
-    2 & Disagree          & 1.81--2.60 & Poor              \\
-    1 & Strongly Disagree & 1.00--1.80 & Very Poor         \\
+    5 & Strongly Agree    & 4.21--5.00 & Strongly Agree / Excellent \\
+    4 & Agree             & 3.41--4.20 & Agree / Very Satisfactory \\
+    3 & Neutral           & 2.61--3.40 & Neutral / Satisfactory \\
+    2 & Disagree          & 1.81--2.60 & Disagree / Poor \\
+    1 & Strongly Disagree & 1.00--1.80 & Strongly Disagree / Very Poor \\
     \bottomrule
   \end{tabular}
 \end{table}
 
+\textbf{Instrument validation.} Because the questionnaire is
+researcher-made, its content validity and reliability are established
+before it is used in the main evaluation. Content validation is
+conducted by three expert raters, namely the thesis adviser, one
+faculty member with expertise in research methods or statistics, and
+one faculty member with expertise in computer science or information
+systems. Each rater independently rates every item on a four-point
+relevance scale, where 1 means not relevant and 4 means highly
+relevant. The Content Validity Index is then computed at the item level
+(I-CVI) and at the scale level (S-CVI/Average). An I-CVI of at least
+0.78 per item and an S-CVI/Average of at least 0.90 for the full scale
+are taken as acceptable thresholds, and any item falling below the
+threshold is revised or removed based on the experts' written comments
+before pilot testing.
+
+\textbf{Reliability testing.} After content validation, the
+questionnaire is pilot-tested with approximately 10 to 15 respondents
+drawn from the same population strata but excluded from the final
+sample. Internal-consistency reliability is then computed using
+Cronbach's alpha, with the formula given in Section~2.7 and a value of
+at least 0.70 taken as acceptable. If alpha falls below the threshold,
+items with low item-total correlation are revised and the pilot is
+repeated. The signed content validation forms and the pilot reliability
+output are attached as appendices.
+
 \section{Ethical Considerations}
 
-This study strictly adheres to ethical standards to protect
-participants' rights, ensure data privacy, and maintain research
-integrity. Participation was entirely voluntary and informed consent
-was obtained from all participants. All personal information was
-anonymized and stored in password-protected systems. The study complied
-with the Data Privacy Act of 2012 (Republic Act No.~10173).
+Ethical handling is treated as part of the system design, not only as a
+research requirement. Staff, administrators, and student users may join
+surveys, interviews, and system testing only after giving informed
+consent. Before any questionnaire or interview is administered, the
+researchers explain the purpose of the study, the activities involved,
+the expected time commitment, possible benefits, and the participant's
+right to withdraw without penalty.
+
+Only respondents who are 18 years of age or older will be enrolled. The
+age criterion is enforced through a screening question that immediately
+precedes the consent form, and any prospective respondent indicating an
+age below 18 will not be enrolled. No data from minors is collected or
+stored at any point in the study.
+
+For confidentiality, personal identifiers are removed before analysis.
+Questionnaires use respondent codes instead of names. Interview audio,
+when the respondent allows recording, is transcribed for analysis and
+then deleted. Results are reported in aggregate form so that individual
+respondents are not identifiable. Digital files are kept in
+password-protected storage accessible only to the researchers and the
+thesis adviser, while hard-copy materials are placed in locked storage
+and shredded after the retention period. Study data are kept for a
+maximum of three years after completion and are then destroyed.
+
+\textbf{Camera Snapshot Handling.} The system captures live video
+frames from the queue zone solely for automated person detection and
+the live staff dashboard. The detector encodes annotated snapshots,
+showing the camera frame with queue zone, person bounding boxes, and
+queue numbers overlaid, at a configurable frame rate and transmits them
+to the backend through an authenticated endpoint. The backend retains
+only the latest snapshot in process memory; each new snapshot
+overwrites the previous one, and no historical snapshot archive is
+maintained on disk. Where an optional Redis cache is enabled in cloud
+deployment, it is configured as a volatile cache only: snapshot keys
+carry a short time-to-live, with a default of ten seconds, and Redis
+persistence, including RDB snapshotting and AOF append-only logging, is
+disabled in the bundled Redis configuration
+(\texttt{save ""; appendonly no}). If a managed Redis provider is used,
+persistence and provider-side backups for the QueueFlow cache instance
+must be disabled, or the existence of provider-side persistence must be
+disclosed in the deployment notes. Detection metadata, including person
+tracks, queue length, and wait-time predictions, is transmitted through
+a separate endpoint and is the only data persisted in the MySQL
+database; the snapshot image itself is not written to MySQL at any
+point. The system does not perform facial recognition and does not
+store biometric templates. Re-identification relies on colour
+histograms, or clothing-colour distributions derived from bounding-box
+regions, which are non-biometric and are reset at end-of-session.
+
+\textbf{Access Control and Transparency.} Dashboard access is
+restricted to authenticated staff through session login, with JWT-based
+camera-token validation between the detector and the backend. The
+student-facing mobile client exposes only the requesting student's own
+queue status, accessed through the ticket QR code and short-code
+credential issued to that student; it does not display the camera feed
+or any other student's status. Physical signage will be posted at the
+service-office entrance informing visitors that the area is monitored
+by an automated queue management system for service-delivery purposes,
+citing the Data Privacy Act of 2012, or Republic Act No.~10173, and
+providing researcher contact for data-subject requests. The camera is
+mounted visibly, not concealed. Consistent with the proportionality
+principle of the Act, only the minimum data necessary for queue
+management is processed; no marketing, profiling, or third-party data
+sharing is performed.
+
+The work is aligned with the Data Privacy Act of 2012, or Republic Act
+No.~10173, and with applicable NCF research ethics protocols. Ethical
+clearance will be secured from the host institution before deployment
+and data collection begin. Sources are cited and acknowledged
+throughout the manuscript. Any use of AI-assisted tools is limited to
+draft organization, language checking, or proofreading; the system
+implementation, analysis, interpretation, and final responsibility for
+the manuscript remain with the researchers.
 
 \section{Statistical Treatment of Data}
 
-Data gathered was processed using both descriptive and technical
-performance metrics. Descriptive analysis used the Weighted Mean
-($\text{WM} = \Sigma(f \times w)/N$), Overall Weighted Mean, and
-Percentage to summarize survey responses. System performance was
-evaluated using:
+The statistical treatment is organized around the questions raised in
+Chapter~1. Technical measures are used for the detector, ticket, and
+prediction components, while descriptive statistics are used for the
+respondent ratings and profile data.
+
+\textbf{Queue Assignment Accuracy and Re-Identification Reliability.}
+These two metrics address Statement of the Problem No.~2. Queue
+assignment accuracy is computed as the proportion of correctly assigned
+queue numbers, matching the manual ground-truth log, over the total
+number of arrivals observed during the evaluation period.
+Re-identification reliability is computed as the proportion of correct
+re-entry decisions, either correctly restoring a previous queue number
+or correctly assigning a new one, over the total number of re-entry
+events observed:
 \begin{equation}
-  \text{MAE} = \frac{\sum |y_{\text{predicted}} - y_{\text{actual}}|}{n}
+  \text{Accuracy} =
+  \frac{\text{correct decisions}}{\text{total decisions}} \times 100\%
+  \label{eq:accuracy}
+\end{equation}
+
+\textbf{Mean Absolute Error and Mean Absolute Percentage Error.} These
+two metrics address Statement of the Problem No.~3 and are computed
+separately for the current, 5-minute, 15-minute, and 30-minute
+prediction horizons:
+\begin{equation}
+  \text{MAE} =
+  \frac{1}{n}\sum |y_{\text{predicted}} - y_{\text{actual}}|
   \label{eq:mae}
 \end{equation}
 \begin{equation}
@@ -997,70 +1242,508 @@ evaluated using:
   \right| \times 100\%
   \label{eq:mape}
 \end{equation}
-calculated separately for each of the three prediction model horizons.
+where $y_{\text{predicted}}$ is the system's wait-time estimate at a
+given horizon and $y_{\text{actual}}$ is the wait time measured by the
+observer using a stopwatch from queue zone entry to counter arrival.
+
+\textbf{Weighted Mean and Overall Weighted Mean.} These two measures
+address Statement of the Problem No.~4. The weighted mean (WM) is
+computed for each Likert item, each dimension averaged across items
+within a dimension, and each respondent group: service staff,
+administrators, and students. The results are then pooled into an
+overall weighted mean (OWM). Per-group weighted means are reported to
+allow comparison across stakeholder perspectives.
+\begin{equation}
+  \text{WM} = \frac{\sum(f \times w)}{N}
+  \label{eq:weighted_mean}
+\end{equation}
+where $f$ is the frequency of each response, $w$ is the weight assigned
+to that response from 1 to 5 on the Likert scale, and $N$ is the number
+of respondents in the group.
+\begin{equation}
+  \text{OWM} = \frac{\sum \text{WM}}{n}
+  \label{eq:overall_weighted_mean}
+\end{equation}
+where $n$ is the number of items per dimension or the number of
+dimensions per group, depending on which level of aggregation is being
+computed. Interpretation follows the verbal categories in
+Table~\ref{tab:likert}.
+
+\textbf{Percentage Distribution.} Percentage is used to describe the
+composition of the respondent sample by group, year level, role, and
+demographic profile, and the distribution of responses across the
+five-point scale for each item:
+\begin{equation}
+  P = \frac{f}{N} \times 100
+  \label{eq:percentage}
+\end{equation}
+
+\textbf{Cronbach's Alpha.} Cronbach's alpha is used to assess the
+internal-consistency reliability of the questionnaire after the pilot
+test:
+\begin{equation}
+  \alpha =
+  \frac{k}{k - 1}
+  \left(1 - \frac{\sum\sigma_i^2}{\sigma_{\text{total}}^2}\right)
+  \label{eq:cronbach_alpha}
+\end{equation}
+where $k$ is the number of items, $\sigma_i^2$ is the variance of each
+item, and $\sigma_{\text{total}}^2$ is the variance of the total score.
+Values of 0.70 or higher are taken as acceptable.
+
+\textbf{Detection-to-Ticket Latency.} Detection-to-ticket latency is
+reported as the mean and standard deviation, in seconds, of the elapsed
+time from the first confirmed detection of a queue entrant to the
+issuance of the corresponding ticket payload, computed from the
+automated operational log.
 
 \section{System Design and Architecture}
+\label{sec:design-arch}
 
-QueueFlow is implemented as a FastAPI-based web application with a
-separate camera detector process, a MySQL backend, staff dashboard
-pages, and public queue-status endpoints for students as shown in
-Table~\ref{tab:tools}. The detector process captures frames through
-OpenCV \texttt{VideoCapture}, runs YOLOv8n tracking with configurable
-image size and confidence threshold, filters duplicate and implausible
-bounding boxes, extracts crowd and prediction metrics, and sends
-tracked-person metadata to the backend. The backend then performs
-queue-zone filtering, candidate confirmation, track-ID remapping,
-re-entry matching, queue-state management, and ticket generation. The
-ticket output is printer-agnostic: the same queue number, short code,
-QR link, and JWT-backed validation record can be rendered as a
-thermal-printed ticket in deployment or as a PDF in the demonstration
-build.
+QueueFlow is designed as a set of cooperating components rather than as
+a single monolithic application. The detector, re-identification logic,
+ticket workflow, prediction module, dashboard, FastAPI backend, and
+MySQL data layer are developed and tested iteratively so that changes
+in one component can be checked against the behavior of the rest of the
+prototype.
 
-\begin{table}[!ht]
+\subsection{Design Principles}
+
+\textbf{Detection Accuracy.} The YOLOv8n detection pipeline,
+supplemented by the custom non-maximum-suppression pre-filter,
+candidate confirmation window, and hybrid re-entry matching logic, must
+meet the queue assignment accuracy and re-identification reliability
+thresholds reported in Chapter~3. These are the primary quality gates
+before deployment to live operation.
+
+\textbf{Prediction Usefulness.} The prediction module must produce
+wait-time estimates whose MAE and MAPE, at each of the current,
+5-minute, 15-minute, and 30-minute horizons, are low enough to be
+actionable for staff planning. Specific target thresholds are reported
+in Chapter~3.
+
+\textbf{API Reliability.} The REST endpoints must handle malformed,
+empty, or unusually long inputs gracefully, returning structured error
+responses rather than crashing. Endpoint behavior must be consistent
+and deterministic across repeated calls with identical inputs, and
+inference time must remain within bounded latency for live use.
+
+\textbf{Reproducibility.} All model configurations, queue-zone
+parameters, prediction smoothing factors, and confirmation-window
+values used in the prototype are recorded as configurable defaults in
+version-controlled code stored in the project repository, ensuring
+results reported in this study can be independently verified.
+
+\textbf{Privacy Protection.} Consistent with the visual privacy
+literature reviewed in Chapter~1, the system processes bounding-box and
+colour-histogram data rather than storing or transmitting raw video.
+Personally identifiable images are not retained beyond the live frame
+buffer required for detection.
+
+\clearpage
+\subsection{Tools and Technologies}
+
+The system uses Python as the principal implementation language, with
+FastAPI as the web framework, OpenCV for camera handling, the
+Ultralytics implementation of YOLOv8n for detection and persistent
+tracking, custom Python modules for queue-zone filtering, hybrid
+re-entry matching, and prediction, and MySQL as the data store.
+Table~\ref{tab:tools} summarizes the tools and their rationale.
+
+\begin{table}[H]
   \caption{System Tools and Technologies}
   \label{tab:tools}
   \centering
-  \begin{tabular}{p{2.0cm} p{2.5cm} p{7.0cm}}
+  \small
+  \begin{tabular}{p{2.2cm} p{3.0cm} p{7.4cm}}
     \toprule
     \textbf{Category} & \textbf{Technology} & \textbf{Rationale} \\
     \midrule
-    Detection  & YOLOv8n       & Lightweight person detection with persistent tracking \\
-    Backend    & FastAPI       & REST API, dashboard routes, detector upload endpoints, and MJPEG streaming \\
-    Video      & OpenCV (cv2)  & Camera capture, frame preprocessing, annotation, and JPEG encoding \\
-    Tracking   & Custom Python & Queue-zone filtering, track remapping, re-entry matching, and no-show handling \\
-    Prediction & Custom Python & M/M/c baseline, short trend projection, Holt smoothing, and mean reversion \\
-    Ticketing  & Printer-agnostic protocol & Queue number, short code, QR link, and JWT payload rendered as thermal ticket or demo PDF \\
-    Database   & MySQL         & Queue records, short codes, JWTs, events, and transaction history \\
-    Auth       & Session/JWT  & Staff session login, camera-token validation, and student ticket tokens \\
+    Detection & YOLOv8n (Ultralytics) &
+      Lightweight person detection with persistent tracking; rationale for choosing this variant over YOLOv9--v12 is given in Chapter~1. \\
+    Backend & Python (FastAPI) &
+      REST API, staff dashboard routes, detector upload endpoints, MJPEG streaming, and student status endpoints. \\
+    Video & OpenCV (cv2) &
+      Camera capture, frame preprocessing, annotation, and JPEG encoding for dashboard snapshots. \\
+    Tracking & Custom Python &
+      Queue-zone filtering, NMS pre-filter for duplicate head/body box suppression, track-ID remapping, hybrid re-entry matching, and no-show handling. \\
+    Prediction & Custom Python &
+      M/M/c wait-time baseline, short trend projection, Holt's double exponential smoothing, and mean-reversion long forecast. \\
+    Ticketing & Thermal printer; demo PDF &
+      Printer-agnostic ticket protocol rendering queue number, short code, QR link, and JWT. Thermal output is the deployment target; PDF rendering is used in the demonstration build. \\
+    Database & MySQL &
+      Queue records, short codes, JWTs, no-show events, prediction snapshots, and transaction history. \\
+    Auth & Session/JWT &
+      Staff session login, camera-token validation between detector and backend, and student ticket tokens. \\
+    Dev Tools & VS Code, Postman, Git/GitHub &
+      Standard development and version control tooling; Postman is used for endpoint contract testing. \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\section{Software Development Process}
+\clearpage
+\subsection{System Architecture}
 
-The system was developed iteratively using the Agile development
-methodology, organized into sprint-based cycles covering: YOLO pipeline
-setup and NMS pre-filter development; re-entry matching algorithm
-design and debugging; no-show detection implementation; prediction
-model development and accuracy tuning; FastAPI REST~API and staff
-dashboard development; printer-agnostic ticket protocol design with
-thermal and PDF rendering paths; and student queue-status integration
-testing.
+The QueueFlow system follows a six-layer architecture composed of the
+Presentation Layer, the API Layer, the Computer Vision Layer, the
+Business Logic Layer, the Persistence Layer, and the Cache and Runtime
+State Layer. This structure reflects the system architecture documented
+in the project repository and separates user-facing interfaces, API
+coordination, camera processing, queue operations, database storage, and
+runtime state management. Figure~\ref{fig:system-architecture}
+summarizes the layers and their components.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth,height=0.66\textheight,keepaspectratio]{Figure_2_1_System_Architecture.pdf}
+  \caption{QueueFlow Six-Layer System Architecture}
+  \label{fig:system-architecture}
+\end{figure}
+
+\textbf{Presentation Layer.} This layer comprises the staff web
+dashboard, which presents queue analytics, live snapshots or video
+streaming, counter controls, and no-show alerts, and the student mobile
+application, which supports QR scanning and queue-status display. These
+are the only two interfaces exposed to end users.
+
+\textbf{API Layer.} This layer is implemented in Python with FastAPI in
+\texttt{app/main.py}. The backend is composed of five routers:
+\texttt{pages.py} serves the login and dashboard pages and the live
+MJPEG video stream; \texttt{detector\_api.py} receives the two
+endpoints used by the detector process, \texttt{POST /yolo/push-frame}
+for detection metadata and \texttt{POST /yolo/update} for annotated
+snapshots; \texttt{queue.py} serves the queue list, queue status,
+prediction, analytics, and staff queue actions; \texttt{crowd.py}
+serves snapshot retrieval and recent history; and \texttt{health.py}
+reports backend, database, cache, and snapshot status.
+
+\textbf{Computer Vision Layer.} This layer is implemented as a separate
+Python process in \texttt{app/detector.py} running on the
+camera-connected machine. It opens the camera through OpenCV
+\texttt{VideoCapture}, runs the Ultralytics YOLOv8n model with
+persistent tracking, draws queue overlays such as queue zone, person
+boxes, queue numbers, and indicators onto the frame, and uploads the
+resulting metadata and JPEG snapshot to the backend through the two
+detector endpoints. Calls are authenticated by a camera token through
+the \texttt{X-CAM-TOKEN} header. Running the detector as a separate
+process prevents camera processing from blocking dashboard or API
+requests.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth,height=0.66\textheight,keepaspectratio]{Figure_2_2_Detection_To_Ticket_Pipeline.pdf}
+  \caption{QueueFlow Detection-to-Ticket Pipeline}
+  \label{fig:detection-ticket-pipeline}
+\end{figure}
+
+\textbf{Business Logic Layer.} This layer is implemented in
+\texttt{app/services/} and is composed of five services. The Queue
+Service filters incoming detections, removes weak detections, and
+routes confirmed detections into the Queue Tracker, which maintains the
+active queue in memory, assigns queue numbers, handles missing persons
+and no-show countdowns, and performs hybrid re-entry matching. The
+Prediction Service computes the current wait-time baseline and the
+multi-horizon forecasts using the M/M/c queueing approximation, linear
+trend projection, Holt's double exponential smoothing, and
+mean-reversion logic. The Ticket Service is a background worker that
+consumes ticket-generation jobs, and the Ticket Printer generates the
+short code, JWT, QR URL, and PDF ticket or, in the deployment
+configuration, drives the thermal printer.
+
+\textbf{Persistence Layer.} This layer is implemented in
+\texttt{app/database/database\_handler.py} against a MySQL database.
+Persisted data include users, queue records such as queue number, short
+code, JWT token, PDF path, status, expiration, creation timestamp, and
+serving timestamp, and operational events. Raw camera frames, live JPEG
+snapshots, and the in-memory queue tracker state are intentionally not
+persisted to MySQL.
+
+\textbf{Cache and Runtime State Layer.} This layer comprises an
+in-memory state module in \texttt{app/state.py} that holds the latest
+detector state, the latest annotated snapshot, and a rolling history,
+and an optional Redis cache in \texttt{app/services/cache\_service.py}
+that mirrors these values for cloud deployments where multiple backend
+workers may need to share live data. The Redis cache is configured as
+volatile only: keys carry short time-to-live values, and Redis
+persistence, including RDB and AOF, is disabled in the bundled Redis
+configuration so that snapshots are never written to disk. If a managed
+Redis provider is used, persistence and backups must be disabled for
+the QueueFlow cache instance or disclosed in the deployment notes.
+
+\subsection{Machine-Learning Wait-Time Predictor Training Protocol}
+\label{sec:ml-training-protocol}
+
+QueueFlow does not train its wait-time model while the cashiering
+prototype is already serving users. Training is handled as an offline
+step: the researchers prepare the transaction logs, test several
+predictors on past records, and deploy the selected model only after
+its error values are acceptable for the study. This keeps experimental
+model changes away from live queue operations and gives the researchers
+a reproducible basis for the results presented later in the manuscript.
+
+\textbf{Dataset.} The working dataset will come from historical
+cashiering transaction logs made available by the NCF Technology
+Resource Center (TRC), following the data-sharing arrangement described
+in Section~2.6. The exact date range and final number of usable records
+will be stated in Chapter~3 after cleaning and screening. The paired
+BSIS capstone team requested the logs through a formal letter endorsed
+by the Dean of the College of Computer Studies, and the anonymized
+records are shared with the BSCS team for QueueFlow predictor
+development. Expected fields include transaction identifiers, start and
+end timestamps, transaction type, counter identifier, and computed
+service duration. Names, student numbers, payment amounts, account
+details, and other personally identifiable fields are excluded. Only
+records belonging to the cashiering office selected for deployment are
+retained for modeling.
+
+\textbf{Feature Engineering.} The predictor uses fields that can be
+derived from timestamps and from the recent movement of the queue. The
+initial feature set is organized as follows:
+\begin{enumerate}
+  \item Time fields, such as hour, minute, day of week, week of month,
+        and month.
+  \item Academic-calendar indicators for regular days, enrollment,
+        midterm payment, final payment, and clearance periods, based on
+        the calendar issued by the Office of the Registrar.
+  \item Queue-state fields, including arrivals and completions within
+        the previous 5, 15, and 30 minutes, estimated queue length, and
+        the number of active counters when this can be inferred from
+        the logs.
+  \item Lagged wait-time fields, such as the wait time of the previous
+        transaction and recent wait-time averages for comparable hours.
+\end{enumerate}
+The response variable is transaction wait time. When queue-entry and
+counter-arrival timestamps are both available, wait time is computed
+directly from their elapsed time. If the released logs contain service
+timestamps but not explicit queue-entry timestamps, the reconstruction
+rule used to estimate waiting time will be documented with the final
+data-cleaning procedure in Chapter~3.
+
+\textbf{Train, Validation, and Test Split.} Queue records are split by
+date, not by random row assignment. The first 70\% of the ordered
+records form the training set, the next 15\% form the validation set,
+and the last 15\% are reserved for final testing. This order matters
+because cashiering demand is time-dependent: enrollment week, payment
+deadlines, and ordinary class days do not behave the same way. A random
+split could allow future queue patterns to influence model tuning, so
+it is avoided.
+
+\textbf{Candidate Model Architectures.} The study compares three
+predictor families:
+\begin{enumerate}
+  \item Gradient-boosted regression trees, using XGBoost or LightGBM,
+        because they work well with tabular operational data and can
+        show feature-importance rankings.
+  \item Random Forest regression, using scikit-learn, because it is a
+        practical comparison model for smaller datasets and is usually
+        less fragile during early tuning.
+  \item Linear regression, using the same engineered fields, as a
+        baseline for checking whether the tree-based models actually
+        improve prediction error.
+\end{enumerate}
+The model family with the lowest validation Mean Absolute Error (MAE)
+at the 15-minute horizon is selected for the prototype. If two models
+produce nearly identical MAE values, the more stable model across
+validation periods is preferred. The selected model and its final
+settings are presented with the results.
+
+Deep sequence models such as Long Short-Term Memory networks and the
+Temporal Fusion Transformer are not used in this version of the
+prototype. These architectures may be useful for large, multi-office
+time-series datasets, but the available cashiering data comes from a
+single service office. For this study, simpler tabular models are more
+appropriate and easier to validate.
+
+\textbf{Hyperparameter Selection.} Tuning is limited to a small grid so
+that the validation set is not overused. For the gradient-boosted
+models, the grid covers tree depth, learning rate, number of
+estimators, and L2 regularization, with early stopping based on
+validation error. For Random Forest regression, tuning is limited to
+the size of the tree ensemble, the allowed tree depth, and the minimum
+number of samples required in a leaf node. The final hyperparameters
+are reported only for the selected model.
+
+\textbf{Evaluation Protocol.} The selected model is evaluated on the
+held-out test set using MAE and MAPE, following the formulas in
+Section~2.7. Error is reported separately for the current, 5-minute,
+15-minute, and 30-minute horizons. The machine-learning predictor is
+also compared with the analytical predictor in Section~2.8.3 by running
+both on the same test records. The comparison reports per-horizon MAE
+differences and, where the data supports it, a statistical test of
+whether the observed difference is significant. Feature-importance
+results are included to help explain which queue conditions most
+influence the prediction.
+
+\textbf{Integration Plan.} After offline testing, the trained model is
+added to the Prediction Service in the Business Logic Layer
+(Section~2.8.3). For each horizon, the service can produce an
+analytical estimate, an ML estimate, and a combined estimate. The
+combined estimate is computed from validation-set performance so that
+the more reliable component receives greater weight. The dashboard
+shows the combined value as the default staff-facing estimate, while
+the component estimates remain available for inspection. The model file
+is serialized with \texttt{joblib}, loaded by the FastAPI backend at
+startup, and referenced through a configurable path so that future
+retraining does not require code changes.
+
+\textbf{Retraining and Model Drift.} The procedure in this subsection
+covers the initial training run only. Periodic retraining, automated
+drift monitoring, and production retraining pipelines are outside the
+present scope, although the prototype is arranged so that a later model
+file can replace the original one.
+
+\textbf{Current Status.} At the time of manuscript preparation, the TRC
+dataset has been made accessible to the BSCS researchers through the
+paired BSIS team. Feature engineering and the training script are still
+being completed. Candidate-model comparison, final error reporting, and
+live prototype integration will be documented in Chapter~3 once the
+training and validation run is finished.
+
+\section{Software Development Process}
+\label{sec:sdp}
+
+QueueFlow development is organized as a small Agile-style engineering
+cycle. Requirements, interface decisions, coding work, testing, and
+review are repeated across modules instead of being handled as one
+large build at the end of the study.
+
+\textbf{Planning and Requirement Analysis.} The researchers will
+collaborate with NCF service office staff to determine system
+requirements. User needs, expected workflows, dashboard actions, and
+ticket conventions will be documented to create user stories,
+prioritize features, and align development goals with the conceptual
+framework presented in Chapter~1.
+
+\textbf{System Design.} This phase focuses on the architecture and
+design of the detection pipeline, the backend, the database, and the
+dashboard. It includes queue-zone coordinate design, ticket-payload
+schema design, prediction-module parameter design, and dashboard
+wireframing.
+
+\textbf{Development Iteration and Sprint Cycles.} Development is
+organized into sprint cycles, each concentrating on a specific module.
+The sprints, in the order in which they will be executed, are
+summarized below:
+\begin{enumerate}
+  \item YOLOv8n pipeline setup, queue-zone configuration, and the
+        custom NMS pre-filter for duplicate head and body box
+        suppression.
+  \item Hybrid re-entry matching algorithm design, implementation, and
+        iterative debugging using recorded test footage.
+  \item No-show detection and queue position recalculation logic.
+  \item Prediction module implementation of the M/M/c baseline,
+        short-term trend projection, Holt smoothing, and
+        mean-reversion long forecast; iterative accuracy tuning against
+        logged ground-truth wait times.
+  \item FastAPI backend, staff web dashboard, and counter controls.
+  \item Printer-agnostic ticket workflow, including JWT issuance,
+        short-code generation, QR linking, and PDF rendering for
+        demonstration.
+  \item Student status integration, including mobile client, status
+        API, and end-to-end ticket scan tests.
+  \item Integration testing, performance tuning, and final
+        pre-evaluation hardening.
+\end{enumerate}
+
+Figure~\ref{fig:agile-cycle} summarizes the per-sprint cycle through
+which each of the eight sprints listed above is executed. Sprint-level
+Plan and Design refine the module's acceptance criteria and interface
+contracts before Build; Test validates the deliverable against those
+criteria; and Review captures adviser feedback together with measured
+performance, which then propagates into the Plan phase of the
+following sprint. This per-sprint feedback loop instantiates, at the
+development level, the Feedback stage described in the conceptual
+framework of Section~\ref{sec:conceptual-framework}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.7\textwidth,height=0.66\textheight,keepaspectratio]{queueflow_agile_cycle.png}
+  \par\vspace{0.3em}{\centering\small\textbf{Figure 2.3}\par}
+  \caption{Agile Development Process for QueueFlow. Each of the eight
+  sprints enumerated above completes one revolution of this five-phase
+  cycle---Plan, Design, Build, Test, Review---before the next sprint
+  begins. The Review phase routes adviser feedback and measured
+  performance back into the Plan phase of the following sprint,
+  instantiating, at the development level, the feedback loop described
+  in Section~\ref{sec:conceptual-framework}.}
+  \label{fig:agile-cycle}
+\end{figure}
+
+Each sprint will conclude with a review against defined acceptance
+criteria and with the thesis adviser before proceeding to the next
+phase. Sprint reviews will also be used to refine prediction parameters
+and queue-zone calibration based on observed system behavior,
+consistent with the feedback loop described in Section~1.6 of
+Chapter~1.
 
 \section{Validation and Testing Methods}
 
-System validation was conducted through four primary approaches.
-\emph{Alpha Testing} was conducted internally by the developers to
-identify and resolve functional issues. \emph{Beta Testing} released
-the system to a limited group of service staff at NCF to observe
-real-world interaction and collect feedback. \emph{Usability
-Evaluation} employed the structured Likert-scale questionnaire
-administered to service staff and administrators after a minimum of
-two weeks of regular system use. \emph{Performance Testing} evaluated
-processing latency, prediction accuracy using MAE and MAPE against
-ground-truth wait times, re-entry matching accuracy verified against
-direct observation logs, and ticket flow validation from queue
-assignment to QR/short-code status lookup.
+Validation combines software tests, observed performance, and user
+feedback. Functional and integration tests check whether the prototype
+works as intended; queue assignment, re-identification, prediction, and
+latency measures address the technical research questions; and the
+survey and interviews address user evaluation.
+
+\textbf{Alpha Testing.} Alpha testing will be conducted internally by
+the developers using both live camera input and pre-recorded test
+footage. Defects in detection, tracking, ticket generation, dashboard
+rendering, and mobile-client status retrieval will be identified and
+resolved before any external user is exposed to the system.
+
+\textbf{Beta Testing.} The system will be released to a limited group
+of NCF service staff for at least two weeks of regular operation.
+During this period, the developers will observe real-world interaction
+patterns, collect informal feedback, and log any operational issues.
+Issues affecting the user experience will be addressed before the
+structured evaluation begins.
+
+\textbf{Performance Testing: Queue Assignment Accuracy.} During defined
+observation windows, an independent observer will maintain a manual
+ground-truth log in which every actual queue entrant will be recorded
+with a timestamp. The system's queue assignments will then be compared
+against this log. Accuracy is reported as the proportion of correct
+assignments over total arrivals, using the formula in Section~2.7.
+
+\textbf{Performance Testing: Re-Identification Reliability.} Re-entry
+events, in which a tracked person leaves the camera frame and later
+returns, will also be recorded in the same manual ground-truth log. The
+system's re-entry decision, either assigning a new number or restoring
+a previous number, will be compared against the ground-truth identity
+recorded by the observer. Reliability is reported as the proportion of
+correct decisions over total re-entry events.
+
+\textbf{Performance Testing: Prediction MAE and MAPE.} Actual wait
+times will be measured by the observer using a stopwatch from the
+moment a person enters the queue zone to the moment the person reaches
+the counter. These observed wait times will be compared to the
+system's predictions at the corresponding horizons. MAE and MAPE will
+be computed using the formulas in Section~2.7, separately for the
+current, 5-minute, 15-minute, and 30-minute horizons.
+
+\textbf{Performance Testing: Latency and Ticket Flow.}
+Detection-to-ticket latency will be measured from automated timestamps
+logged at the moment a queue entrant is first detected to the moment
+the corresponding ticket payload is issued. Ticket flow validation will
+be performed by issuing tickets across a representative range of
+conditions and verifying that the short code, QR link, and JWT each
+correctly resolves to the matching queue status. Failures will be
+logged and counted toward the ticket and token validation rate reported
+under Statement of the Problem No.~2.
+
+\textbf{Usability Evaluation.} After a minimum of two weeks of regular
+system use, the content-validated and pilot-tested questionnaire in
+Section~2.5 will be administered to the three respondent groups
+identified in Section~2.3. Responses will be analyzed using the
+statistical procedures in Section~2.7. A subset of respondents from
+each group will be invited to a short semi-structured interview, and
+the resulting transcripts will be thematically coded to surface
+patterns that the Likert ratings alone do not capture.
+
+The combination of automated performance logs, manual ground-truth
+observation, structured survey responses, and qualitative interviews
+provides multiple lines of evidence for each research question,
+supporting the convergent parallel mixed-methods design described in
+Section~2.1.
 
 % ============================================================
 % CHAPTER 3: RESULTS AND DISCUSSIONS
@@ -1175,6 +1858,315 @@ the gaps identified that motivated the present work.
     \bottomrule
   \end{tabular}
 \end{table}
+
+\clearpage
+\chapter{QueueFlow Evaluation Questionnaire}
+\label{app:queueflow-questionnaire}
+
+\begin{center}
+\textbf{FOR CONTENT VALIDATION -- DRAFT}\\[0.5em]
+\textbf{Naga College Foundation, Inc. -- College of Computer Studies}\\[1em]
+\textbf{Research Title:} QueueFlow: Computer Vision Based Automated
+Queue Ticket Assignment and Real-Time Predictive System for Dynamic
+Campus Service Delivery\\[0.5em]
+\textbf{Researchers:} Archie D. Balbin and Joshua Rovic P. Sanota
+\end{center}
+
+\section*{Pre-Screening}
+
+Are you 18 years of age or older?
+
+\noindent $\square$ Yes \hspace{2em} $\square$ No
+
+\noindent Respondents who answer No are thanked and are not included in
+the study. No profile answers or survey responses are collected from
+them.
+
+\section*{Section I: Respondent Profile}
+
+\begin{enumerate}
+  \item Respondent code assigned by researchers:
+        \rule{0.45\textwidth}{0.4pt}
+  \item Respondent group:
+        $\square$ Service Staff \quad
+        $\square$ Administrator / IT Personnel \quad
+        $\square$ Student
+  \item Age range:
+        $\square$ 18--22 \quad
+        $\square$ 23--30 \quad
+        $\square$ 31--40 \quad
+        $\square$ 41--50 \quad
+        $\square$ 51 and above
+  \item Gender (optional): \rule{0.45\textwidth}{0.4pt}
+  \item For students only -- Year level:
+        $\square$ 1st year \quad
+        $\square$ 2nd year \quad
+        $\square$ 3rd year \quad
+        $\square$ 4th year \quad
+        $\square$ 5th year or above
+  \item For students only -- Program / Course:
+        \rule{0.45\textwidth}{0.4pt}
+  \item For staff and administrators only -- Length of service at NCF:
+        $\square$ Less than 1 year \quad
+        $\square$ 1--3 years \quad
+        $\square$ 4--7 years \quad
+        $\square$ 8 years or more
+  \item During the evaluation period, how often did you interact with
+        QueueFlow?
+        $\square$ Daily \quad
+        $\square$ A few times per week \quad
+        $\square$ Weekly \quad
+        $\square$ Less than weekly
+\end{enumerate}
+
+\section*{Instructions}
+
+For each statement below, choose the box that best matches your actual
+experience with QueueFlow during the evaluation period. The items ask
+about the parts of the system used by your respondent group. When an
+item is outside your role, leave it blank or mark ``Not Applicable'' if
+that option is provided on the printed form.
+
+\begin{table}[H]
+  \caption{Likert Scale Interpretation}
+  \label{tab:appb-likert}
+  \centering
+  \small
+  \begin{tabular}{c p{4.0cm} p{6.2cm}}
+    \toprule
+    \textbf{Scale} & \textbf{Response} & \textbf{Interpretation} \\
+    \midrule
+    5 & Strongly Agree & Strongly Agree / Excellent \\
+    4 & Agree & Agree / Very Satisfactory \\
+    3 & Neutral & Neutral / Satisfactory \\
+    2 & Disagree & Disagree / Poor \\
+    1 & Strongly Disagree & Strongly Disagree / Very Poor \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\noindent Tag legend: [S] = Service Staff, [A] = Administrators / IT,
+[ST] = Students.
+
+\providecommand{\ratingbox}{\ensuremath{\square}}
+
+\clearpage
+\begingroup
+\scriptsize
+\setlength{\tabcolsep}{2.5pt}
+\renewcommand{\arraystretch}{1.15}
+
+\begin{longtable}{p{0.45cm} p{7.0cm} p{2.1cm} c c c c c}
+\caption{Dimension A: Usability}
+\label{tab:appb-usability}\\
+\toprule
+\textbf{\#} & \textbf{Item} & \textbf{Tag} &
+\textbf{5} & \textbf{4} & \textbf{3} & \textbf{2} & \textbf{1} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{\#} & \textbf{Item} & \textbf{Tag} &
+\textbf{5} & \textbf{4} & \textbf{3} & \textbf{2} & \textbf{1} \\
+\midrule
+\endhead
+A1 & The QueueFlow dashboard is easy to navigate. & [S] [A] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+A2 & The actions I need to perform, such as call next, mark done, and
+mark no-show, are easy to find on the dashboard. & [S] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+A3 & I can complete my common tasks in QueueFlow without needing help.
+& [S] [A] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+A4 & The QueueFlow mobile interface is easy to use on my phone. & [ST] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+A5 & Scanning the QR code on my queue ticket is straightforward. & [ST] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+A6 & Checking my queue status on the mobile interface is quick. & [ST] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+\bottomrule
+\end{longtable}
+
+\clearpage
+\begin{longtable}{p{0.45cm} p{7.0cm} p{2.1cm} c c c c c}
+\caption{Dimension B: Detection Reliability}
+\label{tab:appb-detection}\\
+\toprule
+\textbf{\#} & \textbf{Item} & \textbf{Tag} &
+\textbf{5} & \textbf{4} & \textbf{3} & \textbf{2} & \textbf{1} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{\#} & \textbf{Item} & \textbf{Tag} &
+\textbf{5} & \textbf{4} & \textbf{3} & \textbf{2} & \textbf{1} \\
+\midrule
+\endhead
+B1 & QueueFlow correctly assigns queue numbers to people who enter the
+queue area. & [S] [A] [ST] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+B2 & QueueFlow rarely assigns duplicate queue numbers to the same
+person. & [S] [A] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+B3 & When a person briefly leaves the queue area and returns, QueueFlow
+correctly recognizes them. & [S] [A] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+B4 & QueueFlow correctly identifies when someone has left the queue
+without being served. & [S] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+B5 & I trust the queue list shown on the QueueFlow dashboard. & [S] [A] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+B6 & The queue number I received matched my actual position in the line.
+& [ST] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+\bottomrule
+\end{longtable}
+
+\clearpage
+\begin{longtable}{p{0.45cm} p{7.0cm} p{2.1cm} c c c c c}
+\caption{Dimension C: Prediction Usefulness}
+\label{tab:appb-prediction}\\
+\toprule
+\textbf{\#} & \textbf{Item} & \textbf{Tag} &
+\textbf{5} & \textbf{4} & \textbf{3} & \textbf{2} & \textbf{1} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{\#} & \textbf{Item} & \textbf{Tag} &
+\textbf{5} & \textbf{4} & \textbf{3} & \textbf{2} & \textbf{1} \\
+\midrule
+\endhead
+C1 & The current wait-time estimate matches my actual experience. &
+[S] [A] [ST] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+C2 & The 5-minute, 15-minute, and 30-minute wait-time predictions are
+useful for planning my work. & [S] [A] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+C3 & The wait-time predictions help me decide when to come back if I
+cannot wait now. & [ST] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+C4 & The prediction information is easy to understand. & [S] [A] [ST] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+C5 & I find the prediction cards on the dashboard useful for managing
+the queue. & [S] [A] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+C6 & The predictions are accurate enough to be useful to me. &
+[S] [A] [ST] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+\bottomrule
+\end{longtable}
+
+\clearpage
+\begin{longtable}{p{0.45cm} p{7.0cm} p{2.1cm} c c c c c}
+\caption{Dimension D: Dashboard Clarity}
+\label{tab:appb-dashboard}\\
+\toprule
+\textbf{\#} & \textbf{Item} & \textbf{Tag} &
+\textbf{5} & \textbf{4} & \textbf{3} & \textbf{2} & \textbf{1} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{\#} & \textbf{Item} & \textbf{Tag} &
+\textbf{5} & \textbf{4} & \textbf{3} & \textbf{2} & \textbf{1} \\
+\midrule
+\endhead
+D1 & The live camera snapshot on the dashboard is clear and easy to
+interpret. & [S] [A] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+D2 & The queue list is easy to read at a glance. & [S] [A] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+D3 & The analytics cards present information in a useful way. & [S] [A] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+D4 & No-show alerts are clearly visible when they appear. & [S] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+D5 & The counter controls are clearly labeled. & [S] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+D6 & The dashboard layout makes it easy to find the information I need.
+& [S] [A] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+\bottomrule
+\end{longtable}
+
+\clearpage
+\begin{longtable}{p{0.45cm} p{7.0cm} p{2.1cm} c c c c c}
+\caption{Dimension E: Overall Satisfaction}
+\label{tab:appb-satisfaction}\\
+\toprule
+\textbf{\#} & \textbf{Item} & \textbf{Tag} &
+\textbf{5} & \textbf{4} & \textbf{3} & \textbf{2} & \textbf{1} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{\#} & \textbf{Item} & \textbf{Tag} &
+\textbf{5} & \textbf{4} & \textbf{3} & \textbf{2} & \textbf{1} \\
+\midrule
+\endhead
+E1 & Overall, QueueFlow improves the queueing experience at the
+Cashiering Office. & [S] [A] [ST] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+E2 & QueueFlow makes my work easier. & [S] [A] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+E3 & QueueFlow makes my transactions less stressful. & [ST] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+E4 & I would recommend continuing to use QueueFlow after this study. &
+[S] [A] [ST] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+E5 & QueueFlow is a meaningful improvement over the previous manual
+queueing process. & [S] [A] [ST] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+E6 & I am satisfied with QueueFlow overall. & [S] [A] [ST] &
+\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+\bottomrule
+\end{longtable}
+
+\endgroup
+
+\section*{Section VII: Open-Ended Questions}
+
+\begin{enumerate}
+\item What did you like most about using QueueFlow?\\[0.6em]
+        \rule{\linewidth}{0.4pt}\\[1.2em]
+        \rule{\linewidth}{0.4pt}
+  \item What did you find most difficult or confusing when using
+        QueueFlow?\\[0.6em]
+        \rule{\linewidth}{0.4pt}\\[1.2em]
+        \rule{\linewidth}{0.4pt}
+  \item If you could change one thing about QueueFlow, what would it
+        be?\\[0.6em]
+        \rule{\linewidth}{0.4pt}\\[1.2em]
+        \rule{\linewidth}{0.4pt}
+  \item What Cashiering Office situations should QueueFlow handle
+        better before it is considered for wider use?\\[0.6em]
+        \rule{\linewidth}{0.4pt}\\[1.2em]
+        \rule{\linewidth}{0.4pt}
+  \item Any other comments or suggestions?\\[0.6em]
+        \rule{\linewidth}{0.4pt}\\[1.2em]
+        \rule{\linewidth}{0.4pt}
+\end{enumerate}
+
+\begin{center}
+\textbf{End of Questionnaire.} Thank you for your participation.
+\end{center}
+
+\section*{Questionnaire Notes}
+
+The instrument contains 30 Likert-scale statements: six each for
+Usability, Detection Reliability, Prediction Usefulness, Dashboard
+Clarity, and Overall Satisfaction. The open-ended questions are placed
+after the rating items so respondents can explain issues that may not
+appear in the numerical scores. As described in Sections~2.5 and 2.7,
+Cronbach's $\alpha$ is computed per dimension after the pilot run.
+
+The tags identify which respondent group should answer each item. This
+allows the same evaluation form to support staff, administrator / IT,
+and student feedback while avoiding questions that do not fit a
+respondent's role. During scoring, dimension means are computed only
+from the items administered to that respondent group.
+
+Before the questionnaire is used for the main evaluation, it is checked
+through expert content validation and pilot reliability testing. Items
+with weak item-total correlation are revised or removed before the
+final administration. If a Filipino version is needed, translation is
+done after the English version has passed validation, and the translated
+items are checked for equivalent meaning.
 
 % ============================================================
 % BIBLIOGRAPHY
