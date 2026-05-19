@@ -1,0 +1,941 @@
+﻿% =====================================================================
+% Section 3.2: Design and System Plans
+% ---------------------------------------------------------------------
+% QueueFlow capstone manuscript -- body of \section{Design and System
+% Plans} inside Chapter 3 (Results and Discussions).
+%
+% Required preamble packages (verify presence in main manuscript):
+%   \usepackage{amsmath}        % equations, aligned environments
+%   \usepackage{amssymb}        % math symbols
+%   \usepackage{algorithm}      % algorithm floats
+%   \usepackage{algpseudocode}  % algorithmic environment
+%
+% This file is intended to be \input{}'d as the body of Section 3.2.
+% Equation numbering continues from Chapter 2 (last numbered: 2.8).
+% Cross-references to existing manuscript labels are wrapped in
+% \ref{...}; replace the placeholders with the labels actually used
+% in the main file if they differ.
+% =====================================================================
+
+\section{Design and System Plans}
+\label{sec:design}
+
+Section~3.2 records the design routines behind the implemented
+QueueFlow prototype. Section~\ref{sec:architecture} (\S2.8.3)
+identifies the major layers and responsibilities; this section moves
+one level closer to the code by stating each routine's inputs, outputs,
+equations, parameter values, and pseudocode when the control flow
+would otherwise be hard to follow. The discussion follows the
+detection-to-ticket flow in Figure~\ref{fig:detection-ticket-pipeline}
+(Figure~2.2): camera-frame filtering, queue-zone confirmation,
+tracker repair, re-identification, queue-state updates, prediction,
+ticket output, public display output, and the parameter summary.
+Pseudocode blocks are placed after the equations and guard conditions
+they use so that each algorithm stays with its own design step.
+
+\subsection{Notation}
+\label{subsec:notation}
+
+The specifications below adopt the following notation. Queueing-theoretic
+symbols ($\lambda$, $\mu$, $c$, $\rho$, $W$) retain the meanings introduced
+in Section~\ref{sec:theoretical} (\S1.5). Queue length is denoted $Q$
+throughout this section, consistent with the algorithmic literature;
+$Q$ is identical to $L$ in Equation~\ref{eq:littles_law}. Two distinct smoothing
+factors appear and must not be confused: $\alpha_{\mathrm{H}}$ and
+$\beta_{\mathrm{H}}$ for Holt's double-exponential smoothing of queue
+counts (\S\ref{subsec:prediction}), and $\alpha_{\mathrm{s}}$ for the
+per-frame exponential moving average applied to bounding-box coordinates
+(\S\ref{subsec:cv-layer}). Thresholds are denoted $\tau$ with a
+descriptive subscript ($\tau_{\mathrm{tb}}$ for the appearance tiebreak,
+$\tau_{\mathrm{twin}}$ for the twin guard, $\tau_{\mathrm{bl}}$ for the
+done blacklist, $\tau_{\mathrm{iou}}$ for the duplicate-suppression IoU
+gate). The intersection-over-union of two axis-aligned bounding boxes
+$A$ and $B$ is
+
+\begin{equation}
+\mathrm{IoU}(A, B) \;=\; \frac{|A \cap B|}{|A \cup B|},
+\label{eq:iou}
+\end{equation}
+
+\noindent used by the duplicate-suppression step (\S\ref{subsec:dedup}),
+the track-identifier remapping step (\S\ref{subsec:remap}), and the
+non-maximum suppression step internal to the tracker
+(\S\ref{subsec:cv-layer}).
+
+% =====================================================================
+\subsection{Computer Vision Layer}
+\label{subsec:cv-layer}
+
+The Computer Vision Layer runs as a separate Python process
+(\texttt{app/detector.py}) on the camera-connected machine. Each
+captured frame is fed to a YOLOv8n detector~\cite{jocher2023}
+configured for single-class person detection. Multi-object tracking is
+performed by ByteTrack~\cite{zhang2022bytetrack}, the default tracker
+when the Ultralytics interface is invoked with \texttt{persist=True};
+ByteTrack assigns a persistent track identifier $\mathrm{tid}$ to each
+detected person across frames. Raw YOLO output is then passed through
+five quality gates before any detection is forwarded to the Business
+Logic Layer.
+
+\subsubsection{Detection quality gates}
+
+For a bounding box with corners $(x_1, y_1, x_2, y_2)$ in a frame of
+size $W_f \times H_f$, the five gates are defined as follows. Gate~1
+requires sufficient area:
+
+\begin{equation}
+A \;=\; (x_2 - x_1)(y_2 - y_1) \;\geq\; A_{\min}.
+\label{eq:gate1}
+\end{equation}
+
+\noindent Gate~2 caps the fraction of the frame a single box may
+occupy:
+
+\begin{equation}
+f \;=\; \frac{A}{W_f \, H_f} \;\leq\; f_{\max}.
+\end{equation}
+
+\noindent Gate~3 enforces a portrait-orientation aspect ratio, which
+removes most false positives caused by long horizontal objects:
+
+\begin{equation}
+r \;=\; \frac{y_2 - y_1}{x_2 - x_1} \;\geq\; r_{\min}.
+\end{equation}
+
+\noindent Gate~4 requires evidence of motion, computed as the number
+of pixels whose grey-level difference between consecutive frames
+exceeds a threshold:
+
+\begin{equation}
+M \;=\; \big|\{p : |g_t(p) - g_{t-1}(p)| > 25\}\big|.
+\label{eq:motion}
+\end{equation}
+
+\noindent A detection passes Gate~4 if $M \geq M_{\min}$ or, as an
+override for static high-confidence detections, if the detector
+confidence satisfies $\text{conf} \geq c_{\mathrm{byp}}$. Gate~5 is
+standard non-maximum suppression (NMS) applied internally by
+ByteTrack using Equation~(\ref{eq:iou}). Only detections that pass
+all five gates reach the queue tracker. Parameter values are listed in
+Table~\ref{tab:cv-params}.
+
+\begin{table}[H]
+\centering
+\caption{Computer Vision Layer parameters.}
+\label{tab:cv-params}
+\begin{tabular}{lcl}
+\hline
+Symbol & Value & Description \\
+\hline
+$A_{\min}$       & $800\ \mathrm{px}^2$ & Minimum bounding-box area (Gate~1) \\
+$f_{\max}$       & $0.85$               & Maximum frame coverage (Gate~2) \\
+$r_{\min}$       & $0.60$               & Minimum portrait aspect ratio (Gate~3) \\
+$M_{\min}$       & $8\ \mathrm{px}$     & Minimum motion energy (Gate~4) \\
+$c_{\mathrm{byp}}$ & $0.70$             & Static-detection confidence bypass (Gate~4) \\
+$\alpha_{\mathrm{s}}$ & $0.45$          & Bounding-box EMA smoothing factor \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Bounding-box smoothing}
+
+Raw YOLO bounding boxes jitter from frame to frame even when the
+underlying person is moving smoothly. Each of the four box coordinates
+is therefore smoothed with an exponential moving average:
+
+\begin{equation}
+\hat{b}_t \;=\; \alpha_{\mathrm{s}}\, b_t \;+\; (1 - \alpha_{\mathrm{s}})\, \hat{b}_{t-1},
+\label{eq:ema-bbox}
+\end{equation}
+
+\noindent applied independently to $x_1$, $y_1$, $x_2$, and $y_2$.
+The choice $\alpha_{\mathrm{s}} = 0.45$ is a practical midpoint for
+walking-speed motion at $12$--$15$~fps: a higher $\alpha_{\mathrm{s}}$
+reacts faster but appears jittery, a lower value is smoother but lags
+behind. The smoothed boxes are the ones rendered into the annotated
+snapshot that the staff dashboard displays.
+
+% =====================================================================
+\subsection{Queue Zone Membership and Candidate Confirmation}
+\label{subsec:candidate}
+
+A configurable rectangular region of interest---the queue zone---is
+defined by four pixel coordinates $(z_{x_1}, z_{y_1}, z_{x_2}, z_{y_2})$
+on the camera frame. A detected person is considered \emph{inside} the
+zone when the centroid of their bounding box, $(c_x, c_y) = \big((x_1
++ x_2)/2,\ (y_1 + y_2)/2\big)$, falls within the rectangle:
+
+\begin{equation}
+\text{inside} \;\Longleftrightarrow\; z_{x_1} \leq c_x \leq z_{x_2}
+\;\wedge\; z_{y_1} \leq c_y \leq z_{y_2}.
+\label{eq:zone}
+\end{equation}
+
+\noindent The centroid is preferred over any single edge because the
+centroid does not flicker into the zone when only an arm or shoulder
+crosses the boundary.
+
+A person who has just entered the queue zone is not assigned a queue
+number immediately. Each new track identifier is buffered in a
+candidate dictionary $C$ and must satisfy two conditions before a
+number is issued: persistence and motion. Persistence requires that
+the same $\mathrm{tid}$ remain inside the zone for at least
+$N_{\mathrm{conf}}$ consecutive frames. Motion is assessed from the
+standard deviations of the buffered centroid sequence
+$\{(c_{x,i}, c_{y,i})\}_{i=1}^{N_{\mathrm{conf}}}$:
+
+\begin{equation}
+\sigma_x \;=\; \mathrm{std}(c_{x,1}, \ldots, c_{x,N_{\mathrm{conf}}}),
+\qquad
+\sigma_y \;=\; \mathrm{std}(c_{y,1}, \ldots, c_{y,N_{\mathrm{conf}}}),
+\label{eq:sigma}
+\end{equation}
+
+\begin{equation}
+\text{motion ok} \;\Longleftrightarrow\;
+\sigma_x + \sigma_y > \theta_{\mathrm{m}}
+\;\vee\;
+\overline{\text{conf}} \geq c_{\mathrm{byp}}.
+\label{eq:motion-gate}
+\end{equation}
+
+\noindent Algorithm~\ref{alg:candidate} formalises the confirmation
+procedure used after the zone and motion tests above.
+
+\begin{algorithm}[H]
+\footnotesize
+\caption{Candidate confirmation}
+\label{alg:candidate}
+\begin{algorithmic}[1]
+\Require detection $d$ with track ID $\mathrm{tid}$ and confidence
+$\text{conf}$, candidate buffer $C$, threshold $N_{\mathrm{conf}}$
+\Ensure issue queue number, continue accumulating, or reject as static
+\State $C[\mathrm{tid}].\text{count} \gets C[\mathrm{tid}].\text{count} + 1$
+\State append $(c_x, c_y)$ to $C[\mathrm{tid}].\text{centers}$
+\State append $\text{conf}$ to $C[\mathrm{tid}].\text{confs}$
+\If{$C[\mathrm{tid}].\text{count} < N_{\mathrm{conf}}$}
+  \State \Return continue accumulating
+\EndIf
+\State compute $\sigma_x, \sigma_y$ over $C[\mathrm{tid}].\text{centers}$
+\State $\overline{\text{conf}} \gets \mathrm{mean}(C[\mathrm{tid}].\text{confs})$
+\If{$\sigma_x + \sigma_y > \theta_{\mathrm{m}}$ \textbf{or} $\overline{\text{conf}} \geq c_{\mathrm{byp}}$}
+  \State assign next queue number to $\mathrm{tid}$
+\Else
+  \State delete $C[\mathrm{tid}]$ \Comment{static object rejected}
+\EndIf
+\end{algorithmic}
+\end{algorithm}
+
+\noindent At $N_{\mathrm{conf}} = 20$ frames and a typical frame rate
+of $12$--$15$~fps, a person must remain in the zone for approximately
+$1.3$--$1.7$~s before receiving a queue number. The motion threshold
+$\theta_{\mathrm{m}} = 1.5\ \mathrm{px}$ rejects static objects (signs,
+chairs, items left on the floor) that YOLO occasionally mis-classifies
+as persons; the confidence bypass at $0.70$ admits a momentarily
+stationary person whose detection is otherwise unambiguous.
+
+% =====================================================================
+\subsection{Track-Identifier Remapping}
+\label{subsec:remap}
+
+ByteTrack occasionally assigns a new $\mathrm{tid}$ to a person who
+briefly left and re-entered the camera frame. Before any unfamiliar
+identifier is forwarded to the queue tracker as a candidate,
+\texttt{remap\_track\_ids} attempts to recover the original identifier
+by comparing the new detection's bounding box to those of currently
+active queue persons. Two signals are used: IoU (Equation~\ref{eq:iou})
+and centroid Euclidean distance,
+
+\begin{equation}
+d(A, B) \;=\; \sqrt{(c_x^A - c_x^B)^2 + (c_y^A - c_y^B)^2}.
+\label{eq:cdist}
+\end{equation}
+
+\noindent A remap score is computed with IoU prioritised over distance:
+
+\begin{equation}
+s \;=\;
+\begin{cases}
+\mathrm{IoU}(A, B) + 1.0 & \text{if } \mathrm{IoU}(A, B) \geq \tau_{\mathrm{iou}}^{\mathrm{rm}}, \\[2pt]
+1 - d(A, B)/d_{\max}     & \text{else if } d(A, B) \leq d_{\max}, \\[2pt]
+\text{(no match)}        & \text{otherwise.}
+\end{cases}
+\label{eq:remap}
+\end{equation}
+
+\noindent The additive constant $1.0$ in the IoU branch guarantees that
+any genuine overlap always outranks a distance-only match. The
+candidate with the highest score above either threshold inherits the
+known identifier. With $\tau_{\mathrm{iou}}^{\mathrm{rm}} = 0.10$ and
+$d_{\max} = 180\ \mathrm{px}$, remapping rescues brief tracker hiccups
+without false matches across the zone.
+
+% =====================================================================
+\subsection{Duplicate Suppression}
+\label{subsec:dedup}
+
+A second class of tracker artefact---distinct from a re-entered
+person---is the \emph{ghost track}: two different $\mathrm{tid}$ values
+assigned to the same physical person within the same frame. Ghost
+tracks must be merged in the active queue, retaining the lower queue
+number. The merge condition combines bounding-box overlap and centroid
+proximity:
+
+\begin{equation}
+\mathrm{dup}(p_i, p_j) \;\Longleftrightarrow\;
+\mathrm{IoU}(p_i, p_j) > \tau_{\mathrm{iou}}^{\mathrm{dd}}
+\;\vee\;
+d(p_i, p_j) < f_{\mathrm{dd}} \cdot \overline{D}(p_i, p_j),
+\label{eq:dedup}
+\end{equation}
+
+\noindent where $\overline{D}(p_i, p_j)$ is the mean diagonal of the
+two bounding boxes and $f_{\mathrm{dd}}$ is the centre-fraction
+threshold. Two safeguards prevent over-aggressive merging.
+First, an immunity counter is set to $I_0 = 60$~frames whenever a
+queue entry is restored via re-identification (\S\ref{subsec:reid});
+while the counter is positive, the entry is exempt from
+deduplication. Second, even when Equation~(\ref{eq:dedup}) is
+satisfied, the merge is rejected if the appearance similarity
+(Equation~\ref{eq:psim}) between the two entries falls below
+$\tau_{\mathrm{bl}} = 0.55$, on the grounds that two visually distinct
+persons should not be collapsed regardless of their geometric
+proximity. Parameter values are listed in Table~\ref{tab:dedup-params}.
+
+\begin{table}[H]
+\centering
+\caption{Duplicate-suppression parameters.}
+\label{tab:dedup-params}
+\begin{tabular}{lcl}
+\hline
+Symbol & Value & Description \\
+\hline
+$\tau_{\mathrm{iou}}^{\mathrm{dd}}$ & $0.40$ & IoU threshold for ghost-track merge \\
+$f_{\mathrm{dd}}$                   & $0.15$ & Centre-distance fraction of mean diagonal \\
+$I_0$                               & $60$   & Re-entry immunity (frames) \\
+$\tau_{\mathrm{bl}}$                & $0.55$ & Appearance guard against false merge \\
+\hline
+\end{tabular}
+\end{table}
+
+Algorithm~\ref{alg:dedup} formalises the per-frame deduplication pass.
+
+\begin{algorithm}[H]
+\footnotesize
+\caption{Per-frame duplicate suppression}
+\label{alg:dedup}
+\begin{algorithmic}[1]
+\Require active queue $\mathcal{Q}$, immunity table $I$
+\ForAll{ordered pairs $(p_i, p_j) \in \mathcal{Q} \times \mathcal{Q}$ with $i < j$}
+  \If{$I[p_i] > 0$ \textbf{or} $I[p_j] > 0$}
+    \State \textbf{continue} \Comment{immunity active}
+  \EndIf
+  \If{appearance signatures exist \textbf{and} $\mathrm{sim}(p_i, p_j) < \tau_{\mathrm{bl}}$}
+    \State \textbf{continue} \Comment{visually distinct}
+  \EndIf
+  \If{$\mathrm{dup}(p_i, p_j)$ holds (Equation~\ref{eq:dedup})}
+    \State drop the higher queue number, keep the lower
+  \EndIf
+\EndFor
+\State decrement every positive entry of $I$ by one
+\end{algorithmic}
+\end{algorithm}
+
+% =====================================================================
+\subsection{Appearance-Based Re-identification}
+\label{subsec:reid}
+
+Re-identification recovers the original queue number when a person
+leaves the camera frame for longer than the tracker can bridge, then
+returns. The procedure has four parts: an appearance signature
+(\S\ref{subsubsec:signature}), a comparison metric
+(\S\ref{subsubsec:psim}), a hybrid decision rule
+(\S\ref{subsubsec:hybrid}), and two guards against false matches
+(\S\ref{subsubsec:guards}).
+
+\subsubsection{Appearance signature}
+\label{subsubsec:signature}
+
+For each queued person, the bounding-box crop is divided horizontally
+at its midpoint and a $16 \times 16$ joint Hue--Saturation histogram is
+computed for each half in the HSV colour space:
+
+\begin{equation}
+H(b_h, b_s) \;=\; \big|\{p : \text{hue}(p) \in B_h \wedge \text{sat}(p) \in B_s\}\big|,
+\label{eq:hist-bin}
+\end{equation}
+
+\noindent with $b_h \in \{0, \ldots, 15\}$ partitioning the OpenCV hue
+range $[0, 180)$ and $b_s \in \{0, \ldots, 15\}$ partitioning the
+saturation range $[0, 256)$. Each half-histogram is normalised so its
+bin values sum to one. The full appearance signature
+$\mathrm{sig} \in \mathbb{R}^{512}$ is the concatenation of the upper
+and lower half-histograms. HSV is preferred over RGB because
+separating chroma from luminance makes the signature more robust to
+indoor--outdoor lighting variation. The signature is updated every
+$30$~s of wait time using an exponential moving average:
+
+\begin{equation}
+\mathrm{sig}_t \;=\; 0.6\, \mathrm{sig}_{t-1} + 0.4\, \mathrm{sig}_{\text{new}}.
+\label{eq:sig-ema}
+\end{equation}
+
+\subsubsection{Comparison metric}
+\label{subsubsec:psim}
+
+Two signatures are compared using the Pearson histogram correlation
+applied to each body half:
+
+\begin{equation}
+r(H_1, H_2) \;=\;
+\frac{\sum_i (H_{1,i} - \bar{H}_1)(H_{2,i} - \bar{H}_2)}
+     {\sqrt{\sum_i (H_{1,i} - \bar{H}_1)^2} \, \sqrt{\sum_i (H_{2,i} - \bar{H}_2)^2}},
+\label{eq:pearson}
+\end{equation}
+
+\noindent and combined with a fixed body-half weighting that favours
+the upper body, which carries more person-distinctive colour
+information (shirts, jackets) than the lower body:
+
+\begin{equation}
+\mathrm{sim}(\mathrm{sig}_1, \mathrm{sig}_2)
+\;=\;
+0.6\, r(H_1^{\mathrm{upper}}, H_2^{\mathrm{upper}}) +
+0.4\, r(H_1^{\mathrm{lower}}, H_2^{\mathrm{lower}}).
+\label{eq:psim}
+\end{equation}
+
+\noindent The metric ranges over $[-1, 1]$. Three thresholds are
+applied across the system: $\tau_{\mathrm{tb}} = 0.30$ for the
+re-identification tiebreak (\S\ref{subsubsec:hybrid}),
+$\tau_{\mathrm{bl}} = 0.55$ for the done-blacklist match
+(\S\ref{subsubsec:guards}), and $\tau_{\mathrm{twin}} = 0.85$ for the
+twin/lookalike guard (\S\ref{subsubsec:guards}).
+
+\subsubsection{Hybrid decision rule}
+\label{subsubsec:hybrid}
+
+When a new track identifier appears that did not match any active
+queue person under remapping (\S\ref{subsec:remap}), the re-identifier
+considers all missing-person records eligible within the
+$T_{\mathrm{rec}} = 120\ \mathrm{s}$ recency window. The decision
+rule has two branches.
+
+In the single-eligible-missing-person branch, the appearance
+comparison is applied first: if $\mathrm{sim}(\mathrm{sig}, \mathrm{sig}_{\text{new}})
+\geq \tau_{\mathrm{tb}}$, the missing queue number is restored. If
+appearance is inconclusive, a spatial fallback applies: with
+normalised spatial score
+
+\begin{equation}
+s_{\text{sp}}(b_1, b_2) \;=\; \frac{d(b_1, b_2)}{\tfrac{1}{2}\big(\mathrm{diag}(b_1) + \mathrm{diag}(b_2)\big)},
+\label{eq:spatial}
+\end{equation}
+
+\noindent the queue number is restored if $s_{\text{sp}} <
+s_{\mathrm{fb}}^{\mathrm{app}}$, with $s_{\mathrm{fb}}^{\mathrm{app}}
+= 0.20$ (a centroid offset of roughly one-fifth of an average
+bounding-box diagonal). If neither condition holds, a new queue
+number is issued.
+
+In the multi-eligible-missing-person branch, the spatial fallback is
+deliberately omitted: a person who returns to a different queue
+position would otherwise be matched to the entry that happens to sit
+nearest in pixel space, which is precisely the wrong record. Instead,
+the appearance scores of all eligible missing persons are ranked, and
+restoration is committed only when the best score $s^{(1)}$ exceeds
+$\tau_{\mathrm{tb}}$ \emph{and} exceeds the second-best score
+$s^{(2)}$ by at least $\Delta_{\mathrm{mm}} = 0.10$:
+
+\begin{equation}
+\text{restore} \;\Longleftrightarrow\; s^{(1)} \geq \tau_{\mathrm{tb}} \;\wedge\; s^{(1)} - s^{(2)} \geq \Delta_{\mathrm{mm}}.
+\label{eq:multi-reid}
+\end{equation}
+
+\noindent Otherwise the system declines to guess and issues a new
+number. The branch logic above is applied only after the guard checks
+below have not blocked the detection.
+
+\subsubsection{Twin guard and done blacklist}
+\label{subsubsec:guards}
+
+Two guards run before any re-identification commit. The twin guard
+fires when the new detection is nearly identical in appearance to a
+person already visible in the active queue:
+
+\begin{equation}
+\exists\, p \in \mathcal{Q} \;:\; \mathrm{sim}(p.\mathrm{sig}, \mathrm{sig}_{\text{new}}) \geq \tau_{\mathrm{twin}}.
+\label{eq:twin}
+\end{equation}
+
+\noindent When the condition holds, restoration is blocked and a fresh
+queue number is issued; the rationale is that two persons with
+near-identical clothing should not be merged into a single queue
+entry. The done blacklist fires when the new detection's appearance
+matches that of a person already served in the same session:
+
+\begin{equation}
+\exists\, b \in \mathcal{B} \;:\; \mathrm{sim}(b, \mathrm{sig}_{\text{new}}) \geq \tau_{\mathrm{bl}},
+\label{eq:blacklist}
+\end{equation}
+
+\noindent where $\mathcal{B}$ is the set of appearance signatures of
+served persons retained for the duration of the session. When the
+condition holds, no new queue entry is created. The thresholds
+$\tau_{\mathrm{twin}} = 0.85$ and $\tau_{\mathrm{bl}} = 0.55$
+reflect the asymmetric tolerance these guards require: the twin guard
+must be strict (only near-identical appearances trigger it) so that
+ordinary returning persons are not mis-classified as twins, whereas
+the done blacklist must be more permissive so that a recently served
+person whose appearance has shifted slightly (due to lighting or
+posture) is still recognised.
+
+Algorithm~\ref{alg:reid} gives the complete re-identification order:
+guard checks first, single-missing or multi-missing recovery second.
+The calling queue service treats \textsc{Blocked} as no ticket and
+\textsc{None} as a new entrant that may receive a fresh queue number.
+
+\begin{algorithm}[H]
+\footnotesize
+\caption{Hybrid re-identification (appearance-first with spatial fallback)}
+\label{alg:reid}
+\begin{algorithmic}[1]
+\Require new detection signature $\mathrm{sig}_{\text{new}}$, box $b_{\text{new}}$, active queue $\mathcal{Q}$, served blacklist $\mathcal{B}$, eligible missing set $\mathcal{M}$
+\Ensure restored queue person, \textsc{None}, or \textsc{Blocked}
+\If{$\exists\, p \in \mathcal{Q}: \mathrm{sim}(p.\mathrm{sig}, \mathrm{sig}_{\text{new}}) \geq \tau_{\mathrm{twin}}$}
+  \State \Return \textsc{None} \Comment{lookalike guard; issue a fresh number}
+\EndIf
+\If{$\exists\, b \in \mathcal{B}: \mathrm{sim}(b, \mathrm{sig}_{\text{new}}) \geq \tau_{\mathrm{bl}}$}
+  \State \Return \textsc{Blocked} \Comment{already served in this session}
+\EndIf
+\If{$|\mathcal{M}| = 1$} \Comment{single-missing branch}
+  \State $p \gets$ the unique element of $\mathcal{M}$
+  \State $s \gets \mathrm{sim}(p.\mathrm{sig}, \mathrm{sig}_{\text{new}})$
+  \If{$s \geq \tau_{\mathrm{tb}}$} \Return $p$ \Comment{appearance match}
+  \EndIf
+  \If{$s_{\text{sp}}(p.\text{bbox}, b_{\text{new}}) < s_{\mathrm{fb}}^{\mathrm{app}}$} \Return $p$ \Comment{spatial fallback}
+  \EndIf
+  \State \Return \textsc{None}
+\Else \Comment{multi-missing branch}
+  \State rank $\mathcal{M}$ by $\mathrm{sim}(\cdot, \mathrm{sig}_{\text{new}})$
+  \State let $s^{(1)}, s^{(2)}$ be the top scores; let $p^{(1)}$ be the best match
+  \If{$s^{(1)} \geq \tau_{\mathrm{tb}}$ \textbf{and} $s^{(1)} - s^{(2)} \geq \Delta_{\mathrm{mm}}$}
+    \State \Return $p^{(1)}$
+  \Else
+    \State \Return \textsc{None} \Comment{ambiguous}
+  \EndIf
+\EndIf
+\end{algorithmic}
+\end{algorithm}
+
+% =====================================================================
+\subsection{No-Show Detection}
+\label{subsec:noshow}
+
+When the person at position~$1$ in the active queue becomes missing,
+a countdown is started. If the person does not return before the
+no-show window $T_{\mathrm{ns}} = 300\ \mathrm{s}$ elapses, the entry
+is automatically marked as a no-show and bumped from the queue. Let
+$\tau_{\mathrm{start}}(q)$ denote the moment the countdown for queue
+entry $q$ begins. The elapsed time is
+
+\begin{equation}
+e(q) \;=\; t_{\text{now}} - \tau_{\mathrm{start}}(q),
+\label{eq:noshow-elapsed}
+\end{equation}
+
+\noindent and the no-show condition is
+
+\begin{equation}
+\text{no\_show}(q) \;\Longleftrightarrow\; e(q) \geq T_{\mathrm{ns}}
+\;\wedge\;
+\text{position}(q) = 1
+\;\wedge\;
+\text{status}(q) = \texttt{missing}.
+\label{eq:noshow}
+\end{equation}
+
+\noindent The countdown resets to zero if the person returns before
+expiry. The dashboard displays the remaining time
+$\max(0,\, T_{\mathrm{ns}} - e(q))$ and tags the alert as
+\texttt{critical} when the remaining time falls below $15\ \mathrm{s}$
+and \texttt{warning} otherwise. Only the position-$1$ entry is
+monitored because only that entry is being called; persons further
+back in the line may legitimately be waiting elsewhere within the
+service area.
+
+% =====================================================================
+\subsection{Counter Assignment}
+\label{subsec:counters}
+
+After every frame, the active queue $\mathcal{Q}$ is sorted by queue
+number in ascending order. Each person receives an integer
+position-in-line and, if a counter is available, is assigned to one.
+Counter assignment is \emph{sticky}: once a counter is allocated to a
+queue entry, the allocation persists until that entry is marked done
+or no-show, regardless of changes to the line behind it. Let
+$\text{rank}(p)$ denote the $1$-based position of $p.\text{queue\_number}$
+in the sorted active queue and let $c$ be the number of counters
+configured for the service office. The assignment rule is
+
+\begin{equation}
+\text{counter}(p) \;=\;
+\begin{cases}
+\text{rank}(p) & \text{if } \text{rank}(p) \leq c \text{ and } p \text{ unassigned}, \\
+\text{previous allocation} & \text{if } p \text{ already assigned}, \\
+\text{(none)} & \text{otherwise.}
+\end{cases}
+\label{eq:counter}
+\end{equation}
+
+\noindent The sticky rule is essential for user experience: without
+it, every time the position-$1$ person is served, the remaining queue
+would visibly shift one counter to the left, confusing both the
+served-next student and the staff member at the affected counter.
+Algorithm~\ref{alg:counter} formalises the per-frame procedure.
+
+\begin{algorithm}[H]
+\footnotesize
+\caption{Sticky counter assignment}
+\label{alg:counter}
+\begin{algorithmic}[1]
+\Require active queue $\mathcal{Q}$, number of counters $c$
+\State sort $\mathcal{Q}$ by queue number ascending; call this $L$
+\For{$i = 1$ to $|L|$}
+  \State $L[i].\text{position} \gets i$
+\EndFor
+\State $\mathrm{occupied} \gets \{p.\text{counter} : p \in L \text{ with } p.\text{counter} \neq \text{none}\}$
+\State $\mathrm{free} \gets \{1, \ldots, c\} \setminus \mathrm{occupied}$, sorted ascending
+\ForAll{$p \in L$ with $p.\text{counter} = \text{none}$}
+  \If{$\mathrm{free}$ non-empty}
+    \State $p.\text{counter} \gets$ pop smallest element of $\mathrm{free}$
+  \EndIf
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+% =====================================================================
+\subsection{Wait-Time Prediction}
+\label{subsec:prediction}
+
+The Prediction Service consumes a rolling buffer of up to sixty
+crowd-count samples and updates the wait-time estimates every frame.
+It first computes the current wait estimate with an M/M/c approximation,
+then estimates the arrival rate, computes a local trend slope, and uses
+those values for the short-, medium-, and long-horizon forecasts.
+Section~\ref{subsec:service-time} (\S\ref{subsec:service-time})
+describes the dynamic service-time measurement that supplies $\mu$ to
+the M/M/c baseline.
+
+\subsubsection{M/M/c baseline (current wait)}
+\label{subsubsec:mmc-baseline}
+
+With arrival rate $\lambda$, service rate $\mu$, and $c$ active
+counters, the system utilisation $\rho = \lambda/(c\mu)$ is given by
+Equation~\ref{eq:utilization}. When the system is stable ($\rho < 1$), the
+current wait estimate combines Little's Law (Equation~\ref{eq:littles_law}) with the
+expected service duration:
+
+\begin{equation}
+W_{\text{current}} \;=\;
+\begin{cases}
+\dfrac{Q}{\max(\lambda,\, 0.1)} + \dfrac{1}{\mu} & \text{if } \rho < 1, \\[10pt]
+\dfrac{Q}{\mu \, c} & \text{if } \rho \geq 1.
+\end{cases}
+\label{eq:wcurrent}
+\end{equation}
+
+\noindent The saturated-system branch is a deterministic conservative
+estimate used when arrivals exceed capacity, in which case the
+classical M/M/c steady-state formulas no longer apply.
+
+\subsubsection{Arrival rate}
+\label{subsubsec:arrival-rate}
+
+The arrival rate over the recent history is estimated from the
+difference of queue counts $n$ samples apart, divided by the elapsed
+time between those samples in minutes:
+
+\begin{equation}
+\lambda \;=\; \frac{Q_t - Q_{t-n}}{\Delta t}, \qquad n = \min(30,\, |\text{history}|).
+\label{eq:arrival}
+\end{equation}
+
+\noindent Negative differences (departures exceeding arrivals) are
+clamped to zero, and the value is recomputed every frame.
+
+\subsubsection{Trend slope}
+\label{subsubsec:trend-slope}
+
+The short-horizon forecast requires a local rate of change in queue
+count. A simple ordinary-least-squares regression is fit to the most
+recent $W_{\mathrm{tr}} = 20$ samples after de-meaning the time
+indices, yielding a no-intercept slope
+
+\begin{equation}
+\beta \;=\; \frac{\sum_i x_i \, y_i}{\sum_i x_i^2},
+\qquad
+x_i \;=\; i - \bar{x},
+\label{eq:slope}
+\end{equation}
+
+\noindent where $y_i$ is the queue count at sample $i$. The slope is
+expressed in persons per frame and is converted to persons per second
+in the next sub-model via an estimated frame rate.
+
+\subsubsection{Short-term forecast ($\approx 5\ \mathrm{min}$)}
+\label{subsubsec:short-forecast}
+
+The projected queue count $T_{\mathrm{sh}} = 600\ \mathrm{s}$ ahead is
+obtained by linear extrapolation along the OLS slope:
+
+\begin{equation}
+\hat{Q}_{\text{short}} \;=\; \max\!\big(0,\, Q + \beta \cdot \mathrm{fps} \cdot T_{\mathrm{sh}}\big).
+\label{eq:qshort}
+\end{equation}
+
+\noindent The projected wait time is then computed from
+$\hat{Q}_{\text{short}}$ using the same M/M/c-style conversion as
+Equation~(\ref{eq:wcurrent}). Linear extrapolation is appropriate at
+this horizon because queue level rarely changes regime within
+five minutes during normal service operation.
+
+\subsubsection{Medium-term forecast ($\approx 15\ \mathrm{min}$)}
+\label{subsubsec:holt-forecast}
+
+For the medium horizon, Holt's double-exponential
+smoothing~\cite{holt2004forecasting} is applied to the crowd-count buffer. The
+level $L_t$ and the trend $T_t$ are updated jointly each frame:
+
+\begin{align}
+L_t &\;=\; \alpha_{\mathrm{H}} \, y_t \;+\; (1 - \alpha_{\mathrm{H}})\,(L_{t-1} + T_{t-1}), \label{eq:holt-level} \\
+T_t &\;=\; \beta_{\mathrm{H}} \,(L_t - L_{t-1}) \;+\; (1 - \beta_{\mathrm{H}})\, T_{t-1}. \label{eq:holt-trend}
+\end{align}
+
+\noindent The forecast $h$ steps ahead is then damped by a factor
+$\varphi < 1$ raised to the projection step, preventing the trend
+component from over-projecting during transient spikes:
+
+\begin{equation}
+\hat{Q}_{t+h} \;=\; L_t \;+\; T_t \sum_{i=1}^{h} \varphi^i.
+\label{eq:holt-forecast}
+\end{equation}
+
+\noindent The deployed values are $\alpha_{\mathrm{H}} = 0.4$,
+$\beta_{\mathrm{H}} = 0.2$, $\varphi = 0.85$, and $h = 20$, yielding
+$\sum_{i=1}^{20} 0.85^i \approx 5.67$. The projected wait time is
+again obtained by applying the M/M/c-style conversion of
+Equation~(\ref{eq:wcurrent}) to $\hat{Q}_{t+h}$.
+
+\subsubsection{Long-term forecast ($\approx 30\ \mathrm{min}$)}
+\label{subsubsec:long-forecast}
+
+For the long horizon, linear or trend-only methods are
+unreliable. QueueFlow instead blends a growth-ratio projection with
+mean reversion to a recent anchor. The crowd-count history is split
+into thirds, with $Q_{\mathrm{early}}$ and $Q_{\mathrm{recent}}$
+denoting the means of the earliest and latest thirds respectively.
+The growth ratio is
+
+\begin{equation}
+g \;=\; \frac{Q_{\mathrm{recent}}}{\max(Q_{\mathrm{early}},\, 1)},
+\label{eq:growth}
+\end{equation}
+
+\noindent and the projected queue at the long horizon is
+
+\begin{equation}
+\hat{Q}_{\text{long}} \;=\; \max\!\Big(0,\; Q_{\mathrm{recent}} \cdot \big(0.7 \, g + 0.3\big)\Big),
+\label{eq:qlong}
+\end{equation}
+
+\noindent placing $70\%$ of the weight on the observed growth trend
+and $30\%$ on mean reversion to the recent level. The projected wait
+time is then derived as in Equation~(\ref{eq:wcurrent}) and capped at
+sixty minutes; long-horizon forecasts are inherently uncertain and the
+cap prevents a single high-growth window from producing a meaningless
+multi-hour estimate on the dashboard.
+
+% =====================================================================
+\subsection{Dynamic Service-Time Measurement}
+\label{subsec:service-time}
+
+The service rate $\mu = 1 / \overline{\text{svc}}$ used in
+Equation~(\ref{eq:wcurrent}) is not a static parameter. A background
+thread re-measures the average service time every
+$T_{\mathrm{svc}} = 300\ \mathrm{s}$ from the MySQL transaction log,
+ensuring that the prediction component adapts to the actual pace of
+service rather than to a single pre-deployment calibration.
+
+For a sequence of completed-transaction timestamps $t_1, t_2, \ldots,
+t_N$, inter-departure gaps in minutes are
+
+\begin{equation}
+g_i \;=\; \frac{t_i - t_{i-1}}{60}, \qquad i = 2, \ldots, N,
+\label{eq:gap}
+\end{equation}
+
+\noindent and gaps outside the range $[0.1,\, 15]\ \mathrm{min}$ are
+discarded as either database-write noise (very short) or cashier idle
+periods (very long). The mean of the retained gaps is multiplied by
+$c$ to correct for the fact that, in a parallel-server system,
+the inter-departure interval observed at the aggregate output is
+approximately $\overline{\text{svc}} / c$:
+
+\begin{equation}
+\widehat{\overline{\text{svc}}} \;=\; \bar{g} \cdot c.
+\label{eq:svc-measured}
+\end{equation}
+
+\noindent The new estimate is then blended with the previously stored
+value so that a single unusually fast or slow batch of transactions
+does not jolt the prediction:
+
+\begin{equation}
+\overline{\text{svc}}_{\text{new}} \;=\; 0.7 \, \widehat{\overline{\text{svc}}} + 0.3 \, \overline{\text{svc}}_{\text{prev}}.
+\label{eq:svc-blend}
+\end{equation}
+
+\noindent The pre-deployment calibration described in
+Section~\ref{sec:datagathering} (\S2.4, Phase~1) supplies the initial
+seed value for $\overline{\text{svc}}_{\text{prev}}$ before any
+transactions have been logged.
+
+% =====================================================================
+\subsection{Ticket Generation}
+\label{subsec:ticket}
+
+When a queue number is confirmed, the Ticket Service generates a
+printer-agnostic ticket payload comprising four fields: the queue
+number, a short alphanumeric code for manual entry, a QR-encoded
+status-page URL, and a JSON Web Token (JWT) that authenticates
+subsequent status requests from the mobile client. During evaluation,
+the payload is rendered as a PDF saved to a local \texttt{Tickets/}
+directory. In office operation, the same queue record is sent to the
+thermal printer and issued as a paper ticket. The PDF or printed ticket
+is automatically deleted or voided when the entry is marked done or
+no-show.
+
+The JWT is constructed with the HS256 algorithm. The header and
+payload are URL-safe base64-encoded JSON objects, concatenated by a
+period, and signed with a server-side secret using HMAC-SHA256:
+
+\begin{equation}
+\mathrm{token} \;=\; h \cdot \texttt{.} \cdot p \cdot \texttt{.} \cdot \mathrm{base64url}\big(\mathrm{HMAC\text{-}SHA256}(h \cdot \texttt{.} \cdot p,\ K)\big),
+\label{eq:jwt}
+\end{equation}
+
+\noindent where $h = \mathrm{base64url}(\{\texttt{alg}: \texttt{"HS256"},\, \texttt{typ}: \texttt{"JWT"}\})$,
+$p = \mathrm{base64url}(\{\texttt{sub}, \texttt{iat}, \texttt{exp}, \texttt{jti}\})$, and
+$K$ is the secret. The payload includes the queue number
+(\texttt{sub}), the issue time (\texttt{iat}), an expiry four hours
+later (\texttt{exp}), and a $32$-character hexadecimal nonce
+(\texttt{jti}) that makes every issued token unique and prevents
+replay of an intercepted token.
+
+The short code is drawn uniformly at random from the $32$-character
+alphabet $\{A,\ldots,Z\} \cup \{2,\ldots,9\} \setminus \{O, I\}$,
+excluding the visually ambiguous characters $0$, $O$, $1$, and $I$ to
+eliminate manual-entry errors. Eight characters are drawn and
+displayed as \texttt{XXXX-XXXX}, providing entropy of
+$\log_2(32^8) \approx 40$ bits, sufficient to render brute-force
+guessing infeasible within the four-hour ticket lifetime.
+
+% =====================================================================
+\subsection{Public Display Board with TTS Announcements}
+\label{subsec:display-board}
+
+A third presentation surface, alongside the staff dashboard and the
+student mobile client, is a public display board mounted in the
+service-office waiting area. The board renders the active queue and
+announces newly assigned counter calls using the browser's built-in
+Web Speech API. All speech synthesis runs client-side; no audio is
+transmitted to any third-party service and no backend audio endpoint
+is required, which is consistent with the privacy posture established
+in Section~\ref{sec:ethics} (\S2.6).
+
+A deduplication set indexed by the pair
+$(\text{queue\_number}, \text{counter\_number})$ prevents the same
+counter assignment from being announced more than once even when the
+polling endpoint returns the same active queue across consecutive
+intervals. Announcements are spoken sequentially with an $800\
+\mathrm{ms}$ gap between utterances to avoid speech overlap when
+several counter assignments are issued simultaneously.
+
+% =====================================================================
+\subsection{Parameter Summary}
+\label{subsec:params}
+
+Table~\ref{tab:all-params} consolidates every tunable parameter
+referenced in this section. Values listed are those used in the
+deployed prototype.
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{0.94}
+\caption{Consolidated parameter values for the deployed QueueFlow prototype.}
+\label{tab:all-params}
+\begin{tabular}{llcl}
+\hline
+Subsystem & Symbol & Value & Description \\
+\hline
+CV Layer        & $A_{\min}$                   & $800\ \mathrm{px}^2$ & Min.\ box area \\
+                & $f_{\max}$                   & $0.85$               & Max.\ frame fraction \\
+                & $r_{\min}$                   & $0.60$               & Min.\ portrait aspect \\
+                & $M_{\min}$                   & $8\ \mathrm{px}$     & Min.\ motion energy \\
+                & $c_{\mathrm{byp}}$           & $0.70$               & Static-conf bypass \\
+                & $\alpha_{\mathrm{s}}$        & $0.45$               & Bbox EMA factor \\
+\hline
+Candidate conf. & $N_{\mathrm{conf}}$          & $20$ frames          & Confirmation window \\
+                & $\theta_{\mathrm{m}}$        & $1.5\ \mathrm{px}$   & Motion-gate $\sigma$ \\
+\hline
+Remap           & $\tau_{\mathrm{iou}}^{\mathrm{rm}}$ & $0.10$         & Remap IoU threshold \\
+                & $d_{\max}$                   & $180\ \mathrm{px}$   & Remap distance cap \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{0.94}
+Table~\ref{tab:all-params} continued.\\[0.3em]
+\begin{tabular}{llcl}
+\hline
+Subsystem & Symbol & Value & Description \\
+\hline
+Dedup           & $\tau_{\mathrm{iou}}^{\mathrm{dd}}$ & $0.40$         & Dedup IoU threshold \\
+                & $f_{\mathrm{dd}}$            & $0.15$               & Centre-fraction gate \\
+                & $I_0$                        & $60$ frames          & Re-entry immunity \\
+\hline
+Re-ID           & $\tau_{\mathrm{tb}}$         & $0.30$               & Appearance tiebreak \\
+                & $\tau_{\mathrm{bl}}$         & $0.55$               & Done blacklist / appearance guard \\
+                & $\tau_{\mathrm{twin}}$       & $0.85$               & Twin guard \\
+                & $s_{\mathrm{fb}}^{\mathrm{app}}$ & $0.20$            & Spatial fallback (single) \\
+                & $\Delta_{\mathrm{mm}}$       & $0.10$               & Multi-missing score gap \\
+                & $T_{\mathrm{rec}}$           & $120\ \mathrm{s}$    & Re-entry recency window \\
+\hline
+No-show         & $T_{\mathrm{ns}}$            & $300\ \mathrm{s}$    & No-show window \\
+\hline
+Prediction      & $\alpha_{\mathrm{H}}$        & $0.4$                & Holt's level smoothing \\
+                & $\beta_{\mathrm{H}}$         & $0.2$                & Holt's trend smoothing \\
+                & $\varphi$                    & $0.85$               & Holt's damping factor \\
+                & $h$                          & $20$                 & Holt's projection steps \\
+                & $W_{\mathrm{tr}}$            & $20$ samples         & Trend regression window \\
+                & $T_{\mathrm{sh}}$            & $600\ \mathrm{s}$    & Short-term horizon \\
+                & $W_{\max}^{\text{long}}$     & $60\ \mathrm{min}$   & Long-term cap \\
+\hline
+Service time    & $T_{\mathrm{svc}}$           & $300\ \mathrm{s}$    & Re-measure interval \\
+\hline
+Ticket          & ---                          & $4\ \mathrm{h}$      & JWT expiry \\
+                & ---                          & $40$ bits            & Short-code entropy \\
+\hline
+Display board   & ---                          & $800\ \mathrm{ms}$   & TTS inter-utterance gap \\
+\hline
+\end{tabular}
+\end{center}
+
+% =====================================================================
+% End of Section 3.2: Design and System Plans
+% =====================================================================
+
