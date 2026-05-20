@@ -20,12 +20,12 @@
 % ============================================================
 \begin{titlepage}
 \centering
-\vspace*{1.5in}
+\vspace*{0.95in}
 {\LARGE\bfseries QueueFlow: Computer Vision Based Automated Queue Ticket
 Assignment and Real-Time Predictive System for Dynamic Campus
 Service Delivery\par}
 \vfill
-{A Capstone Research\par
+{A Thesis Writing Project\par
 \medskip
 Presented to the Faculty of the\par
 College of Computer Studies\par
@@ -1779,19 +1779,8 @@ status page as the displayed wait-time estimate.
 covers the initial training run only. Periodic retraining, automated
 drift monitoring, and production retraining pipelines are outside the
 present scope, although the prototype is arranged so that a later model
-file can replace the original one.
-
-\textbf{Training Result.} After cleaning and wait-time reconstruction,
-the prepared dataset contained 30,362 supervised rows. Applying the
-one-minute minimum-wait filter left 19,119 modeling rows. The
-date-based split produced 13,031 training rows and 6,088 test rows.
-The training period covered May~24,~2023 to January~20,~2026, and the
-test period covered January~21,~2026 to May~4,~2026. On the test set,
-the Gradient Boosting model obtained MAE~=~2.3512 minutes,
-RMSE~=~4.0858 minutes, MAPE~=~80.74\%, and $R^2=-0.0349$. The MAE and
-RMSE are used as the main accuracy indicators, while MAPE is reported
-with caution because short reconstructed waits inflate percentage
-error.
+file can replace the original one. The resulting training metrics are
+reported in Chapter~3.
 
 \section{Software Development Process}
 \label{sec:sdp}
@@ -1948,7 +1937,19 @@ Section~2.1.
 \chapter{Results and Discussions}
 
 \section{Results}
-% Add QueueFlow-specific results here.
+
+\textbf{Wait-Time Predictor Training Result.}
+\label{sec:wait-time-training-result}
+After cleaning and wait-time reconstruction, the prepared dataset
+contained 30,362 supervised rows. Applying the one-minute minimum-wait
+filter left 19,119 modeling rows. The date-based split produced 13,031
+training rows and 6,088 test rows. The training period covered
+May~24,~2023 to January~20,~2026, and the test period covered
+January~21,~2026 to May~4,~2026. On the test set, the Gradient
+Boosting model obtained MAE~=~2.3512 minutes, RMSE~=~4.0858 minutes,
+MAPE~=~80.74\%, and $R^2=-0.0349$. The MAE and RMSE are used as the
+main accuracy indicators, while MAPE is reported with caution because
+short reconstructed waits inflate percentage error.
 
 \input{section_3_2_design_and_system_plans}
 
