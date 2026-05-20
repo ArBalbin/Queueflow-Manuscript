@@ -1,6 +1,6 @@
 ﻿% =====================================================================
 % Section 3.2: Design and System Plans
-% ---------------------------------------------------------------------
+%
 % QueueFlow capstone manuscript -- body of \section{Design and System
 % Plans} inside Chapter 3 (Results and Discussions).
 %
@@ -184,7 +184,7 @@ snapshot that the staff dashboard displays.
 \subsection{Queue Zone Membership and Candidate Confirmation}
 \label{subsec:candidate}
 
-A configurable rectangular region of interest---the queue zone---is
+A configurable rectangular region of interest, the queue zone, is
 defined by four pixel coordinates $(z_{x_1}, z_{y_1}, z_{x_2}, z_{y_2})$
 on the camera frame. A detected person is considered \emph{inside} the
 zone when the centroid of their bounding box, $(c_x, c_y) = \big((x_1
@@ -325,8 +325,8 @@ without false matches across the zone.
 \subsection{Duplicate Suppression}
 \label{subsec:dedup}
 
-A second class of tracker artefact---distinct from a re-entered
-person---is the \emph{ghost track}: two different $\mathrm{tid}$ values
+A second class of tracker artefact, distinct from a re-entered
+person, is the \emph{ghost track}: two different $\mathrm{tid}$ values
 assigned to the same physical person within the same frame. Ghost
 tracks must be merged in the active queue, retaining the lower queue
 number. The merge condition combines bounding-box overlap and centroid
@@ -1138,10 +1138,10 @@ Prediction      & $\alpha_{\mathrm{H}}$        & $0.4$                & Holt's l
 \hline
 Service time    & $T_{\mathrm{svc}}$           & $300\ \mathrm{s}$    & Re-measure interval \\
 \hline
-Ticket          & ---                          & $4\ \mathrm{h}$      & JWT expiry \\
-                & ---                          & $40$ bits            & Short-code entropy \\
+Ticket          & N/A                          & $4\ \mathrm{h}$      & JWT expiry \\
+                & N/A                          & $40$ bits            & Short-code entropy \\
 \hline
-Display board   & ---                          & $800\ \mathrm{ms}$   & TTS inter-utterance gap \\
+Display board   & N/A                          & $800\ \mathrm{ms}$   & TTS inter-utterance gap \\
 \hline
 \end{tabular}
 \end{center}

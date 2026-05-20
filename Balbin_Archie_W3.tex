@@ -568,7 +568,7 @@ counter planning.
 
 For this manuscript, the design implication is narrow and direct:
 QueueFlow must connect four functions that are often treated
-separately---camera-based queue entry, queue identity management,
+separately, including camera-based queue entry, queue identity management,
 student ticket/status access, and staff-facing wait-time estimates. The
 prototype is evaluated on that integration rather than on detection
 accuracy alone.
@@ -605,10 +605,10 @@ duplicate-suppression layer at the queue-tracker level to keep
 duplicate queue entries to a minimum. For cases where a person leaves
 and later returns within a 120-second recency window, a hybrid
 re-entry matcher compares appearance histograms first and falls back to
-spatial proximity if appearance is inconclusive. Two safeguards---a
+spatial proximity if appearance is inconclusive. Two safeguards, a
 twin / lookalike guard that blocks restoration when a candidate
 resembles a currently visible person, and a done-person blacklist that
-prevents a served person from receiving a second queue number---protect
+prevents a served person from receiving a second queue number, protect
 the matcher's decisions.
 
 The same workflow also prepares the ticket record used by students to
@@ -668,10 +668,10 @@ module used by staff on the dashboard.
 
 \emph{Forecasting Theory} supplies the specific mathematical methods
 used for the prediction module. QueueFlow applies exponential
-smoothing, trend projection, and mean-reversion logic---methods rooted
+smoothing, trend projection, and mean-reversion logic, methods rooted
 in the classical exponentially weighted moving-average
 framework~\cite{holt2004forecasting} and discussed by Hyndman and
-Athanasopoulos~\cite{hyndman2021forecasting}---to produce current,
+Athanasopoulos~\cite{hyndman2021forecasting}, to produce current,
 5-minute, 15-minute, and 30-minute wait-time estimates. The
 medium-horizon forecast in particular relies on Holt's
 double-exponential smoothing, in which a level $L_t$ and a trend $T_t$
@@ -797,9 +797,9 @@ The study is guided by the following research problems:
         30-minute wait times?
   \item How do service staff and administrators evaluate QueueFlow
         across the five dimensions measured by the structured
-        Likert-scale instrument used in this study---namely,
+        Likert-scale instrument used in this study, namely,
         usability, detection reliability, prediction usefulness,
-        dashboard clarity, and overall satisfaction---and what overall
+        dashboard clarity, and overall satisfaction, and what overall
         weighted mean does each dimension obtain?
 \end{enumerate}
 
@@ -848,8 +848,10 @@ on printer availability.
 
 The present build uses one camera-defined queue zone and one selected
 service office. It excludes multi-zone and multi-department operation,
-priority handling based on student status or urgency, direct links to
-the Campus Management System or Student Information System, and IoT
+and no priority queue is implemented in the system; all detected clients
+are assigned under the ordinary queue order without priority handling
+based on student status or urgency. The build also excludes direct links
+to the Campus Management System or Student Information System and IoT
 inputs other than the camera feed and ticket printer. The evaluation is
 limited to one semester after implementation.
 
@@ -965,8 +967,8 @@ metric used by re-entry matching, computed independently on the upper-
 and lower-body halves of the split appearance signature and combined
 with a sixty--forty weighting in favour of the upper body.
 
-\textbf{Printer-Agnostic Ticket Protocol.} The set of fields---queue
-number, short code, QR link, and JWT---issued for each confirmed queue
+\textbf{Printer-Agnostic Ticket Protocol.} The set of fields, including
+queue number, short code, QR link, and JWT, issued for each confirmed queue
 entry. Because the ticket record is independent of the output device,
 it can be printed on thermal paper in office use or rendered as a PDF
 during evaluation.
@@ -1008,7 +1010,7 @@ near-identical clothing should each receive their own queue number.
 model~\cite{jocher2023} with ByteTrack-based \texttt{persist=True}
 tracking, configurable input size, and confidence threshold, used to
 detect and track persons entering the queue zone in camera frames. Newer
-variants---YOLOv9 through YOLOv12~\cite{tian2025yolov12}---are not used
+variants, YOLOv9 through YOLOv12~\cite{tian2025yolov12}, are not used
 in this study; the rationale is discussed in Section~1.3.
 
 % ============================================================
@@ -1853,7 +1855,7 @@ framework of Section~\ref{sec:conceptual-framework}.
   \par\vspace{0.3em}{\centering\small\textbf{Figure 2.3}\par}
   \caption{Agile Development Process for QueueFlow. Each of the eight
   sprints enumerated above completes one revolution of this five-phase
-  cycle---Plan, Design, Build, Test, Review---before the next sprint
+  cycle, Plan, Design, Build, Test, Review, before the next sprint
   begins. The Review phase routes adviser feedback and measured
   performance back into the Plan phase of the following sprint,
   instantiating, at the development level, the feedback loop described
@@ -1914,9 +1916,9 @@ current, 5-minute, 15-minute, and 30-minute horizons.
 
 \textbf{Performance Testing: Latency and Ticket Flow.}
 Detection-to-ticket latency will be measured from automated timestamps
-logged at the moment a queue entrant is first detected---that is, the
+logged at the moment a queue entrant is first detected, that is, the
 moment the detection passes all five quality gates of the Computer
-Vision Layer (\S\ref{subsec:cv-layer})---to the moment the
+Vision Layer (\S\ref{subsec:cv-layer}), to the moment the
 corresponding ticket payload is issued after candidate confirmation and
 queue-number assignment. Ticket flow validation will be performed by
 issuing tickets across a representative range of conditions and
@@ -1969,7 +1971,7 @@ Table~\ref{tab:synthesis} presents a synthesis matrix summarizing the
 reviewed literature, the methodology of each study, key findings, and
 the gaps identified that motivated the present work.
 
-\begin{table}[!ht]
+\begin{table}[p]
   \caption{Synthesis Matrix of Related Literature}
   \label{tab:synthesis}
   \centering
@@ -2365,62 +2367,7 @@ items are checked for equivalent meaning.
 % ============================================================
 % BIBLIOGRAPHY
 % ============================================================
+\nocite{*}
 \printbibliography
-
-% ============================================================
-% CURRICULUM VITAE
-% ============================================================
-\chapter*{Curriculum Vitae}
-\addcontentsline{toc}{chapter}{Curriculum Vitae}
-
-\section*{Archie D. Balbin}
-
-\noindent Archie D. Balbin is a candidate for the degree Bachelor of
-Science in Computer Science at Naga College Foundation, Inc., Naga
-City. He is one of the researchers of the capstone project entitled
-\textit{QueueFlow: Computer Vision Based Automated Queue Ticket
-Assignment and Real-Time Predictive System for Dynamic Campus Service
-Delivery}.
-
-\vspace{1em}
-\noindent
-\begin{tabular}{p{0.28\textwidth} p{0.64\textwidth}}
-\textbf{Name} & Archie D. Balbin \\
-\textbf{Degree Program} & Bachelor of Science in Computer Science \\
-\textbf{Institution} & Naga College Foundation, Inc. \\
-\textbf{College} & College of Computer Studies \\
-\textbf{Capstone Focus} & Computer vision, queue management, ticket
-assignment, and wait-time prediction \\
-\textbf{Adviser} & Fritzgerald Enric T. Imperial, MIT \\
-\end{tabular}
-
-\newpage
-
-\section*{Joshua Rovic P. Sanota}
-
-\noindent Joshua Rovic P. Sanota is a candidate for the degree Bachelor
-of Science in Computer Science at Naga College Foundation, Inc., Naga
-City. He is one of the researchers of the capstone project entitled
-\textit{QueueFlow: Computer Vision Based Automated Queue Ticket
-Assignment and Real-Time Predictive System for Dynamic Campus Service
-Delivery}.
-
-\vspace{1em}
-\noindent
-\begin{tabular}{p{0.28\textwidth} p{0.64\textwidth}}
-\textbf{Name} & Joshua Rovic P. Sanota \\
-\textbf{Degree Program} & Bachelor of Science in Computer Science \\
-\textbf{Institution} & Naga College Foundation, Inc. \\
-\textbf{College} & College of Computer Studies \\
-\textbf{Capstone Focus} & Computer vision, queue management, ticket
-assignment, and wait-time prediction \\
-\textbf{Adviser} & Fritzgerald Enric T. Imperial, MIT \\
-\end{tabular}
-
-% ============================================================
-% APPENDICES
-% ============================================================
-\chapter*{Appendices}
-\addcontentsline{toc}{chapter}{Appendices}
 
 \end{document}
