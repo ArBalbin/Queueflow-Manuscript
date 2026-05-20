@@ -926,7 +926,7 @@ the inter-departure interval observed at the aggregate output is
 approximately $\overline{\text{svc}} / c$:
 
 \begin{equation}
-\widehat{\overline{\text{svc}}} \;=\; \bar{g} \cdot c.
+\widehat{\mathrm{svc}} \;=\; \bar{g} \cdot c.
 \label{eq:svc-measured}
 \end{equation}
 
@@ -935,13 +935,13 @@ value so that a single unusually fast or slow batch of transactions
 does not jolt the prediction:
 
 \begin{equation}
-\overline{\text{svc}}_{\text{new}} \;=\; 0.7 \, \widehat{\overline{\text{svc}}} + 0.3 \, \overline{\text{svc}}_{\text{prev}}.
+\widehat{\mathrm{svc}}_{\text{new}} \;=\; 0.7\,\widehat{\mathrm{svc}} + 0.3\,\widehat{\mathrm{svc}}_{\text{prev}}.
 \label{eq:svc-blend}
 \end{equation}
 
 \noindent The pre-deployment calibration described in
 Section~\ref{sec:datagathering} (\S2.4, Phase~1) supplies the initial
-seed value for $\overline{\text{svc}}_{\text{prev}}$ before any
+seed value for $\widehat{\mathrm{svc}}_{\text{prev}}$ before any
 transactions have been logged.
 
 \begin{algorithm}[H]
@@ -949,8 +949,8 @@ transactions have been logged.
 \caption{Dynamic service-time measurement}
 \label{alg:service-time}
 \begin{algorithmic}[1]
-\Require served transaction timestamps $t_1,\ldots,t_N$, active counters $c$, previous service time $\overline{\mathrm{svc}}_{\mathrm{prev}}$
-\Ensure updated service time $\overline{\mathrm{svc}}_{\mathrm{new}}$ and service rate $\mu$
+\Require served transaction timestamps $t_1,\ldots,t_N$, active counters $c$, previous service time $\widehat{\mathrm{svc}}_{\mathrm{prev}}$
+\Ensure updated service time $\widehat{\mathrm{svc}}_{\mathrm{new}}$ and service rate $\mu$
 \State $G \gets \emptyset$
 \For{$i=2$ to $N$}
   \State $g_i \gets (t_i-t_{i-1})/60$
@@ -959,12 +959,12 @@ transactions have been logged.
   \EndIf
 \EndFor
 \If{$G$ has too few samples}
-  \State \Return previous $\overline{\mathrm{svc}}_{\mathrm{prev}}$ and $\mu=1/\overline{\mathrm{svc}}_{\mathrm{prev}}$
+  \State \Return previous $\widehat{\mathrm{svc}}_{\mathrm{prev}}$ and $\mu=1/\widehat{\mathrm{svc}}_{\mathrm{prev}}$
 \EndIf
-\State $\widehat{\overline{\mathrm{svc}}} \gets \mathrm{mean}(G)\cdot c$
-\State $\overline{\mathrm{svc}}_{\mathrm{new}} \gets 0.7\widehat{\overline{\mathrm{svc}}}+0.3\overline{\mathrm{svc}}_{\mathrm{prev}}$
-\State $\mu \gets 1/\overline{\mathrm{svc}}_{\mathrm{new}}$
-\State \Return $(\overline{\mathrm{svc}}_{\mathrm{new}}, \mu)$
+\State $\widehat{\mathrm{svc}} \gets \mathrm{mean}(G)\cdot c$
+\State $\widehat{\mathrm{svc}}_{\mathrm{new}} \gets 0.7\widehat{\mathrm{svc}}+0.3\widehat{\mathrm{svc}}_{\mathrm{prev}}$
+\State $\mu \gets 1/\widehat{\mathrm{svc}}_{\mathrm{new}}$
+\State \Return $(\widehat{\mathrm{svc}}_{\mathrm{new}}, \mu)$
 \end{algorithmic}
 \end{algorithm}
 
