@@ -1676,71 +1676,70 @@ its error values are acceptable for the study. This keeps experimental
 model changes away from live queue operations and gives the researchers
 a reproducible basis for the results presented later in the manuscript.
 
-\textbf{Dataset.} The working dataset will come from historical
-cashiering transaction logs made available by the NCF Technology
-Resource Center (TRC), following the data-sharing arrangement described
-in Section~2.6. The exact date range and final number of usable records
-will be stated in Chapter~3 after cleaning and screening. The paired
-BSIS capstone team requested the logs through a formal letter endorsed
-by the Dean of the College of Computer Studies, and the anonymized
-records are shared with the BSCS team for QueueFlow predictor
-development. Expected fields include transaction identifiers, start and
-end timestamps, transaction type, counter identifier, and computed
-service duration. Names, student numbers, payment amounts, account
-details, and other personally identifiable fields are excluded. Only
-records belonging to the cashiering office selected for deployment are
-retained for modeling.
+\textbf{Dataset.} The working dataset comes from historical cashiering
+queue logs made available for QueueFlow predictor development. The XML
+export contains 49,303 queue records covering March~24,~2023 to
+May~4,~2026. The available fields include queue identifier, application
+identifier, queue number, service date, service time, transaction type,
+processing status, and program identifier. Names, student numbers,
+payment amounts, account details, and other personally identifiable
+fields are not used by the model. Records marked with
+\texttt{processing = 3} are excluded because they represent no-show,
+cancelled, or incomplete queue events.
 
-\textbf{Feature Engineering.} The predictor uses fields that can be
-derived from timestamps and from the recent movement of the queue. The
-initial feature set is organized as follows:
+\textbf{Feature Engineering.} The predictor uses three feature groups.
+The first group is derived directly from the queue logs and timestamp
+sequence:
 \begin{enumerate}
-  \item Time fields, such as hour, minute, day of week, week of month,
-        and month.
-  \item Academic-calendar indicators for regular days, enrollment,
-        midterm payment, final payment, and clearance periods, based on
-        the calendar issued by the Office of the Registrar.
-  \item Queue-state fields, including arrivals and completions within
-        the previous 5, 15, and 30 minutes, estimated queue length, and
-        the number of active counters when this can be inferred from
-        the logs.
-  \item Lagged wait-time fields, such as the wait time of the previous
-        transaction and recent wait-time averages for comparable hours.
+  \item Queue and transaction fields: queue number, transaction type,
+        program identifier, daily queue size, and estimated people
+        ahead.
+  \item Time fields: hour, minute, day of week, month, morning or
+        afternoon indicator, and peak-hour indicator.
+  \item Recent-demand fields: arrivals within the previous 5 and
+        15 minutes.
 \end{enumerate}
-The response variable is transaction wait time. When queue-entry and
-counter-arrival timestamps are both available, wait time is computed
-directly from their elapsed time. If the released logs contain service
-timestamps but not explicit queue-entry timestamps, the reconstruction
-rule used to estimate waiting time will be documented with the final
-data-cleaning procedure in Chapter~3.
+The second group consists of academic-period indicators for enrollment,
+prelim, midterm, final, and clearance periods. These indicators allow
+the model to distinguish ordinary service days from predictable
+cashiering-demand spikes.
 
-\textbf{Train, Validation, and Test Split.} Queue records are split by
-date, not by random row assignment. The first 70\% of the ordered
-records form the training set, the next 15\% form the validation set,
-and the last 15\% are reserved for final testing. This order matters
-because cashiering demand is time-dependent: enrollment week, payment
-deadlines, and ordinary class days do not behave the same way. A random
-split could allow future queue patterns to influence model tuning, so
-it is avoided.
+The third group grounds the AI model in the analytical prediction
+framework of QueueFlow. For every training row, the preparation script
+computes outputs from the mathematical routines described in
+Section~\ref{subsec:prediction}: an M/M/c-style baseline wait, a
+local trend-projected wait, a Holt double-exponential smoothing
+estimate, a growth-ratio mean-reversion estimate, the estimated
+arrival rate, and the estimated service time. These analytical outputs
+are used as input features to the machine-learning model rather than
+as replacements for it.
 
-\textbf{Candidate Model Architectures.} The study compares three
-predictor families:
-\begin{enumerate}
-  \item Gradient-boosted regression trees, using XGBoost or LightGBM,
-        because they work well with tabular operational data and can
-        show feature-importance rankings.
-  \item Random Forest regression, using scikit-learn, because it is a
-        practical comparison model for smaller datasets and is usually
-        less fragile during early tuning.
-  \item Linear regression, using the same engineered fields, as a
-        baseline for checking whether the tree-based models actually
-        improve prediction error.
-\end{enumerate}
-The model family with the lowest validation Mean Absolute Error (MAE)
-at the 15-minute horizon is selected for the prototype. If two models
-produce nearly identical MAE values, the more stable model across
-validation periods is preferred. The selected model and its final
-settings are presented with the results.
+The response variable is reconstructed wait time in minutes. Because
+the XML export does not contain both a queue-entry timestamp and a
+counter-arrival timestamp for every record, wait time is reconstructed
+as the elapsed time from a valid queue record to the next valid served
+record on the same service date. Reconstructed waits below one minute
+are excluded during model fitting because sub-minute gaps may represent
+immediate transaction encoding or log artifacts rather than meaningful
+queue waiting. Reconstructed waits above 120 minutes are excluded to
+avoid idle-period outliers.
+
+\textbf{Train and Test Split.} Queue records are split by service date,
+not by random row assignment. The first 80\% of ordered service dates
+form the training set and the remaining 20\% form the test set. This
+order matters because cashiering demand is time-dependent: enrollment
+week, payment deadlines, and ordinary class days do not behave the same
+way. A random split could allow future queue patterns to influence
+model tuning, so it is avoided.
+
+\textbf{Model Architecture.} The implemented AI component uses
+Gradient Boosting Regression through scikit-learn's
+\texttt{HistGradientBoostingRegressor}. Gradient boosting is selected
+because the available data is tabular and contains mixed operational,
+calendar, and analytical prediction features. The model learns
+nonlinear corrections from historical queue behavior while still being
+anchored to the interpretable mathematical estimates computed by the
+prediction service.
 
 Deep sequence models such as Long Short-Term Memory networks and the
 Temporal Fusion Transformer are not used in this version of the
@@ -1749,37 +1748,27 @@ time-series datasets, but the available cashiering data comes from a
 single service office. For this study, simpler tabular models are more
 appropriate and easier to validate.
 
-\textbf{Hyperparameter Selection.} Tuning is limited to a small grid so
-that the validation set is not overused. For the gradient-boosted
-models, the grid covers tree depth, learning rate, number of
-estimators, and L2 regularization, with early stopping based on
-validation error. For Random Forest regression, tuning is limited to
-the size of the tree ensemble, the allowed tree depth, and the minimum
-number of samples required in a leaf node. The final hyperparameters
-are reported only for the selected model.
+\textbf{Hyperparameter Selection.} The prototype model uses 300
+boosting iterations, a learning rate of 0.05, 31 maximum leaf nodes,
+and L2 regularization of 0.1. These conservative settings were chosen
+to keep the model stable on the reconstructed wait-time target and to
+avoid overfitting to short timestamp gaps.
 
 \textbf{Evaluation Protocol.} The selected model is evaluated on the
-held-out test set using MAE and MAPE, following the formulas in
-Section~2.7. Error is reported separately for the current, 5-minute,
-15-minute, and 30-minute horizons. The machine-learning predictor is
-also compared with the analytical predictor in Section~2.8.3 by running
-both on the same test records. The comparison reports per-horizon MAE
-differences and, where the data supports it, a statistical test of
-whether the observed difference is significant. Feature-importance
-results are included to help explain which queue conditions most
-influence the prediction.
+date-based held-out test set using MAE, RMSE, MAPE, and $R^2$. MAE and
+RMSE are treated as the primary metrics because reconstructed waits can
+be short, making percentage-based error unstable. MAPE is still
+reported for transparency but is interpreted cautiously.
 
 \textbf{Integration Plan.} After offline testing, the trained model is
-added to the Prediction Service in the Business Logic Layer
-(Section~2.8.3). For each horizon, the service can produce an
-analytical estimate, an ML estimate, and a combined estimate. The
-combined estimate is computed from validation-set performance so that
-the more reliable component receives greater weight. The dashboard
-shows the combined value as the default staff-facing estimate, while
-the component estimates remain available for inspection. The model file
-is serialized with \texttt{joblib}, loaded by the FastAPI backend at
-startup, and referenced through a configurable path so that future
-retraining does not require code changes.
+serialized with \texttt{joblib} and loaded by the FastAPI backend at
+startup. During a ticket-status request, the backend computes the live
+feature vector, including queue-state features, academic-period
+features, and the analytical prediction features described above. The
+Gradient Boosting prediction is then calibrated with current-day
+service speed, yesterday's same-hour wait behavior, and recent
+prediction error before being returned to the dashboard or student
+status page as the displayed wait-time estimate.
 
 \textbf{Retraining and Model Drift.} The procedure in this subsection
 covers the initial training run only. Periodic retraining, automated
@@ -1787,12 +1776,17 @@ drift monitoring, and production retraining pipelines are outside the
 present scope, although the prototype is arranged so that a later model
 file can replace the original one.
 
-\textbf{Current Status.} At the time of manuscript preparation, the TRC
-dataset has been made accessible to the BSCS researchers through the
-paired BSIS team. Feature engineering and the training script are still
-being completed. Candidate-model comparison, final error reporting, and
-live prototype integration will be documented in Chapter~3 once the
-training and validation run is finished.
+\textbf{Training Result.} After cleaning and wait-time reconstruction,
+the prepared dataset contained 30,362 supervised rows. Applying the
+one-minute minimum-wait filter left 19,119 modeling rows. The
+date-based split produced 13,031 training rows and 6,088 test rows.
+The training period covered May~24,~2023 to January~20,~2026, and the
+test period covered January~21,~2026 to May~4,~2026. On the test set,
+the Gradient Boosting model obtained MAE~=~2.3512 minutes,
+RMSE~=~4.0858 minutes, MAPE~=~80.74\%, and $R^2=-0.0349$. The MAE and
+RMSE are used as the main accuracy indicators, while MAPE is reported
+with caution because short reconstructed waits inflate percentage
+error.
 
 \section{Software Development Process}
 \label{sec:sdp}

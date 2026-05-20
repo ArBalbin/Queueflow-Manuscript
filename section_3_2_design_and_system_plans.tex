@@ -119,6 +119,31 @@ ByteTrack using Equation~(\ref{eq:iou}). Only detections that pass
 all five gates reach the queue tracker. Parameter values are listed in
 Table~\ref{tab:cv-params}.
 
+\begin{algorithm}[H]
+\footnotesize
+\caption{Detection quality filtering}
+\label{alg:detection-quality}
+\begin{algorithmic}[1]
+\Require current frame $F_t$, previous grey frame $G_{t-1}$, raw detections $D$
+\Ensure filtered detections ready for queue-zone processing
+\State $G_t \gets$ grey-scale version of $F_t$
+\State $\mathcal{D}_{\mathrm{ok}} \gets \emptyset$
+\ForAll{$d \in D$ with box $(x_1,y_1,x_2,y_2)$ and confidence $\text{conf}$}
+  \State $A \gets (x_2-x_1)(y_2-y_1)$; $f \gets A/(W_fH_f)$; $r \gets (y_2-y_1)/(x_2-x_1)$
+  \If{$A < A_{\min}$ \textbf{or} $f > f_{\max}$ \textbf{or} $r < r_{\min}$}
+    \State \textbf{continue}
+  \EndIf
+  \State compute motion energy $M$ from $G_t$ and $G_{t-1}$ using Equation~\ref{eq:motion}
+  \If{$M < M_{\min}$ \textbf{and} $\text{conf} < c_{\mathrm{byp}}$}
+    \State \textbf{continue}
+  \EndIf
+  \State append $d$ to $\mathcal{D}_{\mathrm{ok}}$
+\EndFor
+\State apply ByteTrack/NMS to $\mathcal{D}_{\mathrm{ok}}$
+\State \Return filtered tracked detections
+\end{algorithmic}
+\end{algorithm}
+
 \begin{table}[H]
 \centering
 \caption{Computer Vision Layer parameters.}
@@ -269,6 +294,32 @@ candidate with the highest score above either threshold inherits the
 known identifier. With $\tau_{\mathrm{iou}}^{\mathrm{rm}} = 0.10$ and
 $d_{\max} = 180\ \mathrm{px}$, remapping rescues brief tracker hiccups
 without false matches across the zone.
+
+\begin{algorithm}[H]
+\footnotesize
+\caption{Track-identifier remapping}
+\label{alg:remap}
+\begin{algorithmic}[1]
+\Require incoming detection $d$ with new track ID $\mathrm{tid}_{new}$, active queue $\mathcal{Q}$
+\Ensure original track ID if recoverable, otherwise $\mathrm{tid}_{new}$
+\State $\mathrm{bestID} \gets \mathrm{tid}_{new}$; $\mathrm{bestScore} \gets -\infty$
+\ForAll{$p \in \mathcal{Q}$ with active or recently visible status}
+  \State $u \gets \mathrm{IoU}(d.\mathrm{bbox}, p.\mathrm{bbox})$
+  \State $\delta \gets d(d.\mathrm{bbox}, p.\mathrm{bbox})$
+  \If{$u \geq \tau_{\mathrm{iou}}^{\mathrm{rm}}$}
+    \State $s \gets u + 1.0$
+  \ElsIf{$\delta \leq d_{\max}$}
+    \State $s \gets 1 - \delta/d_{\max}$
+  \Else
+    \State \textbf{continue}
+  \EndIf
+  \If{$s > \mathrm{bestScore}$}
+    \State $\mathrm{bestScore} \gets s$; $\mathrm{bestID} \gets p.\mathrm{tid}$
+  \EndIf
+\EndFor
+\State \Return $\mathrm{bestID}$
+\end{algorithmic}
+\end{algorithm}
 
 % =====================================================================
 \subsection{Duplicate Suppression}
@@ -564,6 +615,29 @@ monitored because only that entry is being called; persons further
 back in the line may legitimately be waiting elsewhere within the
 service area.
 
+\begin{algorithm}[H]
+\footnotesize
+\caption{No-show countdown and bumping}
+\label{alg:noshow}
+\begin{algorithmic}[1]
+\Require active queue $\mathcal{Q}$, countdown table $S$, current time $t_{\mathrm{now}}$
+\ForAll{$q \in \mathcal{Q}$}
+  \If{$q.\mathrm{position}=1$ \textbf{and} $q.\mathrm{status}=\texttt{missing}$}
+    \If{$q \notin S$}
+      \State $S[q] \gets t_{\mathrm{now}}$
+    \ElsIf{$t_{\mathrm{now}} - S[q] \geq T_{\mathrm{ns}}$}
+      \State mark $q$ as \texttt{no\_show}
+      \State move $q$ from active queue to completed/no-show records
+      \State register $q$'s appearance in the done blacklist
+      \State delete $S[q]$
+    \EndIf
+  \Else
+    \State delete $S[q]$ if present
+  \EndIf
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
 % =====================================================================
 \subsection{Counter Assignment}
 \label{subsec:counters}
@@ -756,6 +830,75 @@ sixty minutes; long-horizon forecasts are inherently uncertain and the
 cap prevents a single high-growth window from producing a meaningless
 multi-hour estimate on the dashboard.
 
+\begin{algorithm}[H]
+\footnotesize
+\caption{Multi-horizon wait-time prediction}
+\label{alg:prediction}
+\begin{algorithmic}[1]
+\Require count history $H$, current queue length $Q$, active counters $c$, service rate $\mu$
+\Ensure current, short-, medium-, and long-horizon wait estimates
+\State append current $Q$ and timestamp to $H$
+\State compute $\lambda$ from recent count differences using Equation~\ref{eq:arrival}
+\State $\rho \gets \lambda/(c\mu)$
+\State $W_{\mathrm{current}} \gets$ Equation~\ref{eq:wcurrent}
+\State compute OLS slope $\beta$ on the latest $W_{\mathrm{tr}}$ samples using Equation~\ref{eq:slope}
+\State $\hat{Q}_{\mathrm{short}} \gets \max(0, Q+\beta\cdot \mathrm{fps}\cdot T_{\mathrm{sh}})$
+\State $W_{\mathrm{short}} \gets$ convert $\hat{Q}_{\mathrm{short}}$ to wait time using Equation~\ref{eq:wcurrent}
+\State $(L_t,T_t) \gets$ Holt update over $H$ using Equations~\ref{eq:holt-level}--\ref{eq:holt-trend}
+\State $\hat{Q}_{t+h} \gets L_t + T_t \sum_{i=1}^{h}\varphi^i$
+\State $W_{\mathrm{medium}} \gets$ convert $\hat{Q}_{t+h}$ to wait time using Equation~\ref{eq:wcurrent}
+\State split $H$ into thirds and compute $Q_{\mathrm{early}}$ and $Q_{\mathrm{recent}}$
+\State $g \gets Q_{\mathrm{recent}}/\max(Q_{\mathrm{early}},1)$
+\State $\hat{Q}_{\mathrm{long}} \gets \max(0,Q_{\mathrm{recent}}(0.7g+0.3))$
+\State $W_{\mathrm{long}} \gets \min(W_{\max}^{\mathrm{long}},$ converted wait from $\hat{Q}_{\mathrm{long}})$
+\State \Return $(W_{\mathrm{current}}, W_{\mathrm{short}}, W_{\mathrm{medium}}, W_{\mathrm{long}}, \rho, \lambda)$
+\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{Hybrid AI wait-time predictor}
+\label{subsubsec:hybrid-ai-prediction}
+
+The deployed AI model does not replace the analytical routines above.
+Instead, QueueFlow treats their outputs as interpretable engineered
+features for a supervised Gradient Boosting regressor. For each
+training or live prediction row, the system computes queue-state
+features, recent-demand features, academic-period indicators, and the
+analytical prediction features
+$W_{\mathrm{current}}$, $W_{\mathrm{short}}$, $W_{\mathrm{medium}}$,
+and $W_{\mathrm{long}}$ from Algorithm~\ref{alg:prediction}. These
+features are passed to a \texttt{HistGradientBoostingRegressor}, which
+learns nonlinear corrections from historical queue behavior.
+
+During live operation, the trained model is not retrained. The backend
+calibrates the AI output with runtime evidence: current service speed,
+active counters, yesterday's same-hour average wait, and recent
+prediction error. This hybrid design keeps the prediction grounded in
+the queueing and forecasting framework while allowing the model to
+learn from historical data.
+
+\begin{algorithm}[H]
+\footnotesize
+\caption{Hybrid AI wait-time prediction}
+\label{alg:hybrid-ai-prediction}
+\begin{algorithmic}[1]
+\Require current queue state, academic calendar, count history $H$, active counters $c$, trained Gradient Boosting model $G$
+\Ensure calibrated student-facing wait-time estimate
+\State compute queue-state features: queue number, people ahead, and daily queue size
+\State compute recent-demand features: arrivals in the last 5 and 15 minutes
+\State compute academic-period indicators from the academic calendar
+\State compute analytical prediction features using Algorithm~\ref{alg:prediction}
+\State concatenate all features into vector $x$
+\State $W_{\mathrm{AI}} \gets G(x)$
+\State compute recent prediction-error correction $e_{\mathrm{recent}}$
+\State $W_{\mathrm{AI,corr}} \gets \max(0, W_{\mathrm{AI}} + e_{\mathrm{recent}})$
+\State compute runtime baseline $W_{\mathrm{base}}$ from current service speed, active counters, and yesterday same-hour wait
+\State $\gamma \gets \min(\mathrm{completed\_today}/10, 1)$ \Comment{confidence in current-day service pattern}
+\State blend $W_{\mathrm{base}}$ toward current-day service behavior using $\gamma$
+\State $W_{\mathrm{final}} \gets 0.6 W_{\mathrm{AI,corr}} + 0.4 W_{\mathrm{base}}$
+\State \Return bounded $W_{\mathrm{final}}$
+\end{algorithmic}
+\end{algorithm}
+
 % =====================================================================
 \subsection{Dynamic Service-Time Measurement}
 \label{subsec:service-time}
@@ -801,6 +944,30 @@ Section~\ref{sec:datagathering} (\S2.4, Phase~1) supplies the initial
 seed value for $\overline{\text{svc}}_{\text{prev}}$ before any
 transactions have been logged.
 
+\begin{algorithm}[H]
+\footnotesize
+\caption{Dynamic service-time measurement}
+\label{alg:service-time}
+\begin{algorithmic}[1]
+\Require served transaction timestamps $t_1,\ldots,t_N$, active counters $c$, previous service time $\overline{\mathrm{svc}}_{\mathrm{prev}}$
+\Ensure updated service time $\overline{\mathrm{svc}}_{\mathrm{new}}$ and service rate $\mu$
+\State $G \gets \emptyset$
+\For{$i=2$ to $N$}
+  \State $g_i \gets (t_i-t_{i-1})/60$
+  \If{$0.1 \leq g_i \leq 15$}
+    \State append $g_i$ to $G$
+  \EndIf
+\EndFor
+\If{$G$ has too few samples}
+  \State \Return previous $\overline{\mathrm{svc}}_{\mathrm{prev}}$ and $\mu=1/\overline{\mathrm{svc}}_{\mathrm{prev}}$
+\EndIf
+\State $\widehat{\overline{\mathrm{svc}}} \gets \mathrm{mean}(G)\cdot c$
+\State $\overline{\mathrm{svc}}_{\mathrm{new}} \gets 0.7\widehat{\overline{\mathrm{svc}}}+0.3\overline{\mathrm{svc}}_{\mathrm{prev}}$
+\State $\mu \gets 1/\overline{\mathrm{svc}}_{\mathrm{new}}$
+\State \Return $(\overline{\mathrm{svc}}_{\mathrm{new}}, \mu)$
+\end{algorithmic}
+\end{algorithm}
+
 % =====================================================================
 \subsection{Ticket Generation}
 \label{subsec:ticket}
@@ -841,6 +1008,30 @@ displayed as \texttt{XXXX-XXXX}, providing entropy of
 $\log_2(32^8) \approx 40$ bits, sufficient to render brute-force
 guessing infeasible within the four-hour ticket lifetime.
 
+\begin{algorithm}[H]
+\footnotesize
+\caption{Printer-agnostic ticket generation}
+\label{alg:ticket}
+\begin{algorithmic}[1]
+\Require confirmed queue number $q$, status-page base URL $U$, signing secret $K$
+\Ensure persisted ticket payload and rendered ticket output
+\State draw eight random characters from the unambiguous 32-character alphabet
+\State format the short code as \texttt{XXXX-XXXX}
+\State $jti \gets$ random 32-character hexadecimal nonce
+\State $\mathrm{iat} \gets$ current timestamp; $\mathrm{exp} \gets \mathrm{iat}+4$ hours
+\State create JWT header $h$ and payload $p=\{\mathrm{sub}:q,\mathrm{iat},\mathrm{exp},\mathrm{jti}\}$
+\State sign $h.p$ with HMAC-SHA256 and secret $K$ to form token
+\State create QR URL $U(q,\mathrm{token})$
+\State persist queue number, short code, QR URL, token, expiry, and status
+\If{prototype output is configured}
+  \State render the payload as a PDF ticket
+\Else
+  \State send the same payload to the thermal-printer driver
+\EndIf
+\State \Return ticket payload
+\end{algorithmic}
+\end{algorithm}
+
 % =====================================================================
 \subsection{Public Display Board with TTS Announcements}
 \label{subsec:display-board}
@@ -861,6 +1052,26 @@ polling endpoint returns the same active queue across consecutive
 intervals. Announcements are spoken sequentially with an $800\
 \mathrm{ms}$ gap between utterances to avoid speech overlap when
 several counter assignments are issued simultaneously.
+
+\begin{algorithm}[H]
+\footnotesize
+\caption{Public-display announcement deduplication}
+\label{alg:display}
+\begin{algorithmic}[1]
+\Require latest counter assignments $A$, announced set $E$, speech queue $P$
+\ForAll{$a \in A$}
+  \State $k \gets (a.\mathrm{queue\_number}, a.\mathrm{counter\_number})$
+  \If{$k \notin E$}
+    \State add $k$ to $E$
+    \State append announcement for $a$ to $P$
+  \EndIf
+\EndFor
+\While{$P$ is non-empty \textbf{and} speech engine is idle}
+  \State speak the next announcement in $P$
+  \State wait $800\ \mathrm{ms}$ before speaking the next item
+\EndWhile
+\end{algorithmic}
+\end{algorithm}
 
 % =====================================================================
 \subsection{Parameter Summary}
