@@ -1076,31 +1076,27 @@ estimate.
 \label{cr:synthesis}
 
 The reviewed studies point to a practical limitation of ordinary queue
-records: an issued ticket list does not show what is happening in the
-service area before a ticket is printed. Camera-based person detection
-can fill part of that gap by capturing activity as it occurs. YOLO-based
-approaches are especially relevant here because their speed allows a
-prototype to observe students entering and moving through a defined
-queue zone without waiting for manual encoding.
+records: an issued ticket list shows the order of numbers, but not who is
+actually standing in the service area or how long they have been there.
+Camera-based person detection addresses part of that gap by observing the
+queue as it forms. YOLO-based detectors are especially relevant because
+their speed allows a prototype to watch a defined queue zone continuously
+without manual encoding.
 
-Within the YOLO family, the trajectory from YOLOv8 through YOLOv11 and
-the attention-centric YOLOv12~\cite{tian2025yolov12} indicates clear
+Within the YOLO family, the progression from YOLOv8 to the
+attention-centric YOLOv12~\cite{tian2025yolov12} shows clear
 architectural progress, but also a widening gap between research
-benchmarks and the operational constraints of campus prototypes.
-YOLOv8n was selected for \sysname{} because it offers (a) stable
-production tooling and Ultralytics-supported persistent tracking, (b)
-lightweight inference suitable for the available prototype hardware,
-(c) broad community benchmarking that simplifies reproducibility, and
-(d) accuracy that is competitive with newer variants for the specific
-task of single-class person detection in a fixed queue zone. This
-rationale, rather than version recency, justifies the design choice.
+benchmarks and the constraints of a campus prototype. \sysname{} uses
+YOLOv8n because it pairs lightweight inference suited to an office
+computer with Ultralytics-supported persistent tracking, and because
+single-class person detection in a fixed queue zone does not depend on
+the gains newer variants report on broader benchmarks.
 
-Detection alone is not enough for the \sysname{} use case. A person
-detector can locate bounding boxes, but it does not decide whether a box
-represents a new entrant, a duplicate track, a returning student, or a
-person who should keep an existing queue number. For this reason,
-tracking, deduplication, candidate confirmation, and re-entry matching
-are treated as queue-management logic rather than optional
+Detection alone is still not enough. A person detector locates bounding
+boxes, but it does not decide whether a box is someone genuinely waiting,
+a duplicate track of the same person, or someone merely passing through.
+Tracking, duplicate suppression, and presence confirmation are therefore
+treated as part of queue management rather than as optional
 post-processing.
 
 A further limit is sharper still. Detection and tracking can tell one
@@ -1131,11 +1127,14 @@ estimates. Multi-horizon prediction is therefore useful because staff
 need both immediate queue status and near-future indicators for
 counter planning.
 
-For this manuscript, the design implication is narrow and direct:
-\sysname{} must connect four functions that are often treated
-separately, including camera-based queue entry, queue identity management,
-student ticket/status access, and staff-facing wait-time estimates. The
-prototype is evaluated on that integration rather than on detection
+For this study, the design implication is narrow and direct:
+\sysname{} must connect four functions that the reviewed studies treat
+separately --- confirming who is present in the queue zone, identifying
+enrolled students by face and issuing their queue numbers without manual
+input, showing each student their position and estimated wait in a
+mobile application, and giving staff wait-time estimates for counter
+planning. The prototype is therefore evaluated on recognition accuracy,
+prediction accuracy, and user satisfaction rather than on detection
 accuracy alone.
 
 Despite these advances, existing studies remain limited when viewed
@@ -1143,11 +1142,14 @@ against the specific needs of NCF's campus service context. Many focus
 on crowd counting, general queue applications, or prediction models as
 separate components. The Philippine HEI work that does exist, such as
 Concepcion et~al.~\cite{concepcion2026smart}, addresses web-based
-ticketing and appointment-booking systems rather than passive
-vision-based detection. Fewer works demonstrate how these components
-can operate together in a Philippine educational institution where
-queue visibility, staff action, student status checking, and practical
-deployment constraints must be handled in a single prototype.
+ticketing and appointment booking rather than camera-based operation,
+and the face-recognition deployments reviewed in educational settings,
+such as the CCTV attendance system of
+Patel et~al.~\cite{patel2025classroomcctv}, identify students without
+issuing or managing a queue. Few works show these components operating
+together in a Philippine educational institution, where queue
+visibility, staff action, student status, and practical deployment
+constraints must be handled in a single prototype.
 
 \section{Gap Bridged by the Study}
 \label{cr:gap}
