@@ -8,7 +8,7 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta,positioning}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric}
 
 % ── System name placeholder: change ONE line here when name is decided ──
 \newcommand{\sysname}{QueuEx}
@@ -34,6 +34,10 @@
 \graphicspath{{images/}}
 \addbibresource{Balbin_Archie_W3.bib}
 
+% No single line of a paragraph stranded at the top or bottom of a page.
+\widowpenalty=10000
+\clubpenalty=10000
+\displaywidowpenalty=10000
 \begin{document}
 
 % ============================================================
@@ -293,7 +297,7 @@ uses a printer-agnostic ticket payload containing the queue number, QR
 link, short code, and JSON Web Token (JWT), which can be rendered as a
 thermal ticket in deployment or as a PDF ticket in the prototype build.
 Queue records are stored in MySQL, students can check ticket status
-from a mobile client, and staff can monitor live snapshots, no-show
+from a mobile client, and staff can monitor live snapshots, pending-link
 alerts, counter actions, analytics, and forecasts through the dashboard.
 The forecasting component reports the current estimated wait time and
 5-, 15-, and 30-minute projections using an M/M/c baseline, local trend
@@ -324,6 +328,7 @@ and MAPE, system latency, and user satisfaction.
 \chapter{Introduction}
 
 \section{Background of the Study}
+\label{cr:background}
 
 Queue management inefficiency is a recognized challenge in service delivery organizations worldwide. Research from banking, healthcare, government service desks, and academic institutions consistently documents that manual queue processes cannot provide real-time status visibility, accurate wait-time estimates, or adaptive counter management when demand increases rapidly~\cite{nair2025survey,batcharo2025smart,yifter2023modeling}. As organizations in various sectors have introduced automated queue systems—which combine digital ticketing, camera-based monitoring, and predictive analytics—the operational gap between manual and automated queue management has widened~\cite{rashid2023smartqueue,zou2026customer}. In these settings, the absence of automated observation and prediction leaves both service staff and clients without the information needed to manage or navigate the service flow efficiently.
 
@@ -342,8 +347,16 @@ arrival detection, staff monitoring, student status access, and
 prediction.
 
 \sysname{} responds to this gap through a camera-connected queue
-management prototype for campus service offices. Instead of waiting for
-a manual entry, it uses YOLOv8n and OpenCV to detect persons inside a
+management prototype for campus service offices. Its central mechanism
+is identification rather than counting: a student enrols a face
+signature once from their own phone, requests a place in the queue when
+they need one, and is then issued a queue number automatically when the
+queue-zone camera recognizes them, with no staff encoding and no manual
+entry at the counter. Detection establishes that somebody is present;
+recognition establishes \emph{who}, which is what allows a number to be
+issued to a named student rather than merely added to a count.
+
+The detection stage uses YOLOv8n and OpenCV to locate persons inside a
 defined queue zone. YOLO is appropriate for this use case because it
 performs object detection in a single network pass~\cite{redmon2018}.
 YOLOv8n was selected because it is light enough for prototype-grade
@@ -358,9 +371,20 @@ computing resources. The selection therefore reflects the constraints
 of the prototype environment rather than a general claim that YOLOv8n
 is superior in all settings.
 
-\sysname{} extends detection with duplicate filtering, candidate
-confirmation, and hybrid re-entry matching so that queue records remain
-more consistent when people move or briefly leave the camera frame. The
+Identification is performed on the face. Each detected person's face is
+converted to a compact numeric embedding, which is compared against the
+signatures of enrolled students. A match is accepted only when it clears
+an absolute similarity threshold \emph{and} leads the next-best candidate
+by a stated margin, so that a face resembling two enrolled students
+equally is refused rather than assigned to whichever scored marginally
+higher. Refusal is the safe outcome: the person remains pending and a
+member of staff resolves the case. The same rule allows people who have
+not enrolled to pass through the queue zone without ever being
+identified.
+
+\sysname{} further extends detection with duplicate filtering, candidate
+confirmation, and face-based re-entry matching so that queue records
+remain consistent when people move or briefly leave the camera frame. The
 ticket component is printer-agnostic: each confirmed queue entry
 receives a queue number, a short code, a QR link, and a JSON Web Token
 (JWT) for status checking. At the service counter, this payload can be
@@ -379,12 +403,16 @@ manual counter update is made.
 
 The Review of Related Literature therefore examines the technologies
 and concepts that support each part of the problem identified above.
-Computer vision and YOLO literature address automated queue
-observation, queue management literature explains ticketing and
-identity maintenance, and forecasting literature supports the
-wait-time estimates needed for staff decision-making.
+Computer vision and YOLO literature address automated queue observation;
+face-recognition literature addresses the identification step on which
+automatic number issuance depends, together with the open-set
+requirement that unenrolled people be refused rather than matched to the
+nearest enrolled face; queue management literature explains ticketing and
+identity maintenance; and forecasting literature supports the wait-time
+estimates needed for staff decision-making.
 
 \section{Review of Related Studies}
+\label{cr:rrl}
 
 \subsection{Computer Vision for Real-Time Person Detection}
 Recent computer-vision work shows why camera-based queue observation is
@@ -407,8 +435,9 @@ constraint rather than an afterthought. Padilla-Lopez
 et~al.~\cite{padillalopez2015privacy} survey visual privacy protection
 methods such as camera-level anonymization, selective scrambling, and
 aggregate-only transmission. In \sysname{}, this concern is reflected in
-the decision to work with bounding boxes and colour histograms instead
-of storing or transmitting raw video.
+the decision to work with derived data: bounding boxes for detection and
+face embeddings for identification, neither of which is an image. No raw
+video, camera frame or enrolment photograph is stored or transmitted.
 
 Real-time people counting using YOLOv8 has been validated across varied
 environments. An IEEE conference publication~\cite{rrlcomp001realtimepeople}
@@ -480,122 +509,222 @@ An IEEE study~\cite{rrlcomp040deeplearninggdpr} further implements
 GDPR-compliant privacy safeguards in surveillance video using deep
 learning to suppress personal identifiers before storage.
 
-\subsection{YOLO-Based Tracking and Deduplication}
-YOLO's single-pass detection architecture delivers the speed necessary
-for real-time queue monitoring, processing entire frames in one forward
-pass to simultaneously predict bounding boxes, confidence scores, and
-class labels~\cite{redmon2018}. The YOLOv8 series advances this
-through improved multi-scale feature pyramid networks and anchor-free
-detection heads~\cite{jocher2023}, with the broader YOLO family
-reviewed in depth by Terven et~al.~\cite{terven2023yolo}. More recent
-variants extend this trajectory in different directions: YOLOv11
-emphasizes a reduced parameter count and improved feature reuse, while
-YOLOv12 introduces an attention-centric architecture with Area
-Attention and Residual ELAN modules~\cite{jocher2024yolo11,
-tian2025yolov12}. These newer variants improve accuracy and contextual
-reasoning but at marginal latency cost; for single-class person
-detection in a fixed queue zone, the stability, tracking integration,
-and benchmark maturity of YOLOv8n remain practically advantageous.
+Detection in a queue is not a per-frame problem. A number must stay with
+the same person across frames, which requires a tracker to carry
+identity forward, and the literature pairs detection with tracking
+accordingly. Person detection using YOLOv8 with DeepSORT
+tracking~\cite{rrlcomp003persondetectionproposed} demonstrates the
+combination on the person class specifically, while pedestrian tracking
+studies based on YOLOv8 with
+OC-SORT~\cite{rrlcomp017multiobjectpedestrian} and with an improved
+association stage~\cite{rrlcomp018multiobjectivepedestrian} report
+gains in identity consistency under the crowding and partial occlusion
+typical of pedestrian scenes. YOLO has also been paired with a sliding
+innovation filter for joint detection and
+tracking~\cite{rrlcomp098objectdetectiontracking}, and with centroid
+tracking for real-time directional
+monitoring~\cite{rrlcomp099realtimewrong}, the latter illustrating how
+a zone-based rule can be layered on top of ordinary tracking output in
+the way \sysname{} applies a queue zone.
 
-Beyond single-frame detection, multi-object tracking requires
-associating detections across frames into consistent identities. Wojke
-et~al.~\cite{wojke2017deepsort} introduced the DeepSORT algorithm,
-which integrates appearance information with motion-based tracking via
-Kalman filtering and the Hungarian algorithm, reducing identity
-switches when targets are temporarily occluded. \sysname{} draws on
-similar principles in its custom track-identifier remapping logic,
-complemented by a two-stage deduplication architecture: standard
-intersection-over-union non-maximum suppression performed internally
-by ByteTrack during detection, and a separate per-frame
-duplicate-suppression pass at the queue-tracker level that combines
-IoU and centroid proximity with re-entry immunity and an
-appearance-based safeguard. The latter pass is required because YOLO
-occasionally assigns two distinct track identifiers to the same
-physical person within the same frame.
+The association step itself rests on motion prediction. Kalman filtering
+remains the standard mechanism, and recent work refines it in ways that
+matter for a fixed indoor camera: adaptive formulations for real-time
+visual tracking~\cite{rrlcomp061adaptivekalmanfilter}, unscented
+variants for non-linear
+motion~\cite{rrlcomp062achievingadaptivevisual}, and reliability-weighted
+object information to resist drift when observations become
+unreliable~\cite{rrlcomp063robustvisualtracking}. Studies of
+bounding-box dynamics and noise covariance
+modelling~\cite{rrlcomp064boundingboxdynamics} show that the box itself
+is a noisy measurement, which is the justification for the smoothing
+applied before any box in \sysname{} is used for a zone decision.
 
-YOLO-based detection has been directly combined with established
-tracking algorithms to form complete person-tracking systems. A 2025
-IEEE publication~\cite{rrlcomp003persondetectionproposed} describes a
-system that pairs YOLOv8 with DeepSORT tracking for persistent person
-detection, demonstrating stable track identity across frames under mild
-occlusion. Xiao and Feng~\cite{rrlcomp017multiobjectpedestrian}
-improve upon standard YOLOv8 by integrating OC-SORT, a
-tracking algorithm that recovers lost tracks more robustly by using
-observation-centric re-identification, showing improved tracking
-accuracy in dense pedestrian scenes. Sheng
-et~al.~\cite{rrlcomp018multiobjectivepedestrian} further refine this
-approach by incorporating an improved DeepSORT with multi-objective
-optimization, balancing identity consistency and processing speed.
+Overlap handling is the remaining requirement, because a detector
+returning several boxes for one person would otherwise inflate a queue
+count. Non-maximum suppression is the standard remedy, and its
+limitations in crowded scenes are well documented. Work on where
+suppression belongs in a tracking
+pipeline~\cite{rrlcomp046nonmaximumsuppression} argues for applying it
+later than is conventional; multi-attribute
+NMS~\cite{rrlcomp047multiattributenms} targets pedestrian detection in
+crowds specifically, where genuine neighbouring people produce high
+mutual overlap; soft suppression
+schemes~\cite{rrlcomp086enhancednmsdetection} decay rather than
+eliminate competing boxes; spatial
+correlation~\cite{rrlcomp089spatialnonmaximum} and adaptive
+thresholding for small
+objects~\cite{rrlcomp090adaptiveiouthresholding} adjust the overlap
+criterion to the scene rather than fixing it in advance. These findings
+inform the overlap and duplicate-suppression gates described in
+Chapter~3, which operate on the same principle that a fixed global
+threshold is a poor fit for a zone where people legitimately stand close
+together.
 
-The broader multi-object tracking literature provides a foundation for
-evaluating tracking design choices. A comprehensive survey
-by Adzemovic~\cite{rrlcomp005deeplearningmulti} covers deep learning
-approaches to MOT from detection-based and joint detection-tracking
-frameworks to transformer-based methods, noting that the dominant
-challenge remains handling occlusion and identity switching in dense
-scenes. Kuo et~al.~\cite{rrlcomp072effectivemultiobject} propose a
-tracking system using global object models that reduces ID switches
-without requiring deep appearance embeddings, a lightweight design
-consistent with the resource constraints of the \sysname{} prototype.
-A CNN-based hybrid tracking system~\cite{rrlcomp097activemultiobject}
-demonstrates ultrafast multi-object tracking by fusing appearance and
-motion cues at inference time, while Moksyakov
-et~al.~\cite{rrlcomp098objectdetectiontracking} combine YOLO detection
-with the sliding innovation filter as an alternative to the Kalman
-filter, achieving comparable tracking accuracy with simpler state
-estimation.
+\subsection{Face Recognition and Open-Set Identification}
 
-Non-maximum suppression plays a central role in removing redundant
-detections before tracking. A study in Applied
-Sciences~\cite{rrlcomp046nonmaximumsuppression} examines where in the
-tracking pipeline NMS is applied, arguing that deferring suppression
-improves recall for occluded objects. For dense pedestrian scenes, a
-multi-attribute NMS extension~\cite{rrlcomp047multiattributenms}
-incorporates spatial and appearance attributes into the suppression
-decision, reducing false suppression of close-proximity persons.
-Soft-NMS adaptations~\cite{rrlcomp086enhancednmsdetection} replace hard
-suppression with a score decay function, retaining overlapping boxes at
-reduced confidence, which helps in scenes where two persons briefly
-overlap. Spatial NMS~\cite{rrlcomp089spatialnonmaximum} uses correlation
-and dynamic thresholds to adapt the suppression radius to local scene
-density, and adaptive IoU thresholding~\cite{rrlcomp090adaptiveiouthresholding}
-adjusts the overlap criterion dynamically based on object scale, both
-addressing limitations of fixed-threshold suppression in
-variable-density queues.
+Detection and tracking establish that a person is present and keep them
+distinct from their neighbours, but neither can say who that person is.
+The revised \sysname{} design requires exactly that: a queue number is
+issued to a named enrolled student, so the system must identify rather
+than merely count. The literature on deep face recognition provides both
+the representation used for that step and the decision framework that
+governs when an identification may be trusted.
 
-Kalman filtering is a foundational state-estimation technique
-underlying many tracking systems. Li
-et~al.~\cite{rrlcomp061adaptivekalmanfilter} propose an adaptive
-Kalman filter for real-time visual object tracking that estimates noise
-covariance online, reducing drift when object motion is irregular.
-A study in Sensors~\cite{rrlcomp062achievingadaptivevisual} achieves
-adaptive multi-object tracking with an unscented Kalman filter, which
-handles non-linear motion more accurately than the standard linear
-variant used in DeepSORT. A further Sensors
-publication~\cite{rrlcomp063robustvisualtracking} combines reliable
-object-information extraction with Kalman prediction for robust
-tracking, while an IEEE publication~\cite{rrlcomp064boundingboxdynamics}
-specifically models bounding-box size and position dynamics to improve
-noise covariance estimation.
+\textbf{Faces as embeddings.} Modern face recognition does not compare
+images directly. Schroff et~al.~\cite{schroff2015facenet} established
+the approach \sysname{} follows, training a network to map a face into a
+compact vector space in which distance corresponds to identity, so that
+recognition, verification and clustering all reduce to distance
+comparisons between vectors. The practical consequence for a deployed
+system is that identity can be stored as a short numeric vector rather
+than as a photograph, since the mapping runs in one direction and the
+face cannot be reconstructed from the vector. Surveys of the field
+confirm that this embedding formulation, rather than any particular
+network architecture, is what unified the
+discipline~\cite{wang2021deepfacesurvey,facesurvey2022}, and they trace
+the remaining variation to how the embedding space is trained and how
+its distances are thresholded.
 
-Several additional tracking refinements address failure cases relevant
-to queue monitoring. A finite-tailed updating rule for MOT in crowd
-scenes~\cite{rrlcomp048effectivelyfinitetailed} reduces the influence
-of outlier detections on track state, improving stability when a person
-briefly leaves the frame. Multi-object tracking with predictive
-information fusion~\cite{rrlcomp049multiobjecttracking} further reduces
-identity switches under sensor uncertainty. The
-3D-DIoU metric~\cite{rrlcomp076dioudistanceintersection} extends
-standard IoU with a distance component, providing a more discriminative
-association cost, while a centroid-tracking approach combined with YOLO
-for wrong-way vehicle detection~\cite{rrlcomp099realtimewrong}
-illustrates how centroid-based identity association can be effective for
-rule-based scenarios such as the queue-zone entry logic in \sysname{}.
-A detachment-tolerant MOT algorithm for occluded
-scenes~\cite{rrlcomp057dettrackalgorithmmultiple} further demonstrates
-that explicit occlusion modelling at the tracking level reduces identity
-fragmentation, a finding directly applicable to counter zones where
-persons may briefly occlude one another.
+\textbf{Margins in the representation.} The refinement that matters for
+this study concerns how such an embedding space is shaped during
+training. Liu et~al.~\cite{liu2017sphereface} began the line of work by
+constraining embeddings to a hypersphere and imposing an angular margin
+between identity classes. Wang et~al.~\cite{wang2018cosface} recast the
+idea as a large-margin cosine loss that explicitly widens the separation
+between identities while tightening each identity's own cluster, and Deng
+et~al.~\cite{deng2019arcface} extended it with an additive angular
+margin, producing the ArcFace formulation used by the recognition model
+in \sysname{}. Later refinements attach magnitude to sample quality so
+that ambiguous faces are pushed away from class
+centres~\cite{meng2021magface}, or reformulate the objective as binary
+classification to simplify training at
+scale~\cite{wen2021sphereface2}. The shared insight across all of them
+is that a recognition system becomes reliable not by scoring similarity
+more precisely but by enforcing a margin between identities. \sysname{}
+applies the same principle a second time, at the decision stage rather
+than the training stage: a margin in the representation is what makes
+identities separable, and a margin in the decision is what determines
+whether a particular comparison is separable enough to act on.
+
+\textbf{Locating the face before recognising it.} Recognition assumes an
+aligned face crop, which a person detector does not provide. Deng
+et~al.~\cite{deng2020retinaface} introduced the single-shot detector and
+five-point alignment stage that \sysname{} relies on through the same
+toolkit, jointly predicting the bounding box and the landmarks used to
+normalise pose before the embedding is computed. Because detection runs
+on every frame while recognition runs only on confident crops, the
+detector's cost dominates in practice, and work on lightweight detection
+for embedded deployment~\cite{embeddedfacedetect2025} reports the
+inference-time reductions that make CPU-only operation viable.
+
+\textbf{Recognition on modest hardware.} A campus prototype cannot
+assume a GPU. Chen et~al.~\cite{chen2018mobilefacenets} showed that a
+face-verification network under one million parameters can approach the
+accuracy of models hundreds of times larger, and the resulting
+MobileFaceNet architecture is the recognition model \sysname{} runs.
+Subsequent work has pushed the same direction through neural
+architecture search and knowledge
+distillation~\cite{pocketnet2022} and through architectures designed
+specifically for edge inference~\cite{edgeface2024}. The relevance to
+this study is that recognition accuracy and deployability are no longer
+in tension at the scale of a single service office.
+
+\textbf{Deciding when not to answer.} A campus service office is an open
+environment: most people who pass the camera are not enrolled, and a
+recognizer that always returns its closest match will name them anyway.
+Scheirer et~al.~\cite{scheirer2013openset} formalised this as open-set
+recognition, distinguishing it from the closed-set assumption that every
+probe belongs to some known class, and argued that a usable system must
+be able to reject. Günther et~al.~\cite{gunther2017opensetface} applied
+the requirement directly to faces, showing that open-set identification
+must handle both subjects who are known to be uninteresting and
+identities never seen before, and that rejection performance is a
+distinct quantity from ranking accuracy. These two works supply the
+justification for the acceptance rule in \sysname{}: an absolute
+similarity threshold establishes that a face resembles a known student,
+and a required margin over the runner-up establishes that it resembles
+one student distinctly, with refusal as the defined outcome when either
+condition fails. Later treatments of open-set identification frame the
+problem the same way, as a decision about whether the gallery contains
+the probe at all rather than which gallery entry ranks
+highest~\cite{indexofmax2020}.
+
+\textbf{Measuring a recognizer that is allowed to refuse.} Because
+refusal is a legitimate outcome, evaluation cannot reduce to a single
+accuracy figure. Biometric practice reports the trade-off between false
+matches and false non-matches across operating points, and recent work
+argues that the error rate at a fixed operating point, rather than an
+aggregate such as area under the curve or equal error rate, is what
+characterises a deployed system~\cite{operatingpoint2026}. This study
+adopts that stance, reporting scores and margins at the thresholds
+actually in force. Two further findings shape what such figures mean.
+Large-scale testing has established that accuracy is not uniform across
+demographic groups~\cite{grother2019frvt}, which is reason to treat a
+threshold calibrated on one population as provisional elsewhere. And
+image quality predicts recognition outcome strongly enough to be
+estimated before matching is
+attempted~\cite{terhorst2020serfiq,boutros2023crfiqa}, which is why a
+detector-confidence gate precedes the embedding step in \sysname{}.
+Occlusion is the clearest instance of that dependence, with accuracy
+degrading measurably when part of the face is
+covered~\cite{maskedreview2025}.
+
+\textbf{Threats specific to face-based entitlement.} A system that
+issues something of value on recognition invites two attacks the
+literature treats separately. A presentation attack substitutes a
+photograph or replay for a live face, and the countermeasures form their
+own research area~\cite{yu2024antispoofing}; \sysname{} does not
+implement liveness detection, which is stated as a limitation rather
+than claimed as solved. A stored template is the second exposure, since
+a biometric cannot be reissued once compromised, and template-protection
+schemes apply non-invertible transformations so that a leaked record
+cannot be matched back to a person~\cite{rathgeb2021templateprotection}.
+The present build relies on the non-invertibility of the embedding
+itself together with access control, which is weaker than a dedicated
+protection scheme and is recorded as such.
+
+\textbf{Deployment in educational settings.} Face recognition is already
+in routine institutional use for attendance. Patel
+et~al.~\cite{patel2025classroomcctv} report a classroom attendance
+system built on existing CCTV infrastructure, confirming both the
+feasibility of recognition from ordinary cameras and the operational
+appeal of removing a manual recording step, and transfer-learning
+approaches report comparable results on modest
+datasets~\cite{transferattendance2021}. Campus access
+management~\cite{campusaccess2024} extends the same capability from
+recording presence to granting entry, which is closer to the present
+case because a decision follows the recognition.
+
+The closest precedent is Handaga et~al.~\cite{handaga2019queue}, who
+adopted face recognition specifically to remove the queue that formed
+when students recorded attendance one at a time. Their motivation is the
+same as this study's: the manual step, not the record, is what consumes
+time. The difference is what the recognition produces. Their system
+marks a student present; \sysname{} issues a service entitlement, a
+queue number that determines when that student is served. Issuing an
+entitlement raises the cost of a wrong identification from a mistaken
+attendance record to a misallocated place in a line, which is the reason
+this study treats the refusal rule, rather than the recognition rate, as
+its central design question.
+
+\textbf{Proportionality.} Because face data is biometric, the decision to
+deploy is not purely technical. Negri
+et~al.~\cite{negri2024deploy} propose a framework for assessing whether
+the use of a face recognition system is proportionate to its purpose in a
+given real-world setting. Regulatory analysis points the same way:
+assessments of the European Union's AI Act treat biometric
+identification as a high-risk application requiring transparency and
+human oversight rather than prohibiting it
+outright~\cite{aiactbiometric2025}, and public-opinion research finds
+that acceptance depends heavily on whether the deployment is
+consent-based and auditable~\cite{remotebiometric2024}. Applied to this
+study, the relevant proportionality argument is that enrolment is
+voluntary and student-initiated, that recognition is confined to a
+marked queue zone and to students who have separately requested service,
+that unenrolled persons are refused rather than identified, and that no
+photograph is retained. Section~\ref{sec:ethics} sets out the resulting
+safeguards in full.
 
 \subsection{Queue Management and Person Re-Identification}
 Camera-based monitoring of service areas enables passive observation
@@ -618,18 +747,26 @@ analyses underscore that practical Re-ID systems typically combine
 multiple signals: appearance-based methods using colour histograms or
 deep feature embeddings, spatial-temporal methods using last known
 position and elapsed time, and hybrid methods combining both.
-\sysname{} implements a hybrid re-entry matching approach in this
-tradition. Within a recency window of 120 seconds, the matcher compares
-a new detection's split-body HSV appearance signature against the
-signatures of missing queue entries using Pearson histogram
-correlation; if the comparison is inconclusive, a spatial proximity
-check provides a secondary fallback for the single-missing-person case.
-This appearance-first ordering reduces identity swaps when two persons
-exchange positions in the line, a case where a spatial-first rule would
-assign the wrong queue number. The simplified scheme is appropriate for
-a single-zone prototype and avoids the additional computational
-overhead of deep Re-ID embeddings, which are typically necessary only
-when matching across non-overlapping cameras.
+\sysname{} takes the deep-embedding branch of this tradition, but applies
+it to the face rather than to the body. An earlier version of the design
+used a split-body colour-histogram signature compared by correlation,
+supported by recency windows and spatial fallbacks. That approach was
+replaced after the pre-oral defence, for a reason that is structural
+rather than a matter of tuning: a clothing signature identifies an
+appearance, not a person. Two students in the same uniform are not
+separable by it, the same student is unrecognisable between visits after
+a change of clothes, and nothing in it can establish that the person at
+the camera is the account holder requesting service. Since the revised
+system must issue a queue number to a named student rather than merely
+keep a line in order, appearance is no longer a sufficient signal.
+
+A face embedding supplies identity directly, and one comparison rule then
+serves both purposes the earlier chain needed several mechanisms to
+cover. The tiered arrangement of recency windows, spatial fallbacks and
+lookalike guards existed to compensate for a weak signal, and is not
+required once the signal itself is discriminative. The computational cost
+this avoided is modest in a single-zone prototype, and is outweighed by
+the identification the system is now required to perform.
 
 At the application layer, Concepcion et~al.~\cite{concepcion2026smart}
 describe a Smart Queuing and Appointment Management System for Bulacan
@@ -652,31 +789,32 @@ conditions where occlusion patterns are irregular. Person re-ID using
 discriminative local features of overlapping body
 stripes~\cite{rrlcomp078personidentificationdiscriminative} achieves
 robust identification without deep metric learning by dividing the
-person image into horizontal zones, a strategy conceptually related to
-the split-body HSV histogram used in \sysname{}. Cross-modality
-re-ID~\cite{rrlcomp079crossmodalityperson} demonstrates that
-heterogeneous appearance representations can be aligned for more robust
-matching, while re-ID enhanced by super-resolution
-technology~\cite{rrlcomp088personidentificationenhanced} improves
-low-resolution person matching, relevant when cameras are positioned at
-a distance from the service counter.
+person image into horizontal zones, the family of approaches from which
+\sysname{}'s pre-oral design was drawn before it moved to face
+embeddings. Cross-modality
+re-ID~\cite{rrlcomp079crossmodalityperson} aligns heterogeneous
+appearance representations, and super-resolution
+re-ID~\cite{rrlcomp088personidentificationenhanced} improves matching at
+low resolution, a concern where cameras sit at a distance from the
+counter.
 
-Appearance and spatio-temporal cues are frequently fused for more
-reliable re-identification. A study published in
-MDPI~\cite{rrlcomp058fusingappearancespatio} fuses colour-histogram
-appearance signatures with spatio-temporal trajectory models, finding
-that the combination reduces re-identification error particularly when
-persons temporarily move behind obstacles. A multi-camera personnel
-movement study~\cite{rrlcomp073unveilingpersonnelmovement} examines
-person tracking across non-overlapping cameras in a large indoor area,
-confirming that without a shared camera view, appearance-based matching
-must rely on strong discriminative features. For wildlife monitoring, a
-2025 MDPI study~\cite{rrlcomp077smartwildlifemonitoring} applies a
-hybrid tracking approach combining a Kalman filter with local binary
-similarity and HSV plus Pearson correlation, directly validating HSV
-histogram correlation as a practical re-identification signal and
-supporting the feasibility of the appearance-matching module in
-\sysname{}.
+A recurring strategy in this literature is to strengthen a weak
+appearance signal by fusing it with others. Colour-histogram signatures
+are combined with spatio-temporal trajectory
+models~\cite{rrlcomp058fusingappearancespatio} to reduce error when
+persons move behind obstacles; multi-camera
+tracking~\cite{rrlcomp073unveilingpersonnelmovement} shows that without
+a shared view, appearance matching must lean on strongly discriminative
+features; and a wildlife-monitoring
+study~\cite{rrlcomp077smartwildlifemonitoring} pairs a Kalman filter
+with HSV and Pearson correlation. What these approaches share is a task
+definition: keeping distinct subjects apart over a short interval.
+\sysname{} began from that position, and the accumulation of
+compensating mechanisms it required is itself evidence of the
+limitation. Once the revised requirement became to name a particular
+enrolled student rather than to keep a line in order, an appearance
+signal could not satisfy it at any level of fusion, and the design moved
+to the face.
 
 Queue management systems have been studied from both the
 operations-research and applied-computing perspectives. A 2022 IEEE
@@ -739,6 +877,39 @@ technologies~\cite{rrlcomp084supportingeducationaladministration}
 documents how emerging tools improve administrative throughput in HEIs
 without requiring proportional staffing increases.
 
+Maintaining identity across a crowded scene is the tracking-level
+counterpart of the re-identification problem, and the multi-object
+tracking literature addresses it directly. A comprehensive survey of
+deep learning approaches to multi-object
+tracking~\cite{rrlcomp005deeplearningmulti} organises the field by how
+detections are associated across frames, which is the same decision a
+queue tracker makes when it must decide whether a new box continues an
+existing entry. Crowded scenes are the difficult case: finite-tailed
+updating schemes~\cite{rrlcomp048effectivelyfinitetailed} address
+association when many candidates compete, predictive information fusion
+with adaptive measurement~\cite{rrlcomp049multiobjecttracking} combines
+motion and appearance evidence rather than relying on either alone, and
+global object models with object-level
+context~\cite{rrlcomp072effectivemultiobject} resolve ambiguity by
+reasoning over the whole scene instead of pairwise comparisons.
+Occlusion-aware tracking~\cite{rrlcomp057dettrackalgorithmmultiple}
+models occlusion explicitly and reports reduced identity fragmentation,
+a finding that applies directly to a service counter where people
+briefly block one another from view. Distance-based overlap measures
+extended to three dimensions~\cite{rrlcomp076dioudistanceintersection}
+and ultrafast tracking architectures~\cite{rrlcomp097activemultiobject}
+indicate where the field is heading, though both exceed what a
+single-zone prototype on commodity hardware requires.
+
+What this body of work establishes for the present study is a boundary.
+Tracking can hold an identity together while a person remains in view
+and can often recover it across a brief occlusion, but it is anchored to
+a session: once a track is lost for long enough, or the camera restarts,
+the association is gone. That is precisely why \sysname{} does not rest
+identity on tracking. The tracker keeps the line in order within a
+session; the face signature establishes who the person is, and survives
+between visits.
+
 \subsection{Predictive Analytics for Service Demand Forecasting}
 Queue staff need two kinds of forecast: a current estimate for the
 person already in line and a short look-ahead for counter planning.
@@ -750,8 +921,15 @@ The M/M/c queuing model provides analytical wait-time calculations
 from real-time arrival and service rate measurements, making it
 suitable for current wait-time estimates and near-term tactical
 predictions~\cite{shortle2018fundamentals}. Together with Little's
-Law, the M/M/c framework gives \sysname{} the mathematical basis for
-translating live arrival rates into expected waiting times. System
+Law~\cite{little2008law}, which relates the mean number in a system to
+the arrival rate and the mean time spent in it, the M/M/c framework
+gives \sysname{} the mathematical basis for translating live arrival
+rates into expected waiting times. Empirical work on how queue
+configuration affects operational
+performance~\cite{song2024queue} further establishes that the
+arrangement of a line, not only its length, shapes the wait each person
+experiences, which is the justification for reporting position and
+counter assignment alongside a single aggregate estimate. System
 utilization is expressed as:
 \begin{equation}
   \rho = \frac{\lambda}{c\mu}
@@ -879,7 +1057,23 @@ success~\cite{rrlcomp100comparativeanalysismachine} applies MAE in an
 educational context, further establishing the use of these metrics in
 HEI-related prediction tasks.
 
+Service-sector deployments confirm both the approach and its limits. A
+large retrospective study of waiting times in a paediatric
+hospital~\cite{pediatricwait2025} trained several machine-learning
+models on more than three hundred thousand records and found that
+queue-derived features, principally the number of people already waiting
+and the arrival rate, were the strongest predictors of waiting time.
+That finding supports the feature basis of the present prediction
+module, which is built on the same two quantities recovered from camera
+observation rather than from a booking system. Work on forecasting
+boarding time in emergency departments~\cite{boardingforecast2026}
+makes the complementary point that a prediction is operationally useful
+only if it reaches staff early enough to change a decision, which is the
+reason \sysname{} reports several horizons rather than a single current
+estimate.
+
 \section{Synthesis of the State-of-the-Art}
+\label{cr:synthesis}
 
 The reviewed studies point to a practical limitation of ordinary queue
 records: an issued ticket list does not show what is happening in the
@@ -902,12 +1096,30 @@ task of single-class person detection in a fixed queue zone. This
 rationale, rather than version recency, justifies the design choice.
 
 Detection alone is not enough for the \sysname{} use case. A person
-detector can identify bounding boxes, but it does not decide whether a
-box represents a new entrant, a duplicate track, a returning student, or
-a person who should keep an existing queue number. For this reason,
+detector can locate bounding boxes, but it does not decide whether a box
+represents a new entrant, a duplicate track, a returning student, or a
+person who should keep an existing queue number. For this reason,
 tracking, deduplication, candidate confirmation, and re-entry matching
 are treated as queue-management logic rather than optional
 post-processing.
+
+A further limit is sharper still. Detection and tracking can tell one
+person from another within a single camera session, but they cannot say
+\emph{who} anyone is, and the revised requirement is to issue a queue
+number to a named enrolled student. Bridging that distance is what the
+face-recognition literature contributes to this study. The embedding
+formulation~\cite{schroff2015facenet} makes identity a comparison
+between short numeric vectors, and margin-based
+training~\cite{wang2018cosface,deng2019arcface} makes those comparisons
+separable enough to be trusted. The open-set
+literature~\cite{scheirer2013openset,gunther2017opensetface} then supplies
+the condition a service office actually operates under: most people
+passing the camera are not enrolled, so a recognizer that always returns
+its nearest match will name them wrongly. Taken together, these establish
+that identification in an open environment is not a matter of scoring
+similarity well, but of having a principled rule for declining to answer.
+\sysname{} adopts that position directly, treating refusal as a defined
+outcome routed to staff rather than as a failure to be tuned away.
 
 Research on queue management and predictive analytics further
 reinforces the need to move beyond static ticket numbering. Traditional
@@ -938,265 +1150,317 @@ queue visibility, staff action, student status checking, and practical
 deployment constraints must be handled in a single prototype.
 
 \section{Gap Bridged by the Study}
+\label{cr:gap}
 
 The literature reviewed shows strong individual contributions in queue
-monitoring, object detection, re-identification, and wait-time
+monitoring, object detection, face recognition, and wait-time
 forecasting, but no existing study integrates these components into a
 single campus-service prototype for a Philippine higher education
-institution; Philippine HEI solutions, such as the web-based ticketing
+institution. Philippine HEI solutions, such as the web-based ticketing
 system of Concepcion et~al.~\cite{concepcion2026smart}, do not include
-passive camera-based arrival detection. \sysname{} bridges this gap
-through a system that: (1)~establishes empirical baseline data on the
-current problems of manual queue management at NCF during busy periods,
-covering recorded wait times and reported user experience; (2)~uses a
-YOLO-based AI detection pipeline to automatically identify students
-and assign queue numbers without requiring any manual input from staff
-or students; (3)~employs a multi-horizon wait-time prediction module
-whose accuracy is evaluated using MAE and MAPE; and (4)~assesses user
-satisfaction across system usability, reliability, and clarity
-dimensions---directly responding to each of the study's four specific
-objectives.
+passive camera-based arrival detection. Educational deployments of face
+recognition, such as the CCTV attendance system of Patel
+et~al.~\cite{patel2025classroomcctv}, record who was present rather than
+issue a service entitlement. And while the open-set requirement is well
+established in the recognition
+literature~\cite{scheirer2013openset,gunther2017opensetface}, it is
+ordinarily treated as a benchmark property rather than as an operating
+rule with a defined consequence when the system declines to answer.
+
+\sysname{} bridges this gap through a system that: (1)~establishes
+empirical baseline data on the current problems of manual queue
+management at NCF during busy periods, covering recorded wait times and
+reported user experience; (2)~identifies enrolled students at the queue
+zone from a face embedding and issues their queue number automatically,
+with no manual input from staff or students, where detection locates the
+person and recognition establishes which student they are; (3)~makes the
+open-set requirement operational by accepting an identification only when
+it clears an absolute similarity threshold \emph{and} leads the
+next-best candidate by a stated margin, so that an ambiguous face is
+referred to staff rather than resolved by the higher of two close scores;
+(4)~employs a multi-horizon wait-time prediction module whose accuracy is
+evaluated using MAE and MAPE; and (5)~assesses user satisfaction across
+system usability, reliability, and clarity dimensions---directly
+responding to each of the study's specific objectives.
 
 \section{Theoretical Framework}
 \label{sec:theoretical}
 
-The theoretical framework of this study is anchored on the queue
-visibility problem described in the Background of the Study. Campus
-service offices need a way to observe student arrival, maintain queue
-order, estimate waiting time, and present useful information to both
-staff and students. \sysname{} addresses this problem through the
-combined application of queuing theory, computer vision, predictive
-analytics, and forecasting theory.
+The theoretical framework is anchored on the problem documented under
+Statement of the Problem No.~1: students in a campus service line cannot
+see how long they will wait or how many people are ahead of them, and
+staff see the line only by looking at it. \sysname{} rests on one main
+theory, which explains the waiting line itself, and three supporting
+theories, each of which explains one capability the system adds to that
+line --- observing it, knowing who is in it, and anticipating how it will
+change. Figure~\ref{fig:theoretical-framework} shows how the four
+converge on the system.
 
-\begin{figure}[!p]
+\begin{figure}[H]
   \centering
-  \resizebox{\textwidth}{!}{%
   \begin{tikzpicture}[
-    every node/.style={align=center, font=\normalsize},
-    mainbox/.style={rectangle, draw=black, thick, text width=5cm, inner sep=10pt},
-    centerbox/.style={rectangle, draw=black, thick, text width=8cm, inner sep=12pt,
-                      font=\normalsize\bfseries},
-    arr/.style={->, thick, >=latex},
-    ln/.style={thick}
+    every node/.style={align=center},
+    tag/.style={font=\footnotesize\bfseries\sffamily, text=black!70},
+    mainbox/.style={rectangle, draw=black, line width=1.2pt,
+                    text width=11.4cm, inner sep=9pt, font=\small},
+    supbox/.style={rectangle, draw=black, line width=0.9pt,
+                   text width=4.25cm, inner sep=7pt, font=\small},
+    centerbox/.style={rectangle, draw=black, line width=1.4pt,
+                      fill=black!6, text width=11.4cm, inner sep=11pt,
+                      font=\bfseries},
+    arr/.style={-{Latex[length=3mm]}, line width=1pt}
   ]
   \hyphenpenalty=10000
   \exhyphenpenalty=10000
+  \node[mainbox] (qt) at (0, 8.2) {
+    {\large\textbf{Queuing Theory}}\\[3pt]
+    \textit{Shortle et al.\ (2018); Yifter et al.\ (2023)}\\[6pt]
+    Explains how arrivals, service capacity, and waiting lines behave.
+    The M/M/c model and Little's Law relate the arrival rate, the
+    service rate, and the number of open counters to queue length,
+    utilisation, and expected waiting time --- the quantities a student
+    in line cannot currently see.
+  };
+  \node[tag, anchor=south] at ([yshift=4pt]qt.north) {MAIN THEORY};
 
-  % ── Top box: Queuing Theory ──
-  \node[mainbox] (qt) at (0, 9.5) {
-    \textbf{Queuing Theory}\\[6pt]
-    \textit{as cited by (Shortle, Thompson,\\[2pt]Gross, \& Harris, 2018)}\\[6pt]
-    ``Explains how arrivals, service capacity, and waiting
-    lines behave through the M/M/c model, providing the
-    mathematical basis for estimating waiting time, queue
-    length, and counter utilization from real-time arrival
-    and service rates.''
+  \node[centerbox] (sys) at (0, 3.7) {
+    \sysname{}\\[4pt]
+    A Computer Vision-Based Smart Queue Management\\
+    and Predictive Service Delivery System
   };
 
-  % ── Center box: System title ──
-  \node[centerbox] (qf) at (0, 3) {
-    A COMPUTER VISION-BASED SMART QUEUE MANAGEMENT\\[4pt]
-    AND PREDICTIVE SERVICE DELIVERY SYSTEM
+  \node[supbox, anchor=north] (cv) at (-5.4, 1.0) {
+    \textbf{Computer Vision Theory}\\[3pt]
+    \textit{Jocher, Chaurasia, and Qiu (2023)}\\[6pt]
+    Single-pass neural detection and multi-object tracking replace
+    manual observation of the line. They establish who is
+    \emph{present} in the queue zone, not who that person is.
   };
-
-  % ── Bottom-left: Computer Vision Theory ──
-  \node[mainbox] (cv) at (-7, -5) {
-    \textbf{Computer Vision Theory}\\[6pt]
-    \textit{as cited by (Redmon \& Farhadi, 2018)}\\[6pt]
-    ``Replaces manual line observation with automated
-    person detection, applying single-pass neural network
-    inference to process camera frames and recognize
-    possible queue entrants within a defined queue zone
-    in real time.''
+  \node[supbox, anchor=north] (fr) at (0, 1.0) {
+    \textbf{Deep Face Recognition Theory}\\[3pt]
+    \textit{Deng et al.\ (2019); Wang and Deng (2021)}\\[6pt]
+    Deep metric learning maps a face to an embedding in which one
+    person's faces lie close together, so an enrolled student can be
+    identified by similarity, and a stranger refused when no enrolled
+    face is clearly closest.
   };
-
-  % ── Bottom-center: Predictive Analytics Theory ──
-  \node[mainbox] (pa) at (0, -5) {
-    \textbf{Predictive Analytics Theory}\\[6pt]
-    \textit{as cited by (Shmueli \& Koppius, 2011)}\\[6pt]
-    ``Extends the system from observing the present
-    queue to anticipating near-future demand through
-    empirical models that generate predictions and
-    assess their predictive power for proactive
-    service decisions.''
+  \node[supbox, anchor=north] (ft) at (5.4, 1.0) {
+    \textbf{Forecasting Theory}\\[3pt]
+    \textit{Hyndman and Athanasopoulos (2021)}\\[6pt]
+    Future values are estimated from patterns in past observations,
+    and a forecast is judged by its error against what actually
+    happened, measured by MAE and MAPE.
   };
+  \node[tag, anchor=north] at ([yshift=-6pt]fr.south) {SUPPORTING THEORIES};
 
-  % ── Bottom-right: Forecasting Theory ──
-  \node[mainbox] (ft) at (7, -5) {
-    \textbf{Forecasting Theory}\\[6pt]
-    \textit{as cited by (Holt, 2004)}\\[6pt]
-    ``Provides the mathematical methods---exponential
-    smoothing, trend projection, and mean-reversion
-    logic---used to produce current, 5-, 15-, and
-    30-minute wait-time forecasts from real-time
-    queue data.''
-  };
-
-  % ── Queuing Theory → Title (arrow pointing down into title) ──
-  \draw[arr] (qt.south) -- (qf.north);
-
-  % ── Three bottom boxes → Title (arrows pointing up into title) ──
-  \draw[arr] (cv.north) -- (qf.south);
-  \draw[arr] (pa.north) -- (qf.south);
-  \draw[arr] (ft.north) -- (qf.south);
-
-  \end{tikzpicture}%
-  }
+  \draw[arr] (qt.south) -- (sys.north);
+  \draw[arr] (cv.north) -- (cv.north |- sys.south);
+  \draw[arr] (fr.north) -- (sys.south);
+  \draw[arr] (ft.north) -- (ft.north |- sys.south);
+  \end{tikzpicture}
   \caption{Theoretical Framework of \sysname{}}
   \label{fig:theoretical-framework}
 \end{figure}
 
-\emph{Queuing Theory}, as formalized in classical queueing
-literature~\cite{shortle2018fundamentals}, explains how arrivals,
-service capacity, and waiting lines behave through the M/M/c model.
-The M/M/c model represents a multi-counter service environment in
-which the arrival rate, service rate, and number of active counters
-influence queue length, utilization, and waiting time. In \sysname{},
-these equations are tied to queue records, active counter settings, and
-service-time estimates so the dashboard can convert live counts into
-wait-time and utilization values.
+\emph{Queuing Theory} is the main theory of the study. In its standard
+formulation~\cite{shortle2018fundamentals}, and as recent studies of
+service queues continue to apply it~\cite{yifter2023modeling}, a waiting
+line is described
+by the rate at which people arrive, the rate at which a counter serves
+them, and the number of counters open. The M/M/c model turns these into
+the expected queue length, counter utilisation, and waiting time, and
+Little's Law ties the three together: the number of people in a line
+equals their arrival rate multiplied by the time each one spends in it.
+These are exactly the quantities the baseline survey found students
+unable to see --- the highest-scoring student items concerned not knowing
+the wait and not knowing how many people are ahead. Queuing theory
+therefore defines what \sysname{} must make visible, and it supplies the
+wait-time definitions against which the prediction module is judged
+under Statement of the Problem No.~3.
 
-\emph{Computer Vision Theory} explains the automated observation layer
-of the prototype. In \sysname{}, YOLOv8n and OpenCV process camera
-frames and return person detections inside a defined queue zone. YOLO's
-single-pass detection approach supports live monitoring because it can
-identify objects quickly within each frame~\cite{redmon2018}. This is
-the first step before queue numbers, tickets, and wait estimates are
-created.
+\emph{Computer Vision Theory} is the first supporting theory and explains
+how the line is observed without a person watching it. Single-stage
+detectors of the YOLO family locate every person in a camera frame in
+one pass of a neural network, fast enough for continuous
+monitoring~\cite{jocher2023}, and multi-object tracking carries each
+detection from frame to frame so that a person keeps one identity across
+the time they stand in line~\cite{zhang2022bytetrack}. In \sysname{} this
+layer answers one question only: whether a person is present in the
+queue zone. It does not establish who that person is, and a walk-in who
+has not enrolled is detected but never identified.
 
-\emph{Predictive Analytics Theory} covers the shift from simply showing
-the current line to estimating what the line may look like shortly
-afterward. The core principle—that empirical prediction models are
-evaluated by their usefulness for real decisions rather than by
-explanatory fit—was established in foundational
-work~\cite{shmueli2011predictive} and continues to be applied in
-recent queue and service research~\cite{rrlcomp009waitingtimeprediction,rrlcomp015machinelearningapproach,rrlcomp014evaluatingfairnessmachine}.
-In \sysname{}, this idea is implemented through the wait-time prediction
-module used by staff on the dashboard.
+\emph{Deep Face Recognition Theory} is the second supporting theory and
+explains how an enrolled student is recognised. Deep metric learning
+trains a network to map each face image to a fixed-length embedding in
+which photographs of the same person lie close together and photographs
+of different people lie far apart; ArcFace achieves this by adding an
+angular margin between identities during training, so that similarity
+between two embeddings can be measured by their cosine~\cite{deng2019arcface}.
+Recent surveys identify this family of margin-based losses as the basis
+of current face recognition~\cite{wang2021deepfacesurvey}.
+\sysname{} uses a pretrained model of this kind. The theory explains why
+a similarity score is meaningful, but not when a score is high enough to
+act on --- particularly in the open-set case, where the person at the
+camera may not be enrolled at all. The threshold-and-margin rule that
+this study contributes, and evaluates under Statement of the Problem
+No.~2, answers that second question.
 
-\emph{Forecasting Theory} supplies the specific mathematical methods
-used for the prediction module. \sysname{} applies exponential
-smoothing, trend projection, and mean-reversion logic—methods whose
-mathematical formulation has been refined over decades and validated
-in recent comparative and review
-studies~\cite{hyndman2021forecasting,rrlcomp010exponentialsmoothingmodel,rrlcomp011reviewmethodsmodels}—to
-produce current, 5-minute, 15-minute, and 30-minute wait-time estimates. The
-medium-horizon forecast in particular relies on Holt's
-double-exponential smoothing, in which a level $L_t$ and a trend $T_t$
-are updated jointly from the observed queue count $y_t$:
+\emph{Forecasting Theory} is the third supporting theory and explains how
+the line is anticipated rather than merely reported. Modern forecasting
+practice estimates future values from structure in past observations ---
+level, trend, and recurring patterns --- through methods such as
+exponential smoothing, and evaluates a forecast by comparing it with what
+actually happened~\cite{hyndman2021forecasting}. The same practice names
+the error measures used in this study: the Mean Absolute Error, which
+states the typical miss in minutes, and the Mean Absolute Percentage
+Error, which states it relative to the wait itself. These are the
+measures applied under Statement of the Problem No.~3.
 
-\begin{equation}
-L_t = \alpha_{\mathrm{H}}\, y_t +
-(1 - \alpha_{\mathrm{H}})(L_{t-1} + T_{t-1}),
-\label{eq:holt-level-ch1}
-\end{equation}
+Taken together, queuing theory states what the line needs to show,
+computer vision establishes who is present in it, face recognition
+establishes which of those people are enrolled students entitled to a
+system-issued number, and forecasting estimates how long each of them
+will wait. The outputs of all four reach users through the staff
+dashboard, the student mobile application, and the public display board,
+whose usability, reliability, and clarity are assessed under Statement of
+the Problem No.~4.
 
-\begin{equation}
-T_t = \beta_{\mathrm{H}}(L_t - L_{t-1}) +
-(1 - \beta_{\mathrm{H}})T_{t-1}.
-\label{eq:holt-trend-ch1}
-\end{equation}
-
-Smoothing factors $\alpha_{\mathrm{H}}$ and $\beta_{\mathrm{H}}$
-govern the responsiveness of the level and trend components
-respectively; their values, together with the damping factor that
-prevents trend over-projection over the projection horizon, are
-specified in Section~\ref{subsec:prediction} (\S3.2.9.5). These
-forecasts support staff decision-making by giving the dashboard more
-than a static queue count; they provide an early indication of whether
-congestion is likely to increase or decrease.
-
-In this study, each theory is tied to a specific part of the
-prototype. Computer vision is used to observe queue activity from
-camera frames, while queuing theory connects the observed queue length
-with counter capacity and expected waiting time. Predictive analytics
-turns these counts into dashboard information that staff can act on,
-and forecasting theory guides the short-term wait-time estimates. These
-outputs appear in the staff dashboard, the student status page, and the
-ticketing process. For office use, the ticket record is sent to a
-thermal printer. For evaluation, the prototype renders it as a PDF
-while keeping the same queue number, short code, QR link, and JWT.
 
 \section{Conceptual Framework}
 \label{sec:conceptual-framework}
 
-The conceptual framework follows the Input-Process-Output-Outcome
-(IPOO) model. For this prototype, the input side consists of the live
-camera feed, the marked queue zone, available counters, staff actions,
-and service-time assumptions. These inputs pass through the main
-\sysname{} routines: person detection, queue-zone filtering, re-entry
-checking, ticket creation, and wait-time prediction. The processed
-results are then shown on the staff dashboard, student status page, and
-public display board, while queue and ticket records are saved for
-review.
+The conceptual framework follows the Input-Process-Output-Outcome (IPOO)
+model. It traces how the camera feed, the students who have enrolled and
+asked to be queued, and the staff at the counter are turned by \sysname{}
+into a queue that both sides can see.
+Figure~\ref{fig:conceptual-framework} arranges the four stages and the
+feedback that returns from the outcome to the input.
 
-Figure~\ref{fig:conceptual-framework} shows how those inputs,
-processing steps, outputs, outcomes, and feedback loops are arranged in
-the proposed \sysname{} workflow.
-
-\begin{figure}[!p]
+\begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth,height=0.88\textheight,keepaspectratio]{QueueFlow_Conceptual_Framework.png}
+  \providecommand{\colbox}[2]{%
+    \begin{minipage}[t][8.4cm][t]{#1}\raggedright #2\end{minipage}}
+  \begin{tikzpicture}[
+    col/.style={rectangle, draw=black, line width=0.9pt, inner sep=4pt,
+                anchor=north, font=\footnotesize},
+    head/.style={rectangle, fill=black!80, text=white,
+                 font=\sffamily\bfseries\small,                  minimum height=0.62cm, anchor=south},
+    arr/.style={-{Latex[length=2.8mm]}, line width=1.1pt}
+  ]
+  \hyphenpenalty=10000
+  \exhyphenpenalty=10000
+
+  \node[col] (in) at (0,0) {\colbox{3.0cm}{%
+    \textbullet\ Live camera feed of the queue zone\\[4pt]
+    \textbullet\ Face embeddings of voluntarily enrolled students\\[4pt]
+    \textbullet\ Student's request to be queued (mobile app)\\[4pt]
+    \textbullet\ Counter configuration and service times\\[4pt]
+    \textbullet\ Staff actions: done, no-show, reset, and emergency manual entry}};
+  \node[head, minimum width=3.28cm] at (in.north) {INPUT};
+
+  \node[col] (pr) at (4.23,0) {\colbox{3.9cm}{%
+    1.\ Person detection and tracking (YOLOv8n, ByteTrack)\\[4pt]
+    2.\ Presence confirmation in the queue zone\\[4pt]
+    3.\ Track stability\\[4pt]
+    4.\ Face-based identity validation: score $\geq 0.30$ \emph{and}
+      margin $\geq 0.15$, else refer to staff\\[4pt]
+    5.\ Queue-number issuance for recognised students who asked\\[4pt]
+    6.\ Sticky counter assignment\\[4pt]
+    7.\ Wait-time prediction\\[4pt]
+    8.\ Ticket generation}};
+  \node[head, minimum width=4.18cm] at (pr.north) {PROCESS};
+
+  \node[col] (out) at (8.51,0) {\colbox{3.1cm}{%
+    \textbullet\ Queue number issued without manual input\\[4pt]
+    \textbullet\ Live queue and alerts on the staff dashboard\\[4pt]
+    \textbullet\ Position, wait, and a \emph{you're next} prompt in the
+      mobile app\\[4pt]
+    \textbullet\ Counter calls on the display board, announced by
+      voice\\[4pt]
+    \textbullet\ Record of every recognition decision}};
+  \node[head, minimum width=3.38cm] at (out.north) {OUTPUT};
+
+  \node[col] (oc) at (12.39,0) {\colbox{3.1cm}{%
+    \textbullet\ Students know their place and wait without watching the
+      display\\[4pt]
+    \textbullet\ Hands-free queue entry for registered students\\[4pt]
+    \textbullet\ Staff act on the queue earlier\\[4pt]
+    \textbullet\ Measured by recognition accuracy (SOP~2), prediction
+      error (SOP~3), and satisfaction (SOP~4)}};
+  \node[head, minimum width=3.38cm] at (oc.north) {OUTCOME};
+
+  \draw[arr] (in.east)  -- (pr.west);
+  \draw[arr] (pr.east)  -- (out.west);
+  \draw[arr] (out.east) -- (oc.west);
+
+  % Feedback: from the outcome back to the input, beneath the columns
+  \draw[arr, dashed] (oc.south) -- ++(0,-0.75) -| (in.south)
+    node[pos=0.25, below, font=\footnotesize\sffamily]
+    {FEEDBACK: service times, counter changes, and staff decisions};
+  \end{tikzpicture}
   \caption{Conceptual Framework of \sysname{}}
   \label{fig:conceptual-framework}
 \end{figure}
 
-\textbf{Input.} The initial phase consists of the data, settings, and
-operational conditions required by the system. These include the live
-camera feed, queue-zone settings, counter configuration, service-time
-assumptions, staff actions, and the ticket and status-access
-requirements used by students and administrative staff.
+\textbf{Input.} The system begins from five inputs. The live camera feed
+shows who is standing in the marked queue zone. The face embeddings are
+those of students who chose to enrol through the mobile application;
+students who have not enrolled contribute no biometric data. A student
+who wants a queue number asks for one in the application, so the camera
+never queues anyone who did not ask. Walk-ins are not an input to
+\sysname{}: they continue to take a ticket from the office's existing
+kiosk by pressing its \emph{Get a Ticket} button, a process that runs
+separately from this system. The counter
+configuration, recent service times, and staff actions at the counter,
+including emergency manual entry, complete the inputs.
 
-\textbf{Process.} The process stage transforms the input data into
-queue intelligence through the \sysname{} pipeline. Key processes
-include YOLOv8n person detection with
-ByteTrack~\cite{zhang2022bytetrack} persistent tracking, five-stage
-detection quality gating, exponential moving-average smoothing of
-bounding boxes, zone-based centroid filtering, candidate accumulation
-over a minimum confirmation window, track-identifier remapping,
-per-frame duplicate suppression with re-entry immunity and an
-appearance guard, hybrid appearance-first re-entry matching with
-twin-guard and done-blacklist safeguards, queue-state management,
-no-show detection, sticky counter assignment, dynamic service-time
-measurement, multi-horizon wait-time prediction, and ticket payload
-generation.
+\textbf{Process.} Eight routines turn these inputs into a managed queue.
+The camera pipeline detects and tracks people, confirms which of them are
+genuinely standing in the queue zone, and keeps each person's track
+stable. For each confirmed person, the face-based identity validation
+compares the face against the enrolled roster and accepts a match only
+under the two-part threshold-and-margin rule; anyone it cannot identify
+with confidence is left for staff rather than guessed at. A recognised
+student who has requested a number receives one minted by the system,
+and every entry is then given a counter, a wait-time estimate, and a
+ticket.
 
-\textbf{Output.} The main outputs are a real-time queue list with
-assigned queue numbers, ticket credentials that can be printed or
-rendered as a PDF, individual queue status and wait times, prediction
-and analytics cards, the staff web dashboard, the student status API
-consumed by a mobile client, and a public display board that announces
-newly assigned counter calls using the browser's built-in Web Speech
-API. Queue entries, ticket records, and operational events are also
-persisted in the MySQL database.
+\textbf{Output.} Recognised students receive a queue number without any
+manual input. Staff see the live queue, counter assignments, and alerts
+for people the system could not identify; students see their own
+position, estimated wait, and a prompt when their turn is next; and the
+public display board announces counter calls. Every recognition decision
+is recorded for later audit.
 
-\textbf{Outcome.} The intended outcome is a queue process that staff
-can see and act on earlier, with fewer manual ticket-handling steps once
-the thermal-printer deployment is used.
+\textbf{Outcome.} The intended outcome answers the problems found under
+Statement of the Problem No.~1: students no longer have to stay within
+sight of the display to know where they stand, registered students join
+the queue without a manual step, walk-ins are served exactly as before,
+and staff can act on the queue earlier. These outcomes are measured by
+Statements of the Problem No.~2 to No.~4.
 
-\textbf{Feedback.} Observed wait times together with staff done,
-no-show, and reset actions are routed into the Feedback stage. This
-feedback propagates counter changes, queue-zone calibration, and
-measured service-time updates back into the Input stage. A secondary
-signal, shown as a dashed arrow in Figure~\ref{fig:conceptual-framework},
-feeds prediction-parameter tuning back into the Process stage, allowing
-the candidate confirmation window, smoothing factors, and
-mean-reversion thresholds to be adjusted iteratively. This refinement
-allows \sysname{} to adapt to the actual demand patterns of NCF service
-offices rather than remaining locked to its initial settings.
+\textbf{Feedback.} Measured service times, changes to the number of open
+counters, and staff decisions --- a transaction marked done, a student
+marked a no-show, a queue reset --- return to the input stage. They update
+the service rate used by the prediction module and the state of the
+queue, so that \sysname{} reflects the office as it is operating rather
+than the settings it started with.
+
 
 \section{Statement of the Problem}
+\label{cr:sop}
 
 The study is guided by the following research problems:
 \begin{enumerate}
   \item What are the current problems with the manual queue management
         process during busy periods, regarding wait times and
         user-experience?
-  \item How accurately can a YOLO-based AI system identify students
-        and assign queue numbers without requiring manual input?
-  \item How well can the system's model predict wait times based on
-        Mean Absolute Error (MAE) and Mean Absolute Percentage Error
-        (MAPE)?
+  \item What is the level of accuracy of the face-recognition system
+        in identifying enrolled students and assigning queue numbers
+        without requiring manual input?
+  \item What is the level of accuracy of the system's wait-time
+        prediction model in terms of Mean Absolute Error (MAE) and
+        Mean Absolute Percentage Error (MAPE)?
   \item What is the level of user's satisfaction in terms of:
         \begin{enumerate}
           \item[(a)] system's usability;
@@ -1206,6 +1470,7 @@ The study is guided by the following research problems:
 \end{enumerate}
 
 \section{Assumptions}
+\label{cr:assumptions}
 
 The following assumptions delimit the proposed evaluation:
 
@@ -1236,6 +1501,7 @@ administrators possess basic digital literacy to operate the web
 dashboard and interpret the system's outputs.
 
 \section{Scope and Delimitation}
+\label{sec:scope}
 
 This section describes the boundaries of the \sysname{} study, organized
 according to its introduction, scope, and limitations.
@@ -1244,14 +1510,16 @@ according to its introduction, scope, and limitations.
 prototype developed and evaluated for one NCF service-office setting in
 Naga City, Philippines. It addresses the specific problem of manual,
 observation-based queue handling in a campus service office by combining
-automated person detection, queue-number assignment, ticket generation,
-and wait-time prediction in a single prototype system.
+automated person detection, face-based identification of enrolled
+students, queue-number assignment, ticket generation, and wait-time
+prediction in a single prototype system.
 
 \textbf{Scope.} The study covers the development and evaluation of the
 \sysname{} prototype in the selected NCF service office. The build
-includes the YOLOv8n detection pipeline, hybrid re-entry matching,
-short- and medium-horizon wait-time prediction, FastAPI endpoints, MySQL
-storage, a staff dashboard, student status access, and
+includes the YOLOv8n detection pipeline, self-service face enrolment and
+ArcFace-based identification of enrolled students, face-based re-entry
+matching, short- and medium-horizon wait-time prediction, FastAPI
+endpoints, MySQL storage, a staff dashboard, a student mobile client, and
 printer-agnostic ticket generation. During office use, the ticket record
 is meant to be printed through a thermal printer. During evaluation, it
 is rendered as a PDF so the queue number, short code, QR link, and JWT
@@ -1260,11 +1528,24 @@ validation can be checked without relying on printer availability.
 \textbf{Limitations.} The present build uses one camera-defined queue
 zone and one selected service office. It excludes multi-zone and
 multi-department operation, and no priority queue is implemented in the
-system; all detected clients are assigned under the ordinary queue order
-without priority handling based on student status or urgency. The build
-also excludes direct links to the Campus Management System or Student
-Information System and IoT inputs other than the camera feed and ticket
-printer. The evaluation is limited to one semester after implementation.
+system; every queue entry is served in ordinary queue order without
+priority handling based on student status or urgency. Face-based
+identification and system-issued queue numbers apply only to students
+who have enrolled voluntarily and asked to be queued; walk-ins and
+unenrolled visitors are detected but never identified, and keep the
+printed kiosk number they receive today. The system does not test
+whether a face belongs to a live person, so it cannot distinguish a
+student from a photograph of that student. The build also excludes
+direct links to the Campus Management System or Student Information
+System and IoT inputs other than the camera feed and ticket printer.
+
+\sysname{} requires a working internet connection. Its backend,
+database, cache, and ticket storage are cloud-hosted, and the detector
+in the office must reach the backend for every recognition and every
+queue number issued; if the connection fails, recognition and number
+issuance stop until it returns. Offline operation is outside the scope
+of this build. The evaluation is limited to one semester after
+implementation.
 
 \section{Significance of the Study}
 
@@ -1278,10 +1559,16 @@ the active queue, individual wait times, counter assignments, and
 short-horizon demand forecasts without requiring them to recount the
 line manually.
 
-\textbf{Students.} Students benefit from a passive queueing process that
-does not require manual registration. Upon entering the monitored area,
-a queue number is assigned and can be checked through the status link or
-mobile client using the ticket credential.
+\textbf{Students.} Students benefit from a queueing process that removes
+the counter-side step of asking for a number. A student enrols once, from
+their own phone, by signing in with their institutional account and
+capturing a face signature. On any later visit they request a place in
+the queue in the mobile client and then walk into the monitored area,
+where the camera recognizes them and the number is issued without staff
+involvement or manual entry. Status is then followed in the mobile client
+or through the ticket credential. Because the number is issued only to a
+student who has asked for one, recognition alone never places anybody in
+the queue.
 
 \textbf{Institutional Administrators.} Administrators receive queue
 performance records that can be used when reviewing staffing, service
@@ -1300,6 +1587,7 @@ priority queues, direct campus-system integration, or alternative
 detection and forecasting models.
 
 \section{Definition of Terms}
+\label{cr:definitions}
 
 The following terms are defined operationally as applied in this study.
 These definitions clarify the specific meanings of key technical
@@ -1311,6 +1599,16 @@ prototype and its evaluation.
 queue number. In the implemented prototype, this consists of a short
 code and a JWT-backed validation record that allows the student to
 check queue status without a login account.
+
+\textbf{ArcFace Embedding.} The numeric representation of a face used
+throughout this study: a 512-dimensional unit vector produced by the
+ArcFace recognition model, in which the cosine similarity between two
+vectors expresses how likely they are to belong to the same person. The
+transformation runs in one direction only; a face cannot be reconstructed
+from its embedding. Embeddings are generated by the InsightFace
+\texttt{buffalo\_s} model pack running on the CPU, and the stored
+enrolment embedding is the average of those computed from a student's
+capture photographs.
 
 \textbf{ByteTrack.} The multi-object tracking
 algorithm~\cite{zhang2022bytetrack} invoked by Ultralytics persistent
@@ -1327,11 +1625,12 @@ mis-detections, and stationary mis-classified objects from generating
 spurious tickets. The motion gate and confidence bypass are specified
 in Section~\ref{subsec:candidate} (\S\ref{subsec:candidate}).
 
-\textbf{Done Blacklist.} A set of appearance signatures retained for
-served persons during a session, used to suppress new queue entries
-from a person who has already been served. It is triggered when the
-Pearson histogram correlation between an incoming detection and a
-blacklist entry exceeds $\tau_{\mathrm{bl}} = 0.55$.
+\textbf{Done Cooldown.} A short-lived record of the position a served
+person occupied, retained for a fixed number of frames after their
+transaction is marked complete. It suppresses an immediate new queue
+entry from the same spot, so that a person still standing at the counter
+when staff mark them served is not re-admitted to the queue. The record
+is spatial and carries no appearance or identity information.
 
 \textbf{Duplicate Suppression.} A per-frame queue-tracker pass that
 merges two distinct track identifiers assigned to the same physical
@@ -1353,6 +1652,14 @@ coordinate using factor $\alpha_{\mathrm{s}} = 0.45$, producing the
 visually stable boxes rendered in the staff dashboard's annotated
 snapshot.
 
+\textbf{Face Enrolment.} The one-time process by which a student becomes
+known to the recognizer. The student signs in with their institutional
+account and then submits one to five photographs from the mobile client,
+from which a single averaged ArcFace embedding is computed and stored
+against their profile. The photographs are discarded once the embedding
+is derived and are never written to storage. A student may repeat the
+process, which replaces the stored embedding.
+
 \textbf{Holt's Double Exponential Smoothing.} A classical forecasting
 algorithm~\cite{holt2004forecasting} used for the medium-horizon
 prediction, applying separate smoothing parameters for queue level and
@@ -1360,16 +1667,27 @@ trend, together with a damping factor to avoid over-projection.
 Parameter values used in the prototype are configurable defaults
 reported and justified in Chapters 2 and 3.
 
+\textbf{Join Intent.} The student's explicit request, made in the mobile
+client before approaching the service office, to be issued a queue number
+when the camera recognizes them. It is the consent gate that separates
+recognition from enrolment in the queue: a registered student who is
+recognized without having armed a join intent is classified as a
+bystander and issued nothing. The intent lapses after a configurable
+interval and is consumed once it produces a number, so each visit
+requires a fresh request.
+
 \textbf{M/M/c Model.} A foundational multi-server queueing model from
 classical queueing theory~\cite{shortle2018fundamentals} used for
 short-term wait-time prediction, calculating $W = L/\lambda$ from
 Little's Law using real-time arrival rates from the YOLO detection
 pipeline.
 
-\textbf{Mobile Client.} The student-facing interface used to check
-queue status. It is implemented as a mobile-optimized web page consumed
-through the student status API; references to a ``mobile tracker'' or
-``mobile browser'' elsewhere refer to the same component.
+\textbf{Mobile Client.} The student-facing application through which a
+student signs in with an NCF Gbox account, enrols a face voluntarily,
+asks to be queued, and follows their own position and estimated wait.
+It is implemented as a Flutter application for Android and communicates
+with the backend through the student API; references to the ``mobile
+application'' elsewhere refer to the same component.
 
 \textbf{Non-Maximum Suppression (NMS).} A standard
 intersection-over-union pass applied internally by ByteTrack during
@@ -1379,10 +1697,13 @@ specified in Section~\ref{subsec:dedup} (\S\ref{subsec:dedup}), handles the rela
 but distinct case of two track identifiers being assigned to the same
 physical person within the same frame.
 
-\textbf{Pearson Histogram Correlation.} The appearance comparison
-metric used by re-entry matching, computed independently on the upper-
-and lower-body halves of the split appearance signature and combined
-with a sixty--forty weighting in favour of the upper body.
+\textbf{Open-Set Rejection.} The requirement that the recognizer refuse
+any face it has not enrolled, rather than returning the closest match
+available. A closed-set recognizer always names somebody; an open-set one
+must be able to answer that the person is unknown. In \sysname{} this is
+enforced by the threshold-and-margin decision rule, and it is what allows
+unenrolled visitors to pass through the queue zone without ever being
+identified.
 
 \textbf{Printer-Agnostic Ticket Protocol.} The set of fields, including
 queue number, short code, QR link, and JWT, issued for each confirmed queue
@@ -1401,27 +1722,34 @@ any external service.
 pixel coordinates on the camera frame; only persons whose bounding box
 centre falls within this region are tracked and assigned queue numbers.
 
-\textbf{Re-Entry Matching.} A hybrid algorithm that, within a
-120-second recency eligibility window, first compares a new detection's
-split-body HSV appearance histogram against the histograms of missing
-queue persons using Pearson correlation. In the
-single-missing-person case, a spatial-proximity check provides a
-secondary fallback if the appearance comparison is inconclusive. The
-full decision rule, including the multi-missing-person branch and the
-supporting twin-guard and done-blacklist safeguards, is specified in
-Section~\ref{subsec:reid} (\S\ref{subsec:reid}).
+\textbf{Re-Entry Matching.} The procedure that restores a queue person
+whose track was lost, typically because they stepped out of the camera's
+view and returned. A face embedding taken from the new detection is
+compared against the stored embeddings of queue persons currently
+recorded as missing, and the same threshold-and-margin decision rule used
+elsewhere in the system governs acceptance. A face signature is
+discriminative enough on its own that the earlier tiered scheme of
+recency windows, spatial fallbacks and lookalike safeguards, which
+existed to compensate for weak clothing-colour comparison, is no longer
+required.
 
 \textbf{Sticky Counter Assignment.} A scheduling rule under which a
 counter, once allocated to a queue entry, persists until that entry is
-marked done or no-show, regardless of changes to the line behind it.
+marked done or a no-show, regardless of changes to the line behind it.
 The rule prevents the disorienting per-frame reshuffling that a
 straight-rank assignment would otherwise produce.
 
-\textbf{Twin / Lookalike Guard.} A safeguard that blocks
-re-identification restoration when the appearance similarity between a
-new detection and a currently visible queue person exceeds
-$\tau_{\mathrm{twin}} = 0.85$, on the grounds that two persons with
-near-identical clothing should each receive their own queue number.
+\textbf{Threshold-and-Margin Decision Rule.} The two-part test every face
+match must pass before it is accepted. The cosine similarity to the
+best-matching enrolled student must reach an absolute threshold
+$\tau_{\mathrm{match}} = 0.30$, and it must additionally exceed the
+similarity to the second-best candidate by a margin
+$\tau_{\mathrm{margin}} = 0.15$. The first condition establishes that the
+face resembles a known student at all; the second establishes that it
+resembles one student distinctly more than any other. A match that
+satisfies the threshold but not the margin is refused rather than
+resolved by choosing the higher score, so an ambiguous face produces no
+identification instead of a plausible but unverified one.
 
 \textbf{You Only Look Once (YOLO).} The YOLOv8n
 model~\cite{jocher2023} with ByteTrack-based \texttt{persist=True}
@@ -1471,6 +1799,7 @@ accounts are analyzed side by side so that the final discussion can
 compare measured performance with the actual experience of the users.
 
 \section{Population and Locale of the Study}
+\label{cr:population}
 
 Naga College Foundation, Inc.\ (NCF), located in Naga City, Camarines
 Sur, Philippines, serves as the locale of this study. NCF was selected
@@ -1495,6 +1824,7 @@ administration, and the number of respondents drawn from each group is
 reported in the final evaluation phase of Chapter~3.
 
 \section{Sample and Sampling Technique}
+\label{cr:sampling}
 
 This study uses a combination of total enumeration for service staff
 and administrators, and stratified purposive sampling guided by
@@ -1533,6 +1863,17 @@ diversity of users who experience the queue. The inclusion criterion is
 at least one completed transaction involving a \sysname{}-issued ticket
 during the evaluation period.
 
+\textbf{Baseline respondents.} The baseline survey for Statement of the
+Problem No.~1 is a separate, earlier sample drawn by convenience
+sampling. A link to the online questionnaire was shared with students
+and service staff of NCF, and those who chose to answer formed the
+sample: 22 in all, 15 students and 7 staff members. Because respondents
+selected themselves, the sample may over-represent people with stronger
+views about the queue, and it was not sized by Slovin's formula; it is
+also small, particularly on the staff side. Its results are therefore
+read as evidence of what the current problems are and how strongly each
+group feels them, not as estimates for the whole NCF population.
+
 \textbf{Exclusion criterion.} Across all three groups, any prospective
 respondent below 18 years of age is excluded. The age criterion is
 enforced through a screening question that immediately precedes the
@@ -1559,9 +1900,12 @@ service-time measurement procedure (Section~\ref{subsec:service-time},
 researchers will also conduct informal observation of the existing
 manual queue handling process, recording approximate queue lengths and
 qualitative accounts from staff regarding the patterns of congestion
-most commonly encountered. These baseline accounts establish the
-qualitative reference against which the \sysname{}-mediated process is
-later compared.
+most commonly encountered. The baseline questionnaire described in
+Section~\ref{sec:instrument} was administered online through a shared
+questionnaire link from 16 to 23 September 2026, and its results
+answer Statement of the Problem No.~1. These baseline accounts establish
+the reference against which the \sysname{}-mediated process is later
+compared.
 
 \textbf{Phase 2: System Deployment and Performance Logging.} After
 alpha and beta testing in Section~2.10, the system will be deployed for
@@ -1588,6 +1932,7 @@ deleted. Both survey responses and interview transcripts will be
 anonymized before analysis.
 
 \section{Research Instrument}
+\label{sec:instrument}
 
 Four instruments provide the evidence for the study: the \sysname{}
 operational log, the observer's ground-truth log, a researcher-made
@@ -1604,12 +1949,31 @@ assignment accuracy, re-identification reliability, MAE and MAPE for
 wait-time prediction, detection-to-ticket latency, and ticket and token
 validation rates.
 
-\textbf{Likert-scale questionnaire.} The questionnaire is structured
-into three dimensions that correspond directly to Statement of the
-Problem No.~4 in Chapter~1: (a)~system's usability, covering the
+\textbf{Baseline questionnaire.} A separate researcher-made
+questionnaire addresses Statement of the Problem No.~1 and is
+administered before deployment. It exists in two forms against a shared
+five-point scale, because the two groups experience the queue from
+opposite sides: the staff form asks about running the queue, and the
+student form about waiting in it. Each form contains fourteen items in
+two sections --- seven on perceived problems with wait-time and seven
+on perceived problems with user experience --- followed by one
+open-ended question asking, in the respondent's own words, what the
+biggest problem is. Every item is worded as a problem, so agreement
+indicates that the problem is present; only the agreement half of
+Table~\ref{tab:likert} is therefore applied to this instrument, since
+its quality half inverts the meaning of a problem statement. Its
+internal consistency is tested with Cronbach's alpha for each section
+and for each form as a whole, and the coefficients are reported with the
+results in Chapter~3. The staff form also records tenure and how often the respondent handles the
+queue; the student form records year level and frequency of use. The
+full instrument appears in Appendix~\ref{app:sop1-questionnaire}.
+
+\textbf{Likert-scale questionnaire.} A second questionnaire is
+structured into three dimensions that correspond directly to Statement
+of the Problem No.~4 in Chapter~1: (a)~system's usability, covering the
 dashboard, mobile client, and ticket workflow; (b)~system's
-reliability, covering queue assignment accuracy, re-identification,
-and no-show detection as perceived by users; and (c)~system clarity,
+reliability, covering queue assignment accuracy, face recognition,
+and re-identification as perceived by users; and (c)~system clarity,
 covering the dashboard layout, live snapshot, analytics cards, counter
 controls, and the presentation of wait-time predictions. Each dimension
 contains several items rated on the five-point scale shown in
@@ -1712,22 +2076,63 @@ disclosed in the deployment notes. Detection metadata, including person
 tracks, queue length, and wait-time predictions, is transmitted through
 a separate endpoint and is the only data persisted in the MySQL
 database; the snapshot image itself is not written to MySQL at any
-point. The system does not perform facial recognition and does not
-store biometric templates. Re-identification relies on colour
-histograms, or clothing-colour distributions derived from bounding-box
-regions, which are non-biometric and are reset at end-of-session.
+point. The queue-zone camera does perform face recognition on enrolled
+students, and the handling of that biometric data is set out separately
+below.
+
+\textbf{Biometric Data and Face Enrolment.} Following the panel-mandated
+revision, \sysname{} identifies enrolled students by face rather than by
+clothing appearance. This constitutes processing of sensitive personal
+information under Section~3(l) of the Data Privacy Act of 2012, and it is
+treated as such.
+
+Enrolment is self-service and requires two deliberate acts. A student
+signs in with an institutional Gbox account and then completes a separate
+face-capture step; neither alone enrols anyone. The capture submits one to
+five photographs taken at varied angle and lighting, from which the system
+computes a single averaged 512-dimensional ArcFace embedding. The
+photographs themselves are never written to storage: they are read into
+memory, converted to the embedding, and discarded within the same request.
+No table in the database holds a face image, and the embedding is a
+one-way numeric representation from which the original face cannot be
+reconstructed.
+
+That embedding, held in \texttt{student\_profiles}, is the only biometric
+artefact the system retains. Embeddings computed at the queue-zone camera
+during operation exist in process memory for the lifetime of a person's
+track and are never written to the database; the recognition audit table
+records only the matched student identifier, the similarity score, the
+margin over the runner-up, and the accept-or-reject outcome.
+
+Recognition is not treated as consent to be queued. A recognized student
+is issued a number only if they have separately requested one in the
+mobile client, and that request lapses after a configurable interval. A
+registered student who merely walks past the camera is marked as a
+bystander and is issued nothing. People who are not enrolled are never
+identified: acceptance requires both an absolute similarity threshold and
+a margin over the next-best candidate, and the matcher refuses rather than
+guesses when either condition fails.
+
+Withdrawal is supported. A hard-delete path removes a student profile
+together with its embedding in support of erasure requests under the Act,
+and a student may re-enrol at any time, which replaces the stored
+embedding rather than adding to it.
 
 \textbf{Access Control and Transparency.} Dashboard access is
 restricted to authenticated staff through session login, with JWT-based
 camera-token validation between the detector and the backend. The
 student-facing mobile client exposes only the requesting student's own
-queue status, accessed through the ticket QR code and short-code
-credential issued to that student; it does not display the camera feed
-or any other student's status. Physical signage will be posted at the
+queue status, reached either through the signed-in student's own session
+or through the ticket QR code and short-code credential issued to that
+student; it does not display the camera feed or any other student's
+status. Physical signage will be posted at the
 service-office entrance informing visitors that the area is monitored
 by an automated queue management system for service-delivery purposes,
-citing the Data Privacy Act of 2012, or Republic Act No.~10173, and
-providing researcher contact for data-subject requests. The camera is
+that students who have enrolled a face signature are identified by the
+camera while all other persons are detected but never identified, and
+that enrolment is voluntary and may be withdrawn. The signage cites the
+Data Privacy Act of 2012, or Republic Act No.~10173, and provides
+researcher contact for data-subject requests. The camera is
 mounted visibly, not concealed. Consistent with the proportionality
 principle of the Act, only the minimum data necessary for queue
 management is processed; no marketing, profiling, or third-party data
@@ -1764,6 +2169,35 @@ events observed:
   \label{eq:accuracy}
 \end{equation}
 
+\textbf{Face-Recognition Accuracy.} Recognition is additionally
+evaluated offline on photographs whose identities are known, so that its
+accuracy can be measured against ground truth rather than inferred from
+the system's own log. Each held-out probe is compared with every
+enrolled identity. A comparison between a probe and its own identity is
+a \emph{genuine} pair; any other comparison is an \emph{impostor} pair.
+At a match threshold $\tau$, the False Accept Rate is the proportion of
+impostor pairs that score at or above $\tau$, and the False Reject Rate
+is the proportion of genuine pairs that score below it:
+\begin{equation}
+  \text{FAR}(\tau) =
+  \frac{\left|\{\text{impostor pairs with } s \geq \tau\}\right|}
+       {\left|\{\text{impostor pairs}\}\right|}, \qquad
+  \text{FRR}(\tau) =
+  \frac{\left|\{\text{genuine pairs with } s < \tau\}\right|}
+       {\left|\{\text{genuine pairs}\}\right|}
+  \label{eq:far-frr}
+\end{equation}
+The Equal Error Rate (EER) is the value at which the two rates coincide,
+and the area under the ROC curve (AUC) is the probability that a
+randomly chosen genuine pair outscores a randomly chosen impostor pair;
+both describe the embedding model independently of any threshold. The
+decision rule itself is then evaluated at the deployed thresholds as an
+identification outcome for each probe --- correctly linked, linked to
+the wrong identity, or refused and escalated to staff --- and, in an
+open-set test, by removing each person from the gallery and probing
+with their photographs, so that the rate at which a non-enrolled person
+is wrongly identified can be measured directly.
+
 \textbf{Mean Absolute Error and Mean Absolute Percentage Error.} These
 two metrics address Statement of the Problem No.~3 and are computed
 separately for the current, 5-minute, 15-minute, and 30-minute
@@ -1784,7 +2218,10 @@ given horizon and $y_{\text{actual}}$ is the wait time measured by the
 observer using a stopwatch from queue zone entry to counter arrival.
 
 \textbf{Weighted Mean and Overall Weighted Mean.} These two measures
-address Statement of the Problem No.~4. The weighted mean (WM) is
+address Statements of the Problem No.~1 and No.~4. For No.~1 they are
+computed separately for staff and students, whose baseline items
+differ, and are interpreted on the agreement scale only. The weighted
+mean (WM) is
 computed for each Likert item, each dimension averaged across items
 within a dimension, and each respondent group: service staff,
 administrators, and students. The results are then pooled into an
@@ -1846,12 +2283,15 @@ prototype.
 
 \subsection{Design Principles}
 
-\textbf{Detection Accuracy.} The YOLOv8n detection pipeline,
-supplemented by the custom non-maximum-suppression pre-filter,
-candidate confirmation window, and hybrid re-entry matching logic, must
-meet the queue assignment accuracy and re-identification reliability
-thresholds reported in Chapter~3. These are the primary quality gates
-before deployment to live operation.
+\textbf{Recognition Accuracy.} The system must never issue an enrolled
+student's queue number to someone else. Person detection establishes
+only that someone is present; a queue number is issued only when the
+face-based identity validation accepts an enrolled student under the
+threshold-and-margin rule, and anyone the rule cannot identify with
+confidence is referred to staff rather than guessed at. Recognition
+accuracy, the rate of wrong identities, and the rejection of
+non-enrolled people are the primary quality gates, reported in
+Chapter~3.
 
 \textbf{Prediction Usefulness.} The prediction module must produce
 wait-time estimates whose MAE and MAPE, at each of the current,
@@ -1872,286 +2312,323 @@ version-controlled code stored in the project repository, ensuring
 results reported in this study can be independently verified.
 
 \textbf{Privacy Protection.} Consistent with the visual privacy
-literature reviewed in Chapter~1, the system processes bounding-box and
-colour-histogram data rather than storing or transmitting raw video.
-Personally identifiable images are not retained beyond the live frame
-buffer required for detection.
+literature reviewed in Chapter~1, the system stores derived data rather
+than imagery. Detection produces bounding boxes, and identification
+produces face embeddings, which are one-way numeric representations from
+which a face cannot be reconstructed. No photograph, video segment or
+camera frame is written to the database at any point, and enrolment
+photographs are discarded once their embedding has been computed. Because
+the embedding is nonetheless biometric data, its handling is governed by
+the safeguards set out in Section~\ref{sec:ethics}.
 
 \subsection{Tools and Technologies}
 
-The system uses Python as the principal implementation language, with
-FastAPI as the web framework, OpenCV for camera handling, the
-Ultralytics implementation of YOLOv8n for detection and persistent
-tracking, custom Python modules for queue-zone filtering, hybrid
-re-entry matching, and prediction, and MySQL as the data store.
-Table~\ref{tab:tools} summarizes the tools and their rationale.
+\sysname{} is split between the service office and the cloud. The
+detector runs on the camera-connected machine in the office, where it
+performs person detection and computes face embeddings locally, so that
+no camera frame has to leave the building for recognition. The backend,
+database, cache, and ticket storage are hosted in the cloud, and the
+staff dashboard and student mobile application reach them over the
+internet. Table~\ref{tab:tools} lists the tools used in each part and
+the reason each was chosen.
 
-\begin{table}[H]
+\begin{table}[!htbp]
   \caption{System Tools and Technologies}
   \label{tab:tools}
   \centering
   \footnotesize
-  \renewcommand{\arraystretch}{0.9}
-  \begin{tabular}{p{2.2cm} p{3.0cm} p{7.4cm}}
+  \renewcommand{\arraystretch}{1.05}
+  \begin{tabular}{p{2.3cm} p{3.4cm} p{7.4cm}}
     \toprule
     \textbf{Category} & \textbf{Technology} & \textbf{Rationale} \\
     \midrule
-    Detection & YOLOv8n (Ultralytics) &
-      Lightweight person detection with ByteTrack-based persistent tracking~\cite{zhang2022bytetrack}; rationale for choosing this variant over YOLOv9--v12 is given in Chapter~1. \\
-    Backend & Python (FastAPI) &
-      REST API, staff dashboard routes, detector upload endpoints, MJPEG streaming, and student status endpoints. \\
-    Video & OpenCV (cv2) &
-      Camera capture, frame preprocessing, annotation, and JPEG encoding for dashboard snapshots. \\
-    Tracking & Custom Python &
-      Queue-zone filtering, NMS pre-filter for duplicate head/body box suppression, track-ID remapping, hybrid re-entry matching, and no-show handling. \\
+    Person detection & YOLOv8n (Ultralytics) with ByteTrack &
+      Lightweight single-pass person detection with persistent tracking,
+      fast enough to run on an office computer without a dedicated
+      GPU~\cite{jocher2023,zhang2022bytetrack}. \\
+    Face recognition & InsightFace \texttt{buffalo\_s} on ONNX Runtime (CPU) &
+      Pretrained face detector and ArcFace embedding
+      network~\cite{deng2019arcface}; the smallest general-purpose pack,
+      chosen to fit the 512~MB backend limit. \\
+    Video & OpenCV &
+      Camera capture, frame preprocessing, overlays, and JPEG encoding of
+      the live view. \\
+    Backend API & Python, FastAPI, Uvicorn &
+      REST endpoints for the detector, the staff dashboard, and the
+      student application; live MJPEG stream of the queue camera. \\
+    Staff dashboard & React, TypeScript, Vite, Tailwind CSS &
+      Browser-based dashboard for the live queue, counter control,
+      Done and No-show actions, pending-link alerts, and analytics. \\
+    Student application & Flutter (Android) &
+      Sign-in, face enrolment, joining the queue, and viewing position
+      and estimated wait. \\
+    Student sign-in & Google Sign-In (NCF Gbox) &
+      Restricts accounts to the school's own domain, so no separate
+      password system is needed. \\
+    Database & MySQL (managed, Aiven) &
+      Student profiles and face embeddings, queue records, tickets,
+      events, and the recognition audit. \\
+    Cache & Redis (managed, Upstash) &
+      Short-lived shared state for the live queue; keys expire and are
+      not persisted. \\
+    Ticket storage & S3-compatible object storage (Supabase) &
+      PDF tickets, kept outside the backend container so they survive a
+      restart. \\
+    Hosting & Render (Docker), Vercel &
+      Backend container on Render; staff dashboard on Vercel. \\
+    Ticketing & Short code, JWT (HS256), QR code &
+      Ticket credential for status checking; PDF during evaluation and
+      thermal printing in deployment. \\
     Prediction & Custom Python &
-      M/M/c wait-time baseline, short trend projection, Holt's double exponential smoothing, and mean-reversion long forecast. \\
-    Ticketing & Thermal printer; PDF output &
-      Ticket record containing the queue number, short code, QR link, and JWT. Thermal printing is used for office operation; PDF output is used during evaluation. \\
-    Database & MySQL &
-      Queue records, short codes, JWTs, no-show events, prediction snapshots, and transaction history. \\
-    Auth & Session/JWT &
-      Staff session login, camera-token validation between detector and backend, and student ticket tokens. \\
-    Dev Tools & VS Code, Postman, Git/GitHub &
-      Standard development and version control tooling; Postman is used for endpoint contract testing. \\
+      M/M/c baseline, trend projection, and exponential smoothing for the
+      wait-time estimates. \\
+    Development & VS Code, Git/GitHub, Postman, Docker &
+      Version control, endpoint testing, and reproducible builds. \\
     \bottomrule
   \end{tabular}
 \end{table}
 
+
 \subsection{System Architecture}
 \label{sec:architecture}
 
-The \sysname{} system follows a six-layer architecture composed of the
-Presentation Layer, the API Layer, the Computer Vision Layer, the
-Business Logic Layer, the Persistence Layer, and the Cache and Runtime
-State Layer. This separation follows the implemented project structure:
-user-facing screens are kept apart from API coordination, camera
-processing, queue services, database storage, and runtime state
-management. Figure~\ref{fig:system-architecture}
-summarizes the layers and their components.
+\sysname{} follows a six-layer architecture: the Presentation Layer, the
+API Layer, the Computer Vision Layer, the Business Logic Layer, the
+Persistence Layer, and the Cache and Runtime State Layer. The layers also
+divide by location. The Computer Vision Layer runs on the office computer
+attached to the camera; every other layer runs in the cloud, and the
+dashboard and mobile application reach it over the internet.
+Figure~\ref{fig:system-architecture} shows the layers and their
+components.
 
-\begin{figure}[!p]
+\begin{figure}[!htbp]
   \centering
   \resizebox{\textwidth}{!}{%
   \begin{tikzpicture}[
     font=\sffamily,
-    layer/.style={draw=black!80, line width=1pt, fill=black!3, minimum width=22cm},
-    lhead/.style={fill=black!78, text=white, font=\bfseries\large,
-      minimum width=22cm, minimum height=0.8cm,
-      anchor=north, align=center, inner sep=4pt},
-    lhalf/.style={lhead, minimum width=10.8cm},
+    layer/.style={draw=black!80, line width=1pt, fill=black!3,
+      minimum width=17cm},
+    lhead/.style={fill=black!78, text=white, font=\sffamily\bfseries\small,
+      minimum width=17cm, minimum height=0.8cm, anchor=north,
+      align=center, inner sep=3pt},
+    hhead/.style={lhead, minimum width=8.3cm},
     box/.style={draw=black!70, line width=0.8pt, fill=white, align=center,
-      minimum height=1.2cm, inner sep=6pt, font=\sffamily\small},
-    widebox/.style={box, text width=5.6cm},
-    medbox/.style={box, text width=4.0cm},
-    smallbox/.style={box, text width=3.2cm},
-    arrow/.style={-{Latex[length=3mm]}, line width=0.9pt, black!85}
+      inner sep=4pt, font=\sffamily\footnotesize},
+    b3/.style={box, text width=4.9cm, minimum height=1.9cm},
+    r3/.style={box, text width=4.9cm, minimum height=1.55cm},
+    b4/.style={box, text width=3.4cm, minimum height=1.9cm},
+    b2/.style={box, text width=3.5cm, minimum height=2.4cm},
+    arrow/.style={-{Latex[length=2.6mm]}, line width=0.9pt, black!85}
   ]
   %---- L1 PRESENTATION ----
-  \node[layer, minimum height=3.2cm] (L1) at (0,-2.5) {};
-  \node[lhead, anchor=north] at (L1.north) {1.\enspace PRESENTATION LAYER};
-  \node[widebox] (dash)    at (-7.0,-2.9)
-    {\textbf{Web Dashboard (Staff)}\\[2pt]
-     analytics \textbullet{} live snapshots\\counter controls \textbullet{} no-show alerts};
-  \node[widebox] (mobile)  at ( 0.0,-2.9)
-    {\textbf{Mobile App (Student)}\\[2pt]
-     QR scan \textbullet{} queue status\\short code + JWT access};
-  \node[widebox] (display) at ( 7.0,-2.9)
-    {\textbf{Public Display Board}\\[2pt]
-     active queue \textbullet{} counter calls\\browser text-to-speech};
+  \node[layer, minimum height=3.2cm] (L1) at (0,-1.6) {};
+  \node[lhead] at (L1.north) {1.\enspace PRESENTATION LAYER};
+  \node[b3] at (-5.6,-2.0)
+    {\textbf{Staff Web Dashboard}\\React, hosted on Vercel\\
+     live camera \textbullet{} queue list\\Done \textbullet{} No-show \textbullet{} alerts};
+  \node[b3] at ( 0.0,-2.0)
+    {\textbf{Student Mobile App}\\Flutter (Android)\\
+     Gbox sign-in \textbullet{} face enrolment\\join queue \textbullet{} position and wait};
+  \node[b3] at ( 5.6,-2.0)
+    {\textbf{Public Display Board}\\browser page\\
+     active queue \textbullet{} counter calls\\voice announcements};
   %---- L2 API ----
-  \node[layer, minimum height=3.6cm] (L2) at (0,-6.8) {};
-  \node[lhead, anchor=north] at (L2.north) {2.\enspace API LAYER \textbullet{} FastAPI\;(\texttt{app/main.py})};
-  \node[smallbox] (pages)    at (-8.4,-7.2)
-    {\textbf{Pages Router}\\\textit{pages.py}\\login \textbullet{} dashboard\\video stream};
-  \node[smallbox] (detapi)   at (-4.2,-7.2)
-    {\textbf{Detector API}\\\textit{detector\_api.py}\\/yolo/push-frame\\/yolo/update};
-  \node[smallbox] (queueapi) at ( 0.0,-7.2)
-    {\textbf{Queue Router}\\\textit{queue.py}\\list \textbullet{} status\\prediction \textbullet{} analytics};
-  \node[smallbox] (crowd)    at ( 4.2,-7.2)
-    {\textbf{Crowd Router}\\\textit{crowd.py}\\snapshot\\history \textbullet{} stats};
-  \node[smallbox] (health)   at ( 8.4,-7.2)
-    {\textbf{Health Router}\\\textit{health.py}\\backend \textbullet{} db\\cache \textbullet{} snapshot};
+  \node[layer, minimum height=5.0cm] (L2) at (0,-6.05) {};
+  \node[lhead] at (L2.north)
+    {2.\enspace API LAYER \textbullet{} FastAPI on Render (cloud)};
+  \node[r3] at (-5.6,-5.35) {\textbf{Pages Router}\\\textit{pages.py}\\login \textbullet{} live video stream};
+  \node[r3] at ( 0.0,-5.35) {\textbf{Student Router}\\\textit{students.py}\\sign-in \textbullet{} enrol \textbullet{} join queue};
+  \node[r3] at ( 5.6,-5.35) {\textbf{Detector API}\\\textit{detector\_api.py}\\detections \textbullet{} snapshots};
+  \node[r3] at (-5.6,-7.45) {\textbf{Queue Router}\\\textit{queue.py}\\status \textbullet{} done \textbullet{} no-show};
+  \node[r3] at ( 0.0,-7.45) {\textbf{Crowd Router}\\\textit{crowd.py}\\snapshot \textbullet{} history};
+  \node[r3] at ( 5.6,-7.45) {\textbf{Health Router}\\\textit{health.py}\\backend \textbullet{} database \textbullet{} cache};
   %---- L3 COMPUTER VISION ----
-  \node[layer, minimum height=3.8cm] (L3) at (0,-11.3) {};
-  \node[lhead, anchor=north] at (L3.north) {3.\enspace COMPUTER VISION LAYER \textbullet{} Separate Process\;(\texttt{app/detector.py})};
-  \node[medbox] (camera) at (-8.0,-11.65)
-    {\textbf{Camera}\\[2pt]OpenCV VideoCapture};
-  \node[medbox] (yolo)   at (-2.67,-11.65)
-    {\textbf{YOLOv8n + ByteTrack}\\[2pt]person tracks\\persistent IDs};
-  \node[medbox] (gates)  at ( 2.67,-11.65)
-    {\textbf{Quality Gates + EMA}\\[2pt]area, coverage, aspect\\motion, NMS, smoothing};
-  \node[medbox] (upload) at ( 8.0,-11.65)
-    {\textbf{Snapshot Uploader}\\[2pt]metadata + JPEG\\camera token header};
-  \draw[arrow] (camera.east) -- (yolo.west);
-  \draw[arrow] (yolo.east)   -- (gates.west);
-  \draw[arrow] (gates.east)  -- (upload.west);
+  \node[layer, minimum height=3.4cm] (L3) at (0,-10.6) {};
+  \node[lhead] at (L3.north)
+    {3.\enspace COMPUTER VISION LAYER \textbullet{} detector on the office computer (local)};
+  \node[b4] (camera) at (-6.3,-11.0) {\textbf{Camera}\\OpenCV capture};
+  \node[b4] (yolo)   at (-2.1,-11.0) {\textbf{YOLOv8n + ByteTrack}\\person tracks\\quality gates + EMA};
+  \node[b4] (embed)  at ( 2.1,-11.0) {\textbf{Face Embedding}\\InsightFace \texttt{buffalo\_s}\\computed locally};
+  \node[b4] (upload) at ( 6.3,-11.0) {\textbf{Uploader}\\tracks + embeddings\\camera-token header};
+  \draw[arrow] (camera) -- (yolo);
+  \draw[arrow] (yolo)   -- (embed);
+  \draw[arrow] (embed)  -- (upload);
   %---- L4 BUSINESS LOGIC ----
-  \node[layer, minimum height=10.0cm] (L4) at (0,-18.6) {};
-  \node[lhead, anchor=north] at (L4.north) {4.\enspace BUSINESS LOGIC LAYER \textbullet{} \texttt{app/services/}};
-  \node[medbox] (qsvc)    at (-8.0,-16.0)
-    {\textbf{Queue Service}\\[2pt]zone filter\\candidate confirmation};
-  \node[medbox] (tracker) at (-2.67,-16.0)
-    {\textbf{Queue Tracker}\\[2pt]track-ID remap\\dedup \textbullet{} re-entry\\no-show detection};
-  \node[medbox] (pred)    at ( 2.67,-16.0)
-    {\textbf{Prediction Service}\\[2pt]M/M/c \textbullet{} trend\\Holt \textbullet{} mean reversion};
-  \node[medbox] (counter) at ( 8.0,-16.0)
-    {\textbf{Counter Service}\\[2pt]sticky assignment\\position to counter};
-  \draw[arrow] (qsvc.east)    -- (tracker.west);
-  \draw[arrow] (tracker.east) -- (pred.west);
-  \draw[arrow] (pred.east)    -- (counter.west);
-  \node[widebox, text width=6.5cm] (ticket) at (0,-20.5)
-    {\textbf{Ticket Service / Printer}\\[2pt]
-     short code \textbullet{} JWT \textbullet{} QR\\PDF demo or thermal output};
-  % Route counter→ticket: go down clear of all row boxes, then left, then into ticket.north
-  \draw[arrow] (counter.south) -- ++(0,-1.6) -| (ticket.north);
+  \node[layer, minimum height=5.6cm] (L4) at (0,-15.45) {};
+  \node[lhead] at (L4.north)
+    {4.\enspace BUSINESS LOGIC LAYER \textbullet{} \texttt{app/services/} on Render};
+  \node[b3] (qsvc)    at (-5.6,-14.5) {\textbf{Queue Service}\\zone filter\\presence confirmation};
+  \node[b3] (tracker) at ( 0.0,-14.5) {\textbf{Queue Tracker}\\remap \textbullet{} duplicate suppression\\number issuance\\pending link to staff};
+  \node[b3] (facesvc) at ( 5.6,-14.5) {\textbf{Face Service}\\threshold + margin rule\\enrolment \textbullet{} matching};
+  \node[b3] (pred)    at (-5.6,-16.95) {\textbf{Prediction Service}\\M/M/c baseline \textbullet{} trend\\exponential smoothing};
+  \node[b3] (counter) at ( 0.0,-16.95) {\textbf{Counter Service}\\sticky counter assignment};
+  \node[b3] (ticket)  at ( 5.6,-16.95) {\textbf{Ticket Service}\\short code \textbullet{} JWT \textbullet{} QR\\PDF ticket};
+  \draw[arrow] (qsvc)    -- (tracker);
+  \draw[arrow] (tracker) -- (facesvc);
+  \draw[arrow] (tracker) -- (counter);
+  \draw[arrow] (counter) -- (ticket);
   %---- L5 & L6 ----
-  \node[layer, minimum width=10.8cm, minimum height=4.0cm] (L5) at (-5.6,-26.2) {};
-  \node[lhalf, anchor=north] at (L5.north) {5.\enspace PERSISTENCE LAYER};
-  \node[box, text width=9.4cm] (mysql) at (-5.6,-26.6)
-    {\textbf{MySQL Database}\\\textit{database\_handler.py}\\
-     users \textbullet{} queue records \textbullet{} tickets \textbullet{} events\\
-     \textit{no raw frames or snapshots persisted}};
-  \node[layer, minimum width=10.8cm, minimum height=4.0cm] (L6) at (5.6,-26.2) {};
-  \node[lhalf, anchor=north] at (L6.north) {6.\enspace CACHE / RUNTIME STATE LAYER};
-  \node[box, text width=4.0cm] (state) at (3.0,-26.6)
-    {\textbf{In-Memory State}\\\textit{app/state.py}\\latest detector state\\snapshot + history};
-  \node[box, text width=4.0cm] (redis) at (8.2,-26.6)
-    {\textbf{Redis (Optional)}\\\textit{cache\_service.py}\\short-TTL keys\\persistence disabled};
-  \draw[arrow] (state.east) -- (redis.west);
+  \node[layer, minimum width=8.3cm, minimum height=3.8cm] (L5) at (-4.35,-20.5) {};
+  \node[hhead] at (L5.north) {5.\enspace PERSISTENCE LAYER};
+  \node[b2] at (-6.35,-20.9) {\textbf{MySQL}\\managed (Aiven)\\profiles \textbullet{} embeddings\\queue \textbullet{} audit};
+  \node[b2] at (-2.35,-20.9) {\textbf{Object Storage}\\S3-compatible\\(Supabase)\\PDF tickets};
+  \node[layer, minimum width=8.3cm, minimum height=3.8cm] (L6) at (4.35,-20.5) {};
+  \node[hhead] at (L6.north) {6.\enspace CACHE / RUNTIME STATE};
+  \node[b2] at (2.35,-20.9) {\textbf{In-Memory State}\\\textit{state.py}\\latest detections\\latest snapshot};
+  \node[b2] at (6.35,-20.9) {\textbf{Redis}\\managed (Upstash)\\short-lived keys\\no persistence};
   \end{tikzpicture}%
   }
-  \caption{\sysname{} Six-Layer System Architecture}
+  \caption[\sysname{} six-layer system architecture]{\sysname{} Six-Layer
+  System Architecture. Layer~3 runs on the office computer attached to
+  the camera; all other layers run in the cloud.}
   \label{fig:system-architecture}
 \end{figure}
 
-\textbf{Presentation Layer.} This layer comprises three user-facing
-surfaces. The \emph{staff web dashboard} presents queue analytics,
-live snapshots or video streaming, counter controls, and no-show
-alerts. The \emph{student mobile application} supports QR scanning and
-queue-status display through the ticket short code and JSON Web Token
-issued at queue entry. The \emph{public display board}, mounted in the
-service-office waiting area, renders the active queue and announces
-newly assigned counter calls using the browser's built-in Web Speech
-API; all text-to-speech synthesis runs client-side and no audio leaves
-the browser, in keeping with the privacy posture established in
-Section~\ref{sec:ethics} (\S2.6).
+\textbf{Presentation Layer.} This layer has three user-facing surfaces.
+The \emph{staff web dashboard}, built in React and hosted on Vercel,
+shows the live camera view, the queue list with Done and No-show actions
+for each entry, alerts for people the system could not identify, an
+emergency manual entry, counter controls, and analytics. The \emph{student mobile application}, built in
+Flutter, handles sign-in with the student's NCF Gbox account, voluntary
+face enrolment, the request to join the queue, and the student's own
+position and estimated wait; it never shows the camera feed or any other
+student's status. The \emph{public display board} renders the active
+queue in the waiting area and announces counter calls using the
+browser's built-in Web Speech API, so no audio leaves the browser.
 
-\textbf{API Layer.} This layer is implemented in Python with FastAPI in
-\texttt{app/main.py}. The backend is composed of five routers:
-\texttt{pages.py} serves the login and dashboard pages and the live
-MJPEG video stream; \texttt{detector\_api.py} receives the two
-endpoints used by the detector process, \texttt{POST /yolo/push-frame}
-for detection metadata and \texttt{POST /yolo/update} for annotated
-snapshots; \texttt{queue.py} serves the queue list, queue status,
-prediction, analytics, and staff queue actions; \texttt{crowd.py}
-serves snapshot retrieval and recent history; and \texttt{health.py}
-reports backend, database, cache, and snapshot status.
+\textbf{API Layer.} This layer is a FastAPI application hosted on Render
+and is organised into six routers. \texttt{pages.py} serves the login
+page and the live MJPEG video stream; \texttt{students.py} handles
+sign-in, face enrolment, the request to join, and a student's own queue
+status; \texttt{detector\_api.py} receives detection metadata and
+snapshots from the detector; \texttt{queue.py} serves the queue list,
+queue status, prediction, analytics, and the staff actions of marking an
+entry done or a no-show; \texttt{crowd.py} serves snapshots and recent
+history; and \texttt{health.py} reports the state of the backend,
+database, cache, and snapshot feed.
 
-\textbf{Computer Vision Layer.} This layer is implemented as a separate
-Python process in \texttt{app/detector.py} running on the
-camera-connected machine. It opens the camera through OpenCV
-\texttt{VideoCapture}, runs the Ultralytics YOLOv8n detector with
-ByteTrack~\cite{zhang2022bytetrack} persistent tracking, and applies a
-five-stage quality-gate pipeline to each detection: minimum
-bounding-box area, maximum frame-coverage fraction, portrait aspect
-ratio, motion energy, and standard non-maximum suppression internal to
-ByteTrack. Detection bounding boxes are smoothed across frames with an
-exponential moving average to remove per-frame jitter before they are
-forwarded. The detector draws queue overlays such as queue zone,
-person boxes, queue numbers, and counter assignment indicators onto the
-frame, and uploads the resulting metadata and JPEG snapshot to the
-backend through the two detector endpoints. Calls are authenticated by
-a camera token transmitted in the \texttt{X-CAM-TOKEN} header. Running
-the detector as a separate process prevents camera processing from
-blocking dashboard or API requests. Quality-gate thresholds and the
-smoothing factor are specified in Section~\ref{subsec:cv-layer}
-(\S\ref{subsec:cv-layer}).
+\textbf{Computer Vision Layer.} This layer is a separate Python process
+running on the office computer attached to the camera, implemented in
+\texttt{app/detector.py}. It reads frames through OpenCV, runs YOLOv8n with
+ByteTrack~\cite{zhang2022bytetrack} persistent tracking, and passes each
+detection through five quality gates --- minimum bounding-box area,
+maximum frame coverage, portrait aspect ratio, motion energy, and
+non-maximum suppression --- before smoothing its box with an exponential
+moving average. For each tracked person whose face is visible, it then
+computes the face embedding locally with InsightFace \texttt{buffalo\_s}.
+Only the resulting metadata --- tracks, boxes, and embeddings --- and a
+compressed snapshot for the live view are sent to the backend, over
+requests authenticated by a camera token. Running the detector as its
+own process keeps camera work from blocking the dashboard or the API.
+Gate thresholds and the smoothing factor are specified in
+Section~\ref{subsec:cv-layer}.
 
-\begin{figure}[!p]
+\begin{figure}[!htbp]
   \centering
-  \resizebox{0.90\textwidth}{!}{%
+  \resizebox{!}{0.86\textheight}{%
   \begin{tikzpicture}[
     font=\sffamily,
+    node distance=0.5cm,
     proc/.style={draw=black!85, line width=0.95pt, fill=white, align=center,
-      rounded corners=2pt, text width=9.3cm, minimum height=1.25cm,
-      inner sep=6pt, font=\sffamily\normalsize},
-    darkproc/.style={proc, fill=black!78, text=white, rounded corners=18pt},
-    output/.style={darkproc, text width=4.3cm, minimum height=1.4cm,
-      rounded corners=5pt, font=\sffamily\small},
-    arrow/.style={-{Latex[length=3.2mm]}, line width=0.95pt, black!88,
-      shorten >=3pt, shorten <=2pt},
-    branch/.style={line width=0.95pt, black!88}
+      rounded corners=2pt, text width=8.2cm, minimum height=1.1cm,
+      inner sep=5pt, font=\sffamily\small},
+    dark/.style={proc, fill=black!78, text=white, rounded corners=12pt},
+    side/.style={proc, text width=4.0cm, fill=black!5},
+    decision/.style={diamond, aspect=2.4, draw=black!85, line width=0.95pt,
+      fill=white, align=center, text width=4.6cm, inner sep=0pt,
+      font=\sffamily\small},
+    outbox/.style={proc, fill=black!78, text=white, text width=2.8cm,
+      minimum height=1.3cm, rounded corners=4pt, font=\sffamily\footnotesize},
+    arrow/.style={-{Latex[length=3mm]}, line width=0.95pt, black!88},
+    lab/.style={font=\sffamily\small\bfseries}
   ]
-  \node[darkproc] (camera)  at (0,-2.15)
-    {\textbf{Camera Frame}\\[2pt]\textit{OpenCV VideoCapture (cv2)}};
-  \node[proc]     (detect)  at (0,-4.25)
-    {\textbf{YOLOv8n + ByteTrack}\\person class \textbullet{} persistent IDs \textbullet{} confidence gate};
-  \node[proc]     (quality) at (0,-6.35)
-    {\textbf{Five Quality Gates + EMA Smoothing}\\area \textbullet{} frame coverage \textbullet{} portrait aspect \textbullet{} motion energy \textbullet{} ByteTrack NMS};
-  \node[proc]     (zone)    at (0,-8.45)
-    {\textbf{Queue Zone and Candidate Confirmation}\\centroid inside zone \textbullet{} 20-frame window \textbullet{} motion gate};
-  \node[proc]     (remap)   at (0,-10.55)
-    {\textbf{Track-ID Remap}\\IoU match first \textbullet{} distance fallback for close continuity};
-  \node[proc]     (dedup)   at (0,-12.65)
-    {\textbf{Duplicate Suppression}\\IoU + centroid proximity \textbullet{} re-entry immunity \textbullet{} appearance safeguard};
-  \node[proc]     (reid)    at (0,-14.95)
-    {\textbf{Appearance-First Re-Entry Match}\\Pearson HSV histogram \textbullet{} 120\,s recency gate\\spatial fallback only for single missing person};
-  \node[proc]     (queue)   at (0,-17.25)
-    {\textbf{Queue State, No-Show, and Sticky Counter}\\queue number \textbullet{} position \textbullet{} no-show timer \textbullet{} smallest free counter};
-  \node[proc]     (predict) at (0,-19.55)
-    {\textbf{Wait-Time Estimate}\\M/M/c baseline \textbullet{} trend \textbullet{} Holt smoothing \textbullet{} mean reversion};
-  \node[proc]     (ticket)  at (0,-21.85)
-    {\textbf{Ticket Payload Generation}\\short code \textbullet{} QR status URL \textbullet{} JWT \textbullet{} PDF demo or thermal ticket};
-  % Pipeline arrows
-  \foreach \a/\b in {camera/detect,detect/quality,quality/zone,zone/remap,%
-                     remap/dedup,dedup/reid,reid/queue,queue/predict,predict/ticket}
+  \hyphenpenalty=10000
+  \exhyphenpenalty=10000
+  \node[dark] (camera) at (0,0)
+    {\textbf{Camera Frame}\\\textit{OpenCV, office computer}};
+  \node[proc, below=of camera] (detect)
+    {\textbf{YOLOv8n + ByteTrack}\\person detection \textbullet{} five quality gates \textbullet{} EMA smoothing};
+  \node[proc, below=of detect] (zone)
+    {\textbf{Presence Confirmation and Track Stability}\\inside the queue zone for 20 frames \textbullet{} identifier remap \textbullet{} duplicate suppression};
+  \node[proc, below=of zone] (embed)
+    {\textbf{Face Embedding}\\InsightFace \texttt{buffalo\_s}, computed in the detector};
+  \node[decision, below=of embed] (dec)
+    {Enrolled student recognised\\(score $\geq 0.30$ \emph{and}\\margin $\geq 0.15$)\\and a number requested?};
+  \node[proc, below=0.6cm of dec] (issue)
+    {\textbf{Issue Queue Number}\\minted by the system (5000+ range) \textbullet{} one per student};
+  \node[side, right=0.9cm of issue] (staff)
+    {\textbf{Refer to Staff}\\entry stays pending; staff alerted after 45~s\\walk-ins: ticket from the existing kiosk};
+  \node[proc, below=0.9cm of issue] (counter)
+    {\textbf{Sticky Counter Assignment}\\position in line \textbullet{} smallest free counter};
+  \node[proc, below=of counter] (predict)
+    {\textbf{Wait-Time Estimate}\\M/M/c baseline \textbullet{} trend \textbullet{} exponential smoothing};
+  \node[proc, below=of predict] (ticket)
+    {\textbf{Ticket Generation}\\short code \textbullet{} QR status link \textbullet{} signed JWT};
+
+  \foreach \a/\b in {camera/detect, detect/zone, zone/embed, embed/dec, issue/counter, counter/predict, predict/ticket}
     \draw[arrow] (\a) -- (\b);
-  % Branch to outputs
-  \node[output] (thermal) at (-7.4,-25.55)
-    {\textbf{Thermal Ticket}\\[2pt]\textit{deployment target}};
-  \node[output] (mobile)  at (-2.45,-25.55)
-    {\textbf{Mobile Status}\\[2pt]\textit{QR / short-code lookup}};
-  \node[output] (display) at ( 2.45,-25.55)
-    {\textbf{Dashboard/Display}\\[2pt]\textit{counter calls + TTS}};
-  \node[output] (mysql)   at ( 7.4,-25.55)
-    {\textbf{MySQL Record}\\[2pt]\textit{queue, ticket, events}};
-  \coordinate (split)      at (   0,-23.55);
-  \coordinate (thermalTop) at (-7.4,-23.55);
-  \coordinate (mobileTop)  at (-2.45,-23.55);
-  \coordinate (displayTop) at ( 2.45,-23.55);
-  \coordinate (mysqlTop)   at ( 7.4,-23.55);
-  \draw[branch] (ticket.south) -- (split);
-  \draw[branch] (thermalTop)   -- (mysqlTop);
-  \draw[arrow]  (thermalTop)   -- (thermal.north);
-  \draw[arrow]  (mobileTop)    -- (mobile.north);
-  \draw[arrow]  (displayTop)   -- (display.north);
-  \draw[arrow]  (mysqlTop)     -- (mysql.north);
+  \draw[arrow] (dec) -- node[lab, left] {Yes} (issue);
+  \draw[arrow] (dec.east) -| node[lab, above, pos=0.25] {No} (staff.north);
+  \draw[arrow] (staff.south) |- (counter.east);
+
+  % outputs
+  \node[outbox, below=1.2cm of ticket, xshift=-5.1cm] (o1) {\textbf{Mobile App}\\position \textbullet{} wait\\\emph{you're next}};
+  \node[outbox, below=1.2cm of ticket, xshift=-1.7cm] (o2) {\textbf{Dashboard and Display}\\queue \textbullet{} counter calls};
+  \node[outbox, below=1.2cm of ticket, xshift= 1.7cm] (o3) {\textbf{MySQL Record}\\queue \textbullet{} events \textbullet{} audit};
+  \node[outbox, below=1.2cm of ticket, xshift= 5.1cm] (o4) {\textbf{Ticket PDF}\\object storage;\\thermal in deployment};
+  \draw[line width=0.95pt, black!88] (ticket.south) -- ++(0,-0.6) coordinate (sp);
+  \draw[line width=0.95pt, black!88] (o1.north |- sp) -- (o4.north |- sp);
+  \foreach \o in {o1,o2,o3,o4}
+    \draw[arrow] (\o.north |- sp) -- (\o.north);
   \end{tikzpicture}%
   }
-  \caption{\sysname{} Detection-to-Ticket Pipeline}
+  \caption[\sysname{} detection-to-ticket pipeline]{\sysname{}
+  Detection-to-Ticket Pipeline. Only an enrolled student who is
+  recognised with confidence and has asked for a number is issued one by
+  the system; every other person is referred to staff. Walk-ins take a ticket from the
+  office's existing kiosk, which runs separately from the system.}
   \label{fig:detection-ticket-pipeline}
 \end{figure}
 
 \textbf{Business Logic Layer.} This layer is implemented in
-\texttt{app/services/} and contains the queue, prediction, counter, and
-ticketing services. The \emph{Queue Service} filters incoming
-detections by removing weak detections, applies the
-centroid-in-rectangle zone membership test
-(\S\ref{subsec:candidate}), and routes confirmed detections
-into the Queue Tracker. The \emph{Queue Tracker} maintains the active
-queue in memory; performs candidate confirmation through a 20-frame
-buffer with a motion gate (\S\ref{subsec:candidate}); assigns queue
-numbers to confirmed entrants; performs track-identifier remapping
-(\S\ref{subsec:remap}) and per-frame duplicate suppression
-with re-entry immunity and an appearance-similarity safeguard
-(\S\ref{subsec:dedup}); performs hybrid appearance-first
-re-entry matching with twin-guard and done-blacklist safeguards
-(\S\ref{subsec:reid}); detects no-shows by countdown for the
-position-one entry (\S\ref{subsec:noshow}); and produces the
-sticky counter assignments displayed on the dashboard
-(\S\ref{subsec:counters}). Per-frame bounding boxes are
-forwarded already smoothed by the Computer Vision Layer.
+\texttt{app/services/} and runs on Render with the API. The \emph{Queue
+Service} removes weak detections, applies the centroid-in-rectangle zone
+test (\S\ref{subsec:candidate}), and passes confirmed detections to the
+Queue Tracker. The \emph{Queue Tracker} holds the active queue in memory;
+confirms presence through a 20-frame buffer with a motion check
+(\S\ref{subsec:candidate}); keeps tracks stable through identifier
+remapping (\S\ref{subsec:remap}) and duplicate suppression with re-entry
+immunity (\S\ref{subsec:dedup}); and, through the \emph{Face Service},
+compares each confirmed person's embedding with the enrolled roster under
+the threshold-and-margin rule (\S\ref{subsec:reid}). A queue number is
+issued only to an enrolled student who is recognised with confidence
+and has asked for a number in the mobile application; anyone else stays
+unlinked, and after 45~seconds the dashboard alerts staff
+(Figure~\ref{fig:detection-ticket-pipeline}). Walk-ins are not handled
+here at all: they take a ticket from the office's existing kiosk, which
+runs separately from \sysname{}. The tracker then produces
+the sticky counter assignments shown on the dashboard
+(\S\ref{subsec:counters}).
+
+\textbf{Emergency manual entry.} The dashboard also gives staff a manual
+override for the occasions when automatic recognition cannot do its job:
+the camera is blocked or offline, the detector has stopped, or a
+registered student is standing in the queue but cannot be recognised,
+for example because of poor lighting or a face covering. Staff can use
+it in two ways. A person the camera sees but could not identify, shown
+among the pending-link alerts, can be given a queue number directly; and
+when the camera cannot see the person at all, staff can type a queue
+number to create the entry by hand. A manual entry joins the queue in the
+same order as any other, receives a counter and a ticket in the usual
+way, and stays in the queue until staff mark it done or a no-show, since
+there is no camera track that could expire. The system refuses any
+number already issued that day, so manual entry cannot create a
+duplicate. This is an emergency feature, not part of the normal flow, and
+every entry made through it is recorded as manual; how often staff
+needed it is therefore itself evidence of how often automatic
+recognition fell short. Because the dashboard runs in the cloud, the
+override covers a failure of the camera or of recognition, but not a loss
+of the office's internet connection.
 
 The \emph{Prediction Service} runs four sub-models in sequence on a
 rolling buffer of crowd-count samples: an M/M/c queueing baseline for
@@ -2163,48 +2640,46 @@ smoothing forecast at the fifteen-minute horizon
 forecast at the thirty-minute horizon (\S\ref{subsubsec:long-forecast}).
 The arrival rate $\lambda$ is estimated from the difference of recent
 queue counts (\S\ref{subsubsec:arrival-rate}); the service rate $\mu$
-is supplied by the dynamic
-service-time measurement procedure described in
-Section~\ref{subsec:service-time} (\S\ref{subsec:service-time}), which recomputes the
-average service time every five minutes from the MySQL transaction log.
+is supplied by the dynamic service-time measurement described in
+Section~\ref{subsec:service-time}, which recomputes the average service
+time every five minutes from the transaction log.
 
-The \emph{Counter Service} allocates counters to queue entries using a
-sticky-assignment rule: each frame, the active queue is sorted by queue
-number, each person receives a position-in-line, and each unassigned
-person at a position less than or equal to the configured number of
-counters is given the smallest currently free counter number;
-allocations persist until the entry is marked done or no-show. The full
-specification is in Section~\ref{subsec:counters} (\S\ref{subsec:counters}).
+The \emph{Counter Service} allocates counters using a sticky-assignment
+rule: each frame, the active queue is sorted by queue number, each person
+receives a position in line, and each unassigned person at a position no
+greater than the number of open counters is given the smallest free
+counter number. An allocation persists until the entry is marked done or
+a no-show (\S\ref{subsec:counters}).
 
 The \emph{Ticket Service} is a background worker that consumes
-ticket-generation jobs, and the \emph{Ticket Printer} produces the
-short code, the JSON Web Token signed with HMAC-SHA256, the QR-encoded
-status URL, and the PDF ticket or, in the deployment configuration,
-drives the thermal printer. The short code is drawn from a
-32-character unambiguous alphabet, excluding 0, O, 1, and I, and
-formatted as \texttt{XXXX--XXXX}. The JWT carries a four-hour expiry
-and a 32-hex-digit nonce to prevent replay. The complete payload
-specification is in Section~\ref{subsec:ticket} (\S\ref{subsec:ticket}).
+ticket-generation jobs. The \emph{Ticket Printer} produces the short
+code, the JSON Web Token signed with HMAC-SHA256, the QR-encoded status
+URL, and the PDF ticket, which is stored in object storage; in the
+deployment configuration it drives a thermal printer instead. The short
+code is drawn from a 32-character alphabet that excludes the ambiguous
+characters 0, O, 1, and I, and is formatted as \texttt{XXXX--XXXX}. The
+JWT carries a four-hour expiry and a 32-hex-digit nonce to prevent
+replay. The complete payload specification is in
+Section~\ref{subsec:ticket}.
 
-\textbf{Persistence Layer.} This layer is implemented in
-\texttt{app/database/database\_handler.py} against a MySQL database.
-Persisted data include users, queue records such as queue number, short
-code, JWT token, PDF path, status, expiration, creation timestamp, and
-serving timestamp, and operational events. Raw camera frames, live JPEG
-snapshots, and the in-memory queue tracker state are intentionally not
-persisted to MySQL.
+\textbf{Persistence Layer.} This layer is a managed MySQL database hosted
+on Aiven, accessed through \texttt{app/database/database\_handler.py},
+together with S3-compatible object storage on Supabase for PDF tickets.
+The database holds student profiles and their face embeddings, queue
+records with their short codes, tokens, statuses, and timestamps,
+operational events, and the audit of every recognition decision. Raw
+camera frames, live snapshots, enrolment photographs, and the in-memory
+queue state are intentionally never persisted.
 
-\textbf{Cache and Runtime State Layer.} This layer comprises an
-in-memory state module in \texttt{app/state.py} that holds the latest
-detector state, the latest annotated snapshot, and a rolling history,
-and an optional Redis cache in \texttt{app/services/cache\_service.py}
-that mirrors these values for cloud deployments where multiple backend
-workers may need to share live data. The Redis cache is configured as
-volatile only: keys carry short time-to-live values, and Redis
-persistence, including RDB and AOF, is disabled in the bundled Redis
-configuration so that snapshots are never written to disk. If a managed
-Redis provider is used, persistence and backups must be disabled for
-the \sysname{} cache instance or disclosed in the deployment notes.
+\textbf{Cache and Runtime State Layer.} This layer comprises an in-memory
+state module, \texttt{app/state.py}, holding the latest detector output,
+the latest annotated snapshot, and a short rolling history, and a managed
+Redis cache on Upstash, accessed through
+\texttt{app/services/cache\_service.py}, which shares live values
+between backend workers. The cache is volatile by design: every key
+carries a short time-to-live and nothing in it is written to disk as a
+record of the queue.
+
 
 \subsection{Dynamic Service-Time Measurement}
 \label{sec:dynamic-service-time-method}
@@ -2384,7 +2859,7 @@ summarized below:
         suppression.
   \item Hybrid re-entry matching algorithm design, implementation, and
         iterative debugging using recorded test footage.
-  \item No-show detection and queue position recalculation logic.
+  \item Queue position recalculation logic.
   \item Prediction module implementation of the M/M/c baseline,
         short-term trend projection, Holt smoothing, and
         mean-reversion long forecast; iterative accuracy tuning against
@@ -2430,6 +2905,7 @@ consistent with the feedback loop described in Section~1.6 of
 Chapter~1.
 
 \section{Validation and Testing Methods}
+\label{cr:validation}
 
 Validation combines software tests, observed performance, and user
 feedback. Functional and integration tests check whether the prototype
@@ -2494,7 +2970,10 @@ researcher-made, its internal-consistency reliability is established
 through a pilot run with Cronbach's alpha before the main evaluation
 begins, as specified in Section~2.5. An alpha value of at least $0.70$
 is required; items below that threshold are revised or removed before
-the questionnaire is administered to the full sample. Responses will
+the questionnaire is administered to the full sample. The baseline
+questionnaire for Statement of the Problem No.~1 is also researcher-made
+and was tested in the same way; its coefficients are reported with the
+results in Section~\ref{sec:sop1-results}. Responses will
 be analyzed using the statistical procedures in Section~2.7. A subset
 of respondents from each group will be invited to a short
 semi-structured interview, and the resulting transcripts will be
@@ -2525,19 +3004,255 @@ described in Section~2.1.
 % ----------------------------------------------------------------
 % 3.1  SOP #1 — Current limitations of manual queue management
 % ----------------------------------------------------------------
-\section{Current Limitations of Manual Queue Management at NCF}
+\section[Current Problems with the Manual Queue Management Process]{Current Problems with the Manual Queue\\ Management Process}
 \label{sec:sop1-results}
 
 This section addresses Statement of the Problem No.~1: \emph{What are
-the current limitations of the manual queue management process at NCF
-service offices during peak demand periods?} The findings below are
-drawn from the pre-deployment baseline observation conducted during
+the current problems with the manual queue management process during
+busy periods, regarding wait times and user-experience?} The findings
+are drawn from the pre-deployment baseline survey administered during
 Phase~1 of the data-gathering procedure described in
-Section~\ref{sec:datagathering}.
+Section~\ref{sec:datagathering}, using the instrument described in
+Section~\ref{sec:instrument}.
 
-% TODO: Insert baseline observation findings here after Phase 1 data
-% collection. Report approximate queue lengths, estimated wait times,
-% observed congestion patterns, and qualitative staff accounts.
+Twenty-two respondents completed the survey: 15 students and 7 staff
+members of the service office. Among the staff, 6 handle queue
+transactions daily and 4 have done so for one to three years. Among the
+students, 10 are in their fourth year and 12 use the office
+occasionally or rarely rather than daily, which matters for
+interpretation: these are not people whose answers reflect a single bad
+day, but the ordinary experience of an occasional visitor.
+
+The two groups answered different items against the same five-point
+scale --- staff about running the queue, students about waiting in it
+--- so their results are reported side by side rather than pooled.
+Every item is worded as a problem, so agreement means the problem is
+real. For this reason only the agreement half of Table~\ref{tab:likert}
+is used here; its quality half reads backwards on a problem statement,
+where agreeing is the unfavourable outcome.
+
+Because the questionnaire is researcher-made, its internal consistency
+was tested with Cronbach's alpha before the results were interpreted
+(Table~\ref{tab:sop1-reliability}). The student form is reliable as a
+whole ($\alpha = 0.857$) and in both sections. The staff form is
+acceptable as a whole ($\alpha = 0.796$) and in its user-experience
+section, but its wait-time section is not ($\alpha = 0.288$): the seven
+staff agreed strongly with some wait-time items and disagreed with
+others, so the items do not move together. With seven respondents this
+coefficient is also unstable. The staff wait-time section weighted mean
+is therefore reported as a descriptive average only, and the staff
+findings below are interpreted item by item rather than as a composite.
+
+\begin{table}[H]
+\centering
+\caption{Internal consistency of the baseline questionnaire
+(Cronbach's alpha).}
+\label{tab:sop1-reliability}
+\begin{tabular}{lccc}
+\hline
+Form & Wait-time & User experience & Whole form \\
+\hline
+Students ($n = 15$) & $0.703$ & $0.828$ & $0.857$ \\
+Staff ($n = 7$) & $0.288$ & $0.767$ & $0.796$ \\
+\hline
+\multicolumn{4}{l}{\footnotesize Seven items per section, fourteen per
+form. $\alpha \geq 0.70$ is taken as acceptable.} \\
+\end{tabular}
+\end{table}
+
+\subsection{Problems Reported by Students}
+\label{subsec:sop1-students}
+
+Students returned an overall weighted mean of $4.25$ (\emph{Strongly
+Agree}), the strongest agreement recorded anywhere in this study.
+Table~\ref{tab:sop1-students} gives the item-level results.
+
+\begin{table}[H]
+\centering
+\caption{Problems with the current queue process as reported by
+students ($n = 15$).}
+\label{tab:sop1-students}
+\begin{tabular}{p{0.66\textwidth}cc}
+\hline
+Item & WM & Interpretation \\
+\hline
+\multicolumn{3}{l}{\textbf{Perceived problems on wait-time}} \\
+The display shows only the number being served, not how long I still
+  need to wait & $4.60$ & Strongly Agree \\
+I have experienced long wait times during busy periods & $4.60$ & Strongly Agree \\
+I have no way of knowing my estimated wait time after getting my ticket
+  & $4.13$ & Agree \\
+I need to keep watching the display to know when my number will be
+  called & $4.47$ & Strongly Agree \\
+I have missed my turn because I was not near the display & $3.47$ & Agree \\
+Waiting time feels unpredictable, especially during busy periods & $4.27$ & Strongly Agree \\
+Long or unpredictable waits discourage me from availing services at
+  peak hours & $4.53$ & Strongly Agree \\
+\hline
+\multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.30$ \\
+\hline
+\multicolumn{3}{l}{\textbf{Perceived problems on user experience}} \\
+It is inconvenient to have to watch the screen or ask staff to know my
+  status & $4.13$ & Agree \\
+I get confused whether a window is closed, on break, or not yet open & $4.07$ & Agree \\
+I feel frustrated when I do not know how many people are ahead of me & $4.40$ & Strongly Agree \\
+There is no notification to tell me when my turn is near & $4.00$ & Agree \\
+It is inconvenient to wait without knowing how much time is left & $4.47$ & Strongly Agree \\
+The lack of a wait-time estimate affects my overall experience & $4.40$ & Strongly Agree \\
+Overall, I am dissatisfied with the current queue process & $4.00$ & Agree \\
+\hline
+\multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.21$ \\
+\hline
+\multicolumn{2}{l}{\textbf{Overall weighted mean}} & $\mathbf{4.25}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\noindent Three items sit at or above $4.47$ and describe the same
+condition from different angles: the student cannot see how long the
+wait will be, cannot see how many people are ahead, and must therefore
+stay within sight of the display. The highest-scoring item on the
+user-experience side is not dissatisfaction in general ($4.00$) but the
+specific inconvenience of waiting without knowing how much time is left
+($4.47$). What the students object to is not the waiting; it is the
+\emph{blindness} of the waiting.
+
+The consequence appears in the item scoring $4.53$: long or
+unpredictable waits discourage students from availing services during
+peak hours. The current process does not merely inconvenience students;
+it changes when --- and whether --- they come at all.
+
+The open-ended responses point the same way while adding two problems
+the Likert items did not ask about. One student wrote that there is
+``no way of telling if the queue is long if I'm not physically present
+in the office,'' which is the remote-visibility problem stated plainly.
+Two reported being cut in line, one of them ``whenever my turn is near
+and told to go back again the next office hours.'' One raised a
+physical constraint outside the scope of any software: ``the lack of
+waiting space or room for people waiting in line, often times I am
+stuck standing in a hallway.'' Another asked for ``guidance of where I
+should queue.'' These last three are recorded here because they were
+volunteered, but a queue-management system does not solve them.
+
+\subsection{Problems Reported by Staff}
+\label{subsec:sop1-staff}
+
+Staff returned an overall weighted mean of $3.34$ (\emph{Neutral}) ---
+substantially lower than the students, and the more informative result
+of the two. Table~\ref{tab:sop1-staff} gives the item-level figures.
+
+\begin{table}[H]
+\centering
+\caption{Problems with the current queue process as reported by staff
+($n = 7$).}
+\label{tab:sop1-staff}
+\begin{tabular}{p{0.66\textwidth}cc}
+\hline
+Item & WM & Interpretation \\
+\hline
+\multicolumn{3}{l}{\textbf{Perceived problems on wait-time}} \\
+The display shows only the number being served, not how long a client
+  still needs to wait & $4.14$ & Agree \\
+It is difficult to predict how long a client will wait after receiving
+  a ticket & $4.00$ & Agree \\
+Wait times increase significantly during peak periods & $4.29$ & Strongly Agree \\
+Wait times increase further when a window closes, since numbers are not
+  redistributed & $3.29$ & Neutral \\
+It is difficult to manage the queue when a window closes temporarily & $2.43$ & Disagree \\
+No-show clients disrupt the flow of the numbering system & $3.57$ & Agree \\
+There is no way to notify clients in advance that their number is near & $3.43$ & Agree \\
+\hline
+\multicolumn{2}{l}{\textbf{Section weighted mean}} & $3.59$ \\
+\hline
+\multicolumn{3}{l}{\textbf{Perceived problems on user experience}} \\
+Clients frequently approach the counter to ask about their number & $2.86$ & Neutral \\
+Clients get confused when a window shows no number & $3.00$ & Neutral \\
+It is difficult to manage complaints about long or unclear waits & $2.86$ & Neutral \\
+Handling paper tickets creates additional workload during busy periods & $3.57$ & Agree \\
+It is challenging to maintain order in the queue area & $3.14$ & Neutral \\
+Miscommunication occurs when the display and actual status do not match & $3.43$ & Agree \\
+Overall, the current system negatively affects service quality & $2.71$ & Neutral \\
+\hline
+\multicolumn{2}{l}{\textbf{Section weighted mean}} & $3.08$ \\
+\hline
+\multicolumn{2}{l}{\textbf{Overall weighted mean}} & $\mathbf{3.34}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\noindent Staff agree with the students on what the display fails to
+show ($4.14$) and on what happens at peak hours ($4.29$), but they do
+not agree that the process is hard to run. They disagree that a closing
+window is difficult to manage ($2.43$), and they are neutral on whether
+the system harms service quality at all ($2.71$).
+
+\subsection{The Gap Between the Two Groups}
+\label{subsec:sop1-gap}
+
+The difference between $4.25$ and $3.34$ is the central finding of this
+section, and it is not a weakness in the data. Staff and students were
+asked about the same process and gave different answers because the
+process costs them different things. The student bears the uncertainty:
+standing within sight of a display, unable to estimate the wait,
+occasionally missing a turn. The staff member does not --- from behind
+the counter the queue is visible, its length is known, and the next
+number is whatever the system prints.
+
+This explains why the problem has persisted. A cost that falls entirely
+on the people waiting is invisible to the people who would have to
+authorise fixing it. It also sets the design priority for
+\sysname{}: the features that address the highest-scoring student items
+--- knowing the position in line, an estimated wait, and a notification
+before the turn arrives --- are directed at the group that reported the
+problem, not the group that administers it.
+
+\subsection{The Problem Staff Named Instead}
+\label{subsec:sop1-connectivity}
+
+When the Likert items ended and staff were asked in their own words
+what the biggest problem is, six of the seven gave the same answer, and
+none of them named anything the Likert items had asked about:
+
+\begin{quote}
+``Internet connection.''\\
+``No internet.''\\
+``No internet connection during peak season, it cause long lines.''\\
+``Glitch of queueing system when there's no internet, and running out
+of paper tickets when peak or busy periods.''\\
+``Glitch of the system, repetitive of number called by the system, no
+internet which caused system failure, offline, no thermal paper
+available.''\\
+``Unreliable or slow internet connection compounds every problem in the
+queue process\ldots{} you can't trust the status, and you waste time
+redoing work.''
+\end{quote}
+
+\noindent This is the most consequential result in the baseline survey,
+and it is reported here rather than set aside because it bears directly
+on the deployed design of \sysname{}. The office already operates a
+networked queueing system with a display and thermal tickets; what
+staff experience as the daily failure is not the queue logic but the
+connection underneath it.
+
+\sysname{} is more exposed to this failure, not less. Its backend,
+database, cache, and object storage are cloud-hosted, and the local
+detector must reach the backend for every recognition and every queue
+number issued. A connection loss that today costs the office its
+display and its ticket printer would, under \sysname{}, additionally
+stop face recognition and number issuance. The prototype was in fact
+unreachable during one verification attempt in this study while general
+connectivity was unaffected, which is the same failure mode the staff
+describe.
+
+Two consequences follow, and both are carried forward rather than
+resolved here. First, the connectivity requirement is stated as a
+delimitation in Section~\ref{sec:scope} and as a limitation in the
+concluding chapter: \sysname{} as evaluated requires a
+working network path between the service office and the cloud backend.
+Second, offline-capable operation --- local inference with deferred
+synchronisation --- is recorded as the highest-priority recommendation
+for future work, because the survey shows it is the problem the
+operators of the current system would most want solved.
 
 % ----------------------------------------------------------------
 % 3.2  SOP #2 — System performance: detection, re-ID, ticket, latency
@@ -2546,20 +3261,565 @@ Section~\ref{sec:datagathering}.
 \label{sec:sop2-results}
 \label{sec:design}
 
-This section addresses Statement of the Problem No.~2: \emph{How
-effectively can the YOLO-based passive detection pipeline with hybrid
-re-identification assign and maintain queue numbers without student
-interaction?} It covers the design and implementation of the prototype,
-followed by the measured performance results for queue assignment
-accuracy, re-identification reliability, ticket and token validation,
-and detection-to-ticket latency.
+This section addresses Statement of the Problem No.~2: \emph{What is
+the level of accuracy of the face-recognition system in identifying
+enrolled students and assigning queue numbers without requiring manual
+input?} It covers the design and implementation of the prototype,
+then reports recognition accuracy in two parts that answer different
+questions: an offline evaluation on photographs whose identities are
+known, which measures accuracy against ground truth, and the system's
+own record of live recognitions at the queue-zone camera, which shows
+how the same rule behaved in operation and whether queue numbers were
+issued without manual input.
 
 \input{section_3_2_design_and_system_plans}
 
-% TODO: Insert measured performance results here after the evaluation
-% period. Report queue assignment accuracy, re-identification
-% reliability, ticket/token validation rate, and detection-to-ticket
-% latency (mean and standard deviation).
+\subsection{Evaluation Dataset}
+\label{subsec:eval-dataset}
+
+The offline evaluation used photographs of 17 individuals, gathered
+from a classmate's face-photo collection and supplemented by
+photographs of the researcher, with several photographs per person taken
+under varied angle, lighting, and background. Each person's photographs
+were divided into an enrolment set and a held-out probe set, using
+explicit enrolment and verification labels where the collection
+provided them and a 70/30 split by file order otherwise. The enrolment
+photographs of each person were averaged into one stored embedding,
+exactly as the system builds a registered student's profile; no probe
+photograph was used for enrolment.
+
+This produced 45 held-out probes. Each probe was compared with every one
+of the 17 stored identities, giving 765 comparisons: 45 genuine pairs
+and 720 impostor pairs (Table~\ref{tab:eval-dataset}).
+
+\begin{table}[!htbp]
+\centering
+\caption{Offline face-recognition evaluation dataset.}
+\label{tab:eval-dataset}
+\begin{tabular}{lr}
+\hline
+Component & Count \\
+\hline
+Identities enrolled & 17 \\
+Held-out probe photographs & 45 \\
+Genuine pairs (probe vs.\ own identity) & 45 \\
+Impostor pairs (probe vs.\ other identities) & 720 \\
+\hline
+Total comparisons & 765 \\
+\hline
+\end{tabular}
+\end{table}
+
+Two defects in the dataset were found and corrected before the results
+below were computed, and both are reported because a small calibration
+set is sensitive to a single bad sample. One photograph filed as a
+genuine capture was a screenshot of an AI face filter, watermarked as
+AI-generated; it scored $0.126$ against its own identity and was
+removed. Separately, photographs stored in the \texttt{.jfif} format
+were being skipped by the image loader, silently dropping one person
+from the evaluation. Restoring that person raised the dataset from 16
+identities and 43 probes to the 17 identities and 45 probes reported
+here --- and, as Section~\ref{subsec:calibration} shows, it was the
+restored person who exposed the need for a stricter margin.
+
+\subsection{Model Selection and Threshold Calibration}
+\label{subsec:calibration}
+
+Unlike a classification study, this system does not train a neural
+network. Face embeddings are produced by the pretrained InsightFace
+\texttt{buffalo\_s} model, whose recognition network was trained by its
+developers on a large public face corpus with the ArcFace objective
+described in Chapter~1. Training or fine-tuning such a model requires
+millions of photographs across tens of thousands of identities, a scale
+no single-office deployment can supply; a network fine-tuned on a few
+hundred photographs would generalise worse, not better. Using a
+pretrained embedding model is the standard engineering choice at this
+scale, and it is not the contribution of this study.
+
+The same holds for person detection. YOLOv8n runs with its stock
+weights, pretrained on the COCO dataset, in which the person class is
+among the most heavily represented. Fine-tuning it on a small custom set
+of queue-area images was attempted during development; person detection
+became less reliable afterwards, and the change was reverted. The stock
+model is therefore the one evaluated here.
+
+\textbf{Model selection.} \texttt{buffalo\_s} is the smaller of
+InsightFace's two general-purpose model packs. It was selected because
+the deployed backend runs in 512~MB of memory; loading only its
+detection and recognition modules, rather than the full pack, reduced
+its footprint from 251.9~MB to 98.9~MB and allowed the service to run
+within that limit.
+
+\textbf{What was calibrated.} The contribution of this study is the
+decision rule applied on top of the model
+(Equation~\ref{eq:face-decision}), and what had to be established
+empirically are its two thresholds: the minimum similarity
+$\tau_{\mathrm{match}}$ and the required lead over the runner-up
+$\tau_{\mathrm{margin}}$. These cannot be derived from first principles;
+they depend on the enrolled population, the camera, and the lighting.
+
+The match threshold was selected by sweeping $\tau_{\mathrm{match}}$
+from $0.20$ to $0.70$ and recording, for every probe, whether the rule
+linked it correctly, linked it to the wrong identity, or refused it.
+Figure~\ref{fig:threshold-sweep} shows the result. No threshold in the
+range produced a wrong identity; raising the threshold only converted
+correct links into refusals. $\tau_{\mathrm{match}} = 0.30$ was chosen
+because it sits below the lowest genuine score observed ($0.321$),
+leaving room for live captures, which come from a person crop at
+queue-zone distance and score lower than posed photographs.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.86\textwidth]{03_threshold_sweep.png}
+  \caption[Match-threshold selection trade-off]{Outcome of every probe
+  as the match threshold is varied, at the deployed margin of $0.15$.
+  This sweep was run on the calibration dataset as it stood before the
+  loader defect was corrected (16 identities, 43 probes); the accuracy
+  figures that follow use the corrected dataset (17 identities, 45
+  probes).}
+  \label{fig:threshold-sweep}
+\end{figure}
+
+The margin was first set at $0.10$. A sweep over enrolled probes could
+not test the case that matters most --- a person who is not enrolled at
+all --- so the open-set test described in
+Section~\ref{subsec:heldout-accuracy} was added. It found one
+non-enrolled person accepted as an enrolled student with a margin of
+$0.110$, clearing $0.10$ by a hundredth. Across the corrected dataset,
+genuine probes led their runner-up by at least $0.222$ (excluding the
+one probe refused at every setting), while strangers led by at most
+$0.110$. The margin was therefore raised to $0.15$, which lies between
+the two with room on both sides and costs no genuine match.
+Table~\ref{tab:calibrated-params} lists the calibrated values.
+
+\begin{table}[H]
+\centering
+\caption{Calibrated recognition parameters.}
+\label{tab:calibrated-params}
+\begin{tabular}{llp{0.5\textwidth}}
+\hline
+Parameter & Value & Basis \\
+\hline
+$\tau_{\mathrm{match}}$ & $0.30$ & Below the lowest genuine score
+  ($0.321$); no wrong identity at any threshold tested \\
+$\tau_{\mathrm{margin}}$ & $0.15$ & Between the highest stranger
+  margin ($0.110$) and the lowest genuine margin ($0.222$) \\
+$\tau_{\mathrm{det}}$ & $0.60$ & Minimum face-detector confidence
+  before a face is embedded \\
+Embedding model & \texttt{buffalo\_s} & Fits the 512~MB deployment
+  limit (98.9~MB loaded) \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Recognition Accuracy on Held-Out Probes}
+\label{subsec:heldout-accuracy}
+
+\textbf{Embedding quality.} Before any threshold is applied, the model
+separates genuine from impostor pairs almost completely
+(Table~\ref{tab:embedding-quality}). The area under the ROC curve is
+$0.999907$; it is reported to six decimals deliberately, because at
+four it prints as $1.0000$ and would read as perfect separation, when
+the set in fact contains one inverted pair. The Equal Error Rate is
+$0.42\%$, reached at a threshold of $0.320$ --- close to the deployed
+$0.30$, which was chosen independently in
+Section~\ref{subsec:calibration}.
+
+\begin{table}[H]
+\centering
+\caption{Threshold-independent embedding quality ($N = 765$
+comparisons).}
+\label{tab:embedding-quality}
+\begin{tabular}{lr}
+\hline
+Metric & Value \\
+\hline
+ROC AUC & $0.999907$ \\
+Equal Error Rate & $0.42\%$ (at $0.320$) \\
+Separation ($d'$) & $4.99$ \\
+Genuine score, mean $\pm$ SD & $0.695 \pm 0.140$ \\
+Impostor score, mean $\pm$ SD & $0.108 \pm 0.090$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.62\textwidth]{07_roc_curve.png}
+  \caption[ROC curve of the embedding model]{ROC curve over 45 genuine
+  and 720 impostor pairs. AUC $= 0.999907$.}
+  \label{fig:roc}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.9\textwidth]{06_far_frr.png}
+  \caption[False accept and false reject rates]{False Accept Rate and
+  False Reject Rate as the match threshold varies. The two cross at
+  $0.42\%$ (EER, threshold $0.320$); the deployed threshold of $0.30$
+  is marked.}
+  \label{fig:far-frr}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.9\textwidth]{08_full_score_distribution.png}
+  \caption[Genuine and impostor score distributions]{Cosine similarity
+  of every probe against every enrolled identity. Impostor pairs
+  ($n = 720$) and genuine pairs ($n = 45$) occupy largely separate
+  ranges; the few impostor pairs above $0.30$ are the cases the margin
+  requirement exists to catch.}
+  \label{fig:score-distribution}
+\end{figure}
+
+\textbf{Identification at the deployed thresholds.}
+Table~\ref{tab:identification-outcomes} gives the outcome of every probe
+under the full decision rule, in the form of a confusion matrix: each
+probe is either linked to the correct student, linked to a wrong one,
+or refused and escalated to staff. The first row is the closed-set
+test, in which every probe belongs to an enrolled student. The second
+is the open-set test, in which each person is removed from the gallery
+and probed with their own photographs, so that they arrive as a
+stranger.
+
+\begin{table}[H]
+\centering
+\caption{Identification outcomes at $\tau_{\mathrm{match}} = 0.30$,
+$\tau_{\mathrm{margin}} = 0.15$.}
+\label{tab:identification-outcomes}
+\begin{tabular}{lcccc}
+\hline
+Probe & Correctly linked & Wrong identity & Refused & Total \\
+\hline
+Enrolled student & $44$ ($97.8\%$) & $0$ ($0\%$) & $1$ ($2.2\%$) & $45$ \\
+Not enrolled (stranger) & --- & $0$ ($0\%$) & $45$ ($100\%$) & $45$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\noindent The correct student was ranked first for all 45 enrolled
+probes (rank-1 accuracy $100\%$), and 44 of them were linked
+automatically. The single refusal scored $0.321$ against the correct
+student, but its runner-up was only $0.027$ behind; the rule declined to
+choose between two candidates it could not separate and escalated to
+staff. That is the safe failure --- the student is delayed, not given
+someone else's number --- and no probe produced the unsafe one.
+
+\textbf{Why the margin requirement is necessary.} The highest stranger
+score in the open-set test was $0.353$, above $\tau_{\mathrm{match}}$.
+Five stranger probes cleared the match threshold, and a rule that
+applied the threshold alone would have issued each of them an enrolled
+student's queue number. Table~\ref{tab:margin-caught} lists them, with
+identities anonymised.
+
+\begin{table}[H]
+\centering
+\caption{Stranger probes that cleared the match threshold.}
+\label{tab:margin-caught}
+\begin{tabular}{llcc}
+\hline
+Stranger & Would have been accepted as & Score & Margin \\
+\hline
+Person A & Enrolled student 1 & $0.353$ & $0.046$ \\
+Person B & Enrolled student 2 & $0.331$ & $0.110$ \\
+Person B & Enrolled student 2 & $0.326$ & $0.056$ \\
+Person C & Enrolled student 1 & $0.305$ & $0.012$ \\
+Person C & Enrolled student 3 & $0.302$ & $0.015$ \\
+\hline
+\multicolumn{2}{l}{Threshold alone} & \multicolumn{2}{r}{5 false identifications} \\
+\multicolumn{2}{l}{Threshold and margin} & \multicolumn{2}{r}{0 false identifications} \\
+\hline
+\end{tabular}
+\end{table}
+
+\noindent None of the five led its runner-up by the required $0.15$,
+and all five were refused. This is the measured case for the decision
+rule that is this study's contribution: the pretrained model supplies
+the similarity scores, but it is the requirement of a clear lead over
+the runner-up that prevents a stranger from being issued an enrolled
+student's number.
+
+These probes are posed, cooperative, close-up photographs, whereas a
+live capture is a crop of a person standing at queue-zone distance. The
+figures above should therefore be read as an upper bound on live
+performance. The remainder of this section reports how the same rule
+behaved at the deployed camera.
+
+\subsection{Separation Between Enrolled Students}
+\label{subsec:enrol-separation}
+
+Before recognition accuracy can be interpreted, it is necessary to know
+how distinguishable the enrolled population is. With nine students
+enrolled, the thirty-six distinct pairs of stored enrolment embeddings
+were compared using Equation~\ref{eq:cosine}. Table~\ref{tab:enrol-sep}
+reports the resulting impostor distribution.
+
+\begin{table}[H]
+\centering
+\caption{Cosine similarity between the enrolment embeddings of different
+students ($n = 9$ students, 36 pairs).}
+\label{tab:enrol-sep}
+\begin{tabular}{lc}
+\hline
+Statistic & Value \\
+\hline
+Mean impostor similarity & $0.1611$ \\
+Standard deviation       & $0.0869$ \\
+Minimum                  & $-0.0427$ \\
+Maximum                  & $0.3561$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\noindent The mean of $0.1611$ sits well below the acceptance threshold
+$\tau_{\mathrm{match}} = 0.30$, confirming that enrolled students are
+generally well separated. The maximum is the consequential figure: one
+pair of genuinely different students reaches $0.3561$, which
+\emph{exceeds} the acceptance threshold. An absolute threshold applied on
+its own would therefore admit a comparison between these two students as
+a valid match, and the identity finally reported would be decided by
+whichever score happened to be higher. This is the condition the margin
+requirement in Equation~\ref{eq:face-decision} exists to detect.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.86\textwidth]{sop2_03_impostor_separation.png}
+  \caption[Similarity between different enrolled students]{Cosine
+  similarity across all 36 pairs of different enrolled students. The
+  closest pair exceeds the acceptance threshold, which is the situation an
+  absolute threshold alone cannot resolve.}
+  \label{fig:sop2-impostors}
+\end{figure}
+
+\subsection{Recognition Outcomes in Operation}
+\label{subsec:recog-outcomes}
+
+Every evaluation performed by Algorithm~4 is written to the recognition
+audit table with its score, margin and outcome. Over the system-testing
+period, 72 evaluations were logged. Of these, 45 came from the queue-zone
+camera and 27 from the mobile client's face-login path, which uses the
+same matcher and the same enrolled gallery but authenticates account
+access rather than issuing a number. The camera evaluations are the ones
+Statement of the Problem No.~2 concerns and are reported here; one is
+excluded because it was recorded while only a single student was
+enrolled, leaving no runner-up and therefore no meaningful margin.
+Table~\ref{tab:recog-sep} summarises the remaining 44.
+
+\begin{table}[H]
+\centering
+\caption{Score and margin ranges for accepted and refused queue-zone
+recognitions ($N = 44$).}
+\label{tab:recog-sep}
+\begin{tabular}{lccc}
+\hline
+Outcome & $n$ & Score range & Margin range \\
+\hline
+Accepted & $18$ & $0.5408$--$0.7277$ & $0.2578$--$0.6823$ \\
+Refused  & $26$ & $0.0780$--$0.2997$ & $0.0014$--$0.1492$ \\
+\hline
+Threshold & & $\tau_{\mathrm{match}} = 0.30$ & $\tau_{\mathrm{margin}} = 0.15$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\noindent The two groups do not overlap on either criterion. The lowest
+accepted score, $0.5408$, sits $0.2411$ above the highest refused score,
+$0.2997$, and the lowest accepted margin, $0.2578$, sits $0.1087$ above
+the highest refused margin, $0.1492$. Both thresholds fall inside those
+gaps rather than near either boundary, so neither is finely tuned to the
+observations. Figure~\ref{fig:sop2-decision} plots every evaluation
+against the rule: the accepted and refused populations occupy separate
+regions with an empty band between them, and the single refusal closest
+to acceptance failed both conditions by less than $0.001$, which is the
+behaviour a conservative rule should show at its boundary.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.86\textwidth]{sop2_01_decision_rule.png}
+  \caption[Queue-zone evaluations against the accept rule]{Every
+  queue-zone evaluation placed against the two-part accept rule. The
+  shaded region is where both conditions hold. No evaluation fell between
+  a score of $0.300$ and $0.541$.}
+  \label{fig:sop2-decision}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\textwidth]{sop2_02_separation.png}
+  \caption[Score and margin distributions by outcome]{Distributions of
+  score and margin for accepted and refused queue-zone evaluations, with
+  the deployed thresholds marked.}
+  \label{fig:sop2-separation}
+\end{figure}
+
+\subsection{Evidence for the Margin Requirement}
+\label{subsec:margin-evidence}
+
+Because the audit table stores both the accepted score and its margin,
+the runner-up similarity of every accepted recognition can be recovered
+as $s^{(2)} = s^{(1)} - \mathrm{margin}$. This makes it possible to ask
+how often the second-best candidate was itself above the acceptance
+threshold, which is precisely the case an absolute threshold cannot
+resolve.
+
+The highest runner-up so far occurred on the face-login path, where the
+system scored $0.7884$ against the correct student with a margin of
+$0.4733$, placing the runner-up at $0.3150$. Two further evaluations on
+that path produced runner-ups of $0.3096$ and $0.2997$. All three are at
+or above $\tau_{\mathrm{match}} = 0.30$. Under a score-only rule, two
+enrolled students would both have qualified for the same face, and the
+system would have had to choose between them on a difference it had not
+established as meaningful. The margin requirement resolved each case
+without ambiguity.
+
+That these occurred on the login path rather than at the camera does not
+limit the finding. Both paths run the same matcher against the same
+enrolled gallery, so how close two enrolled students can come is a
+property of the roster, not of which camera is looking. The highest
+runner-up recorded at the queue zone itself is $0.2830$, and the closest
+pair of stored enrolment embeddings reaches $0.3561$
+(Section~\ref{subsec:enrol-separation}), so the condition is reachable
+there and has simply not yet been observed in the smaller number of
+queue-zone evaluations.
+
+The runner-up similarity also rises as the enrolled population grows. In
+recognitions performed while two to four students were enrolled, the
+runner-up ranged from $0.05$ to $0.14$; with eight or nine enrolled it
+ranged from $0.23$ to $0.31$. This is the expected consequence of adding
+identities to an open roster: each additional enrolment is another chance
+that some enrolled face resembles the person at the camera. It also
+indicates that an absolute threshold alone becomes progressively less
+sufficient at the population sizes a campus deployment would reach, which
+is the practical argument for the margin requirement rather than a higher
+fixed threshold.
+
+\subsection{Issuing the Queue Number Without Manual Input}
+\label{subsec:sop2-issuance}
+
+The second half of Statement of the Problem No.~2 concerns what follows a
+successful identification: whether the queue number is issued without
+manual input, and how quickly. Each issuance is recorded separately from
+the recognition audit, with how the number was linked and the timestamps
+around it.
+
+Seven numbers were issued over the testing period. All seven were linked
+by \texttt{face\_only}, the path in which the system mints the number
+itself on an accepted match; none required a staff member to type a
+number or a student to request one at the counter. Across the frames that
+produced these seven issuances, the face-extraction stage returned a
+usable embedding on 103 of 103 attempts.
+
+Timing is reported in two consecutive phases, shown in
+Figure~\ref{fig:sop2-issuance}. The first runs from the frame a person
+first appears in to the moment their presence in the queue zone is
+confirmed. The second runs from the moment the system was first able to
+act --- the later of that confirmation and the student's join intent ---
+to the number being issued, and averaged $4.80$~s across the seven.
+
+The second phase is deliberately not measured from first sighting. With
+the consent gate in place, a student may stand in frame for some time
+before opening the app, and measuring from first sighting would charge
+that waiting to the system: one run recorded $889$~s on that basis, which
+is a person standing in front of the camera during unrelated work rather
+than a recognition that took fifteen minutes. The raw timestamps remain
+in the table, so any other interpretation can be recomputed.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.86\textwidth]{sop2_04_issuance_time.png}
+  \caption[Time from arrival to an issued queue number]{The two phases
+  between a person arriving in the queue zone and holding a queue number,
+  for each of the seven numbers issued. All seven were minted by the
+  system without manual input.}
+  \label{fig:sop2-issuance}
+\end{figure}
+
+\subsection{Load Testing}
+\label{subsec:load-test}
+
+As the panel recommended, the backend was load-tested to see whether it
+stays responsive when many users poll it at once. The test used Locust
+to simulate 50 concurrent users for two minutes across three user
+classes --- students polling their queue status, the public display
+board, and staff viewing analytics --- together with staff logins, against
+a real seeded ticket rather than an invalid path. It was run against the
+backend on the development machine, so it measures the application
+itself and not the network path to the cloud deployment.
+Table~\ref{tab:load-test} gives the results.
+
+\begin{table}[H]
+\centering
+\caption{Backend response time under load (50 concurrent users,
+2 minutes).}
+\label{tab:load-test}
+\begin{tabular}{lrrrr}
+\hline
+Endpoint & Median & 95th pct. & 99th pct. & Failures \\
+\hline
+Public display board & 7 ms & 13 ms & 46 ms & 0 \\
+Wait-time prediction & 13 ms & 24 ms & 43 ms & 0 \\
+Student queue status & 13 ms & 26 ms & 85 ms & 0 \\
+Staff analytics & 21 ms & 36 ms & 50 ms & 0 \\
+Staff login & 410 ms & 710 ms & 710 ms & 0 \\
+\hline
+\textbf{All requests} & \textbf{12 ms} & \textbf{31 ms} & \textbf{85 ms} &
+  \textbf{0} \\
+\hline
+\end{tabular}
+\end{table}
+
+\noindent Across 2,536 requests at a sustained 21.3 requests per second,
+none failed, and 95\% were answered within 31~ms. Staff login is slower
+by design: passwords are hashed with a deliberately expensive function to
+resist brute-force guessing, and because that work runs on its own
+thread, the rest of the API held its 12~ms median while logins were in
+progress. The limitation is the one stated above: a student or staff
+member using the deployed system also waits for the round trip over the
+internet to the cloud host, which this test does not include.
+
+\subsection{Assessment of Statement of the Problem No.~2}
+\label{subsec:sop2-scope}
+
+Statement of the Problem No.~2 asks what level of accuracy the
+face-recognition system reaches in identifying enrolled students and
+assigning queue numbers without manual input. On held-out photographs
+with known identities, the system linked $97.8\%$ of enrolled students
+automatically, ranked the correct student first in every case, assigned
+no one to a wrong identity, and refused every one of 45 non-enrolled
+probes. In live operation at the queue-zone camera, every queue number
+issued --- seven of seven --- was minted by the system without staff or
+student input, with a mean of $4.80$~s from the moment the system could
+act to the number being issued. The rule's defining property held in
+both settings: when it could not identify someone with confidence, it
+refused rather than guessed.
+
+These findings must be interpreted with four limitations.
+
+\begin{enumerate}
+  \item \textbf{The offline figures are an upper bound.} The held-out
+        probes are posed, close-up photographs. Live captures are person
+        crops at queue-zone distance and score lower, so live accuracy
+        should be expected to fall below the offline figures, most
+        likely as more refusals rather than as wrong identities.
+  \item \textbf{Live recognitions have no ground truth.} The live
+        results in Sections~\ref{subsec:enrol-separation}
+        to~\ref{subsec:sop2-issuance} come from the system's own record.
+        They have not been checked against an independent observer's
+        log, so the proportion of correct assignments over total
+        arrivals and the re-identification reliability defined in
+        Equation~\ref{eq:accuracy} remain to be measured during the
+        evaluation period, together with the ticket and token validation
+        rate and the detection-to-ticket latency.
+  \item \textbf{The populations are small.} The offline evaluation
+        covers 17 identities and the deployment nine enrolled students.
+        Each additional enrolment adds another face that could resemble
+        a new arrival, so the separation figures should be recomputed as
+        enrolment grows.
+  \item \textbf{No liveness check.} The system does not test whether
+        the face in front of the camera belongs to a live person, so it
+        cannot distinguish a student from a printed or on-screen
+        photograph of that student.
+\end{enumerate}
 
 % ----------------------------------------------------------------
 % 3.3  SOP #3 — Wait-time prediction accuracy (MAE and MAPE)
@@ -2567,9 +3827,10 @@ and detection-to-ticket latency.
 \section{Wait-Time Prediction Accuracy}
 \label{sec:sop3-results}
 
-This section addresses Statement of the Problem No.~3: \emph{How well
-can the system's model predict wait times based on Mean Absolute Error
-(MAE) and Mean Absolute Percentage Error (MAPE)?}
+This section addresses Statement of the Problem No.~3: \emph{What is
+the level of accuracy of the system's wait-time prediction model in
+terms of Mean Absolute Error (MAE) and Mean Absolute Percentage Error
+(MAPE)?}
 
 \subsection{Wait-Time Predictor Training Result}
 \label{sec:wait-time-training-result}
@@ -2727,15 +3988,113 @@ the gaps identified that motivated the present work.
 \end{center}
 
 \clearpage
+\chapter{Baseline Questionnaire on the Current Queue Process}
+\label{app:sop1-questionnaire}
+
+This instrument addresses Statement of the Problem No.~1 and was
+administered before deployment. It has a staff form and a student form
+answered against the same five-point scale (5 = Strongly Agree,
+1 = Strongly Disagree). Every item states a problem; agreement means the
+problem is present.
+
+\section*{Staff / Cashier Form}
+
+\noindent\textbf{Profile.} (1)~How long have you been handling queue
+transactions in this office? (2)~On average, how often do you
+personally handle queue management during busy periods?
+
+\medskip
+\noindent\textbf{Perceived problems on wait-time}
+\begin{enumerate}
+  \item The current display only shows the number being served, not how
+        long a client still needs to wait.
+  \item It is difficult to predict how long a client will wait after
+        receiving their paper ticket.
+  \item Wait times increase significantly during peak or busy periods.
+  \item Wait times increase further when a window is closed or on break,
+        since queue numbers are not redistributed to open windows.
+  \item It is difficult to manage the queue efficiently when a window
+        has to close temporarily during busy periods.
+  \item No-show clients disrupt the flow of the numbering system.
+  \item There is no way to notify clients in advance that their number
+        is about to be called.
+\end{enumerate}
+
+\noindent\textbf{Perceived problems on user experience}
+\begin{enumerate}
+  \item Clients frequently approach the counter to ask about their
+        number or wait time.
+  \item Clients get confused when a window shows no number, since the
+        display does not indicate whether it is closed, on break, or not
+        yet in use.
+  \item It is difficult to manage complaints related to long or unclear
+        wait times.
+  \item Handling paper tickets creates additional workload for staff
+        during busy periods.
+  \item It is challenging to maintain order in the queue area during
+        busy periods despite having a numbering system.
+  \item Miscommunication with clients occurs when the display and the
+        actual queue status do not match.
+  \item Overall, the current queue system negatively affects the quality
+        of service provided to clients.
+\end{enumerate}
+
+\noindent\textbf{Open-ended.} In your own words, what is the biggest
+problem you experience with the current queue process?
+
+\section*{Student Form}
+
+\noindent\textbf{Profile.} (1)~Year level. (2)~How often do you avail of
+services that require queuing during busy periods?
+
+\medskip
+\noindent\textbf{Perceived problems on wait-time}
+\begin{enumerate}
+  \item The display screen only shows the number currently being served,
+        not how long I still need to wait.
+  \item I have experienced long wait times when transacting during busy
+        periods.
+  \item I have no way of knowing my estimated wait time after getting my
+        paper ticket.
+  \item I need to keep watching the display screen to know when my
+        number will be called.
+  \item I have missed my turn because I was not near the display when my
+        number was called.
+  \item Waiting time feels unpredictable, especially during busy periods.
+  \item Long or unpredictable wait times discourage me from availing
+        certain services during peak hours.
+\end{enumerate}
+
+\noindent\textbf{Perceived problems on user experience}
+\begin{enumerate}
+  \item I find it inconvenient that I have to physically watch the
+        screen or ask staff to know my queue status.
+  \item I get confused about whether a window is closed, on break, or
+        just not yet available when its display shows no number.
+  \item I feel frustrated when I do not know how many people are still
+        ahead of me.
+  \item There is no notification or alert to tell me when my turn is
+        near.
+  \item I find it inconvenient to wait without knowing how much time is
+        left.
+  \item The lack of a wait-time estimate affects my overall experience
+        in transacting at the office.
+  \item Overall, I am dissatisfied with the current queue management
+        process.
+\end{enumerate}
+
+\noindent\textbf{Open-ended.} In your own words, what is the biggest
+problem you experience while waiting in line at this office?
+
+\clearpage
 \chapter{\sysname{} Evaluation Questionnaire}
 \label{app:queueflow-questionnaire}
 
 \begin{center}
 \textbf{FOR CONTENT VALIDATION -- DRAFT}\\[0.5em]
 \textbf{Naga College Foundation, Inc. -- College of Computer Studies}\\[1em]
-\textbf{Research Title:} \sysname{}: Computer Vision Based Automated
-Queue Ticket Assignment and Real-Time Predictive System for Dynamic
-Campus Service Delivery\\[0.5em]
+\textbf{Research Title:} \sysname{}: A Computer Vision-Based Smart Queue
+Management and Predictive Service Delivery System\\[0.5em]
 \textbf{Researchers:} Archie D. Balbin and Joshua Rovic P. Sanota
 \end{center}
 
@@ -2865,8 +4224,8 @@ A6 & Checking my queue status on the mobile interface is quick. & [ST] &
 \textbf{\#} & \textbf{Item} & \textbf{Tag} &
 \textbf{5} & \textbf{4} & \textbf{3} & \textbf{2} & \textbf{1} \\
 \midrule
-B1 & \sysname{} correctly assigns queue numbers to people who enter the
-queue area. & [S] [A] [ST] &
+B1 & \sysname{} correctly recognizes enrolled students and issues their
+queue numbers. & [S] [A] [ST] &
 \ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
 B2 & \sysname{} rarely assigns duplicate queue numbers to the same
 person. & [S] [A] &
@@ -2874,8 +4233,8 @@ person. & [S] [A] &
 B3 & When a person briefly leaves the queue area and returns, \sysname{}
 correctly recognizes them. & [S] [A] &
 \ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
-B4 & \sysname{} correctly identifies when someone has left the queue
-without being served. & [S] &
+B4 & The dashboard shows clearly when the person whose turn it is has
+left the queue area. & [S] &
 \ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
 B5 & I trust the queue list shown on the \sysname{} dashboard. & [S] [A] &
 \ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
@@ -2903,7 +4262,7 @@ C2 & The queue list is easy to read at a glance. & [S] [A] &
 \ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
 C3 & The analytics cards present information in a useful way. & [S] [A] &
 \ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
-C4 & No-show alerts and counter controls are clearly labeled and
+C4 & Pending-link alerts and counter controls are clearly labeled and
 visible. & [S] &
 \ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
 C5 & The wait-time predictions are easy to understand and presented
@@ -2980,7 +4339,6 @@ items are checked for equivalent meaning.
 % ============================================================
 % BIBLIOGRAPHY
 % ============================================================
-\nocite{*}
 \printbibliography
 
 \end{document}

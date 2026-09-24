@@ -1,7 +1,7 @@
 % =====================================================================
 % Section 3.2: Design and System Plans
 % Reformatted per panel recommendation: numbered-list algorithm style,
-% consolidated from 12 to 8 algorithms.
+% consolidated from 12 to 7 algorithms.
 % =====================================================================
 
 % Section heading is provided by the parent file (Chapter 3, SOP #2).
@@ -30,9 +30,9 @@ double-exponential smoothing of queue counts (\S\ref{subsec:prediction}),
 and $\alpha_{\mathrm{s}}$ for the per-frame exponential moving average
 applied to bounding-box coordinates (\S\ref{subsec:cv-layer}).
 Thresholds are denoted $\tau$ with a descriptive subscript
-($\tau_{\mathrm{tb}}$ for the appearance tiebreak,
-$\tau_{\mathrm{twin}}$ for the twin guard,
-$\tau_{\mathrm{bl}}$ for the done blacklist,
+($\tau_{\mathrm{match}}$ for the absolute face-match threshold,
+$\tau_{\mathrm{margin}}$ for the required lead over the runner-up,
+$\tau_{\mathrm{det}}$ for the face-detector confidence gate,
 $\tau_{\mathrm{iou}}$ for the duplicate-suppression IoU gate).
 The intersection-over-union of two axis-aligned bounding boxes $A$ and
 $B$ is
@@ -292,10 +292,11 @@ d(p_i, p_j) < f_{\mathrm{dd}} \cdot \overline{D}(p_i, p_j),
 \end{equation}
 
 \noindent where $\overline{D}(p_i, p_j)$ is the mean diagonal of the
-two bounding boxes. Merge is blocked if the appearance similarity
-(Equation~\ref{eq:psim}) falls below $\tau_{\mathrm{bl}} = 0.55$, and
-suppressed for 60 frames after any re-identification restoration.
-Parameter values are in Table~\ref{tab:dedup-params}.
+two bounding boxes, and the younger of the two entries is dropped. The
+test is purely geometric. A person who has just been restored after an
+absence carries 60 frames of immunity from this pass, so that somebody
+returning to the queue is not immediately removed as a duplicate of
+themselves. Parameter values are in Table~\ref{tab:dedup-params}.
 
 \begin{table}[H]
 \centering
@@ -307,10 +308,10 @@ Symbol & Value & Description \\
 \hline
 $\tau_{\mathrm{iou}}^{\mathrm{rm}}$ & $0.10$ & Remap IoU threshold \\
 $d_{\max}$                          & $180\ \mathrm{px}$ & Remap distance cap \\
+$F_{\mathrm{rm}}$                   & $45\ \text{frames}$ & Remap absence window \\
 $\tau_{\mathrm{iou}}^{\mathrm{dd}}$ & $0.40$ & Ghost-track merge IoU \\
 $f_{\mathrm{dd}}$                   & $0.15$ & Centre-distance fraction \\
 $I_0$                               & $60\ \text{frames}$ & Re-entry immunity \\
-$\tau_{\mathrm{bl}}$                & $0.55$ & Appearance merge guard \\
 \hline
 \end{tabular}
 \end{table}
@@ -362,185 +363,217 @@ $\mathcal{Q}$ with ghost tracks removed
 \vspace{0.3em}
 
 % =====================================================================
-\subsection{Appearance-Based Re-identification}
+\subsection{Face-Based Identity Validation}
 \label{subsec:reid}
 
-Re-identification recovers the original queue number when a person
-leaves the camera frame for longer than the tracker can bridge, then
-returns. The procedure uses an appearance signature, a comparison
-metric, a hybrid decision rule, and two guards against false matches.
+This algorithm answers the question the pre-oral panel required the system
+to answer: given a person standing in the queue zone, which enrolled
+student is this, if any? It serves two purposes in the running system.
+First, it identifies a registered student so that a queue number can be
+issued without manual input, which is the subject of
+Statement of the Problem~2. Second, it restores a queue person whose
+track was lost, typically because they stepped out of the camera's view
+and returned, recovering their original number instead of issuing a
+second one.
 
-\subsubsection{Appearance signature}
+The earlier design answered both questions from clothing colour. That
+approach was replaced because a clothing signature identifies an
+appearance, not a person: two students in similar uniforms are not
+separable by it, the same student changes appearance between visits, and
+nothing in it can confirm that the person at the camera is the account
+holder requesting service. A face signature carries identity directly, and
+the tiered arrangement of recency windows, spatial fallbacks and lookalike
+guards that existed to compensate for a weak signal is no longer needed.
+
+\subsubsection{Face embedding}
 \label{subsubsec:signature}
 
-For each queued person, the bounding-box crop is divided horizontally
-at its midpoint and a $16 \times 16$ joint Hue--Saturation histogram
-is computed for each half in the HSV colour space:
+A face detector locates the face within the upper region of each person's
+bounding box, and is accepted only when its detection confidence reaches
+$\tau_{\mathrm{det}} = 0.60$. The aligned face crop is passed to an
+ArcFace recognition model, which maps it to a unit-length embedding
 
 \begin{equation}
-H(b_h, b_s) \;=\; \big|\{p : \text{hue}(p) \in B_h
-\wedge \text{sat}(p) \in B_s\}\big|.
-\label{eq:hist-bin}
+e \;=\; f(\mathbf{x}) \in \mathbb{R}^{512},
+\qquad \lVert e \rVert_2 = 1,
+\label{eq:embedding}
 \end{equation}
 
-\noindent Each half-histogram is normalised so bin values sum to one.
-The full appearance signature
-$\mathrm{sig} \in \mathbb{R}^{512}$ is the concatenation of the upper
-and lower half-histograms, updated every 30~s using an EMA:
+\noindent where $\mathbf{x}$ is the face crop and $f$ the recognition
+network. The mapping is one-way: $\mathbf{x}$ cannot be recovered from
+$e$. Both models are supplied by the InsightFace
+\texttt{buffalo\_s} pack and execute on the CPU, with the detector
+operating at a $320 \times 320$ input size.
+
+\subsubsection{Enrolment signature}
+\label{subsubsec:enrolment}
+
+A student enrols by submitting $n \in [1, 5]$ photographs at varied angle
+and lighting. Each photograph that yields a confident face contributes an
+embedding, and the stored signature is their normalised mean:
 
 \begin{equation}
-\mathrm{sig}_t \;=\; 0.6\, \mathrm{sig}_{t-1} + 0.4\, \mathrm{sig}_{\text{new}}.
-\label{eq:sig-ema}
+e^{\mathrm{enrol}} \;=\;
+\frac{\frac{1}{n}\sum_{i=1}^{n} e_i}
+     {\bigl\lVert \frac{1}{n}\sum_{i=1}^{n} e_i \bigr\rVert_2}.
+\label{eq:enrol}
 \end{equation}
+
+\noindent Averaging across angles makes the stored signature more robust
+than any single photograph. The photographs themselves are discarded once
+the embedding is computed and are never written to storage.
 
 \subsubsection{Comparison metric}
 \label{subsubsec:psim}
 
-Two signatures are compared using Pearson histogram correlation applied
-to each body half:
+A live embedding is compared with an enrolled one by cosine similarity,
+which for unit-length vectors reduces to their inner product:
 
 \begin{equation}
-r(H_1, H_2) \;=\;
-\frac{\sum_i (H_{1,i} - \bar{H}_1)(H_{2,i} - \bar{H}_2)}
-     {\sqrt{\sum_i (H_{1,i} - \bar{H}_1)^2} \,
-      \sqrt{\sum_i (H_{2,i} - \bar{H}_2)^2}},
-\label{eq:pearson}
+\mathrm{sim}(e_1, e_2) \;=\;
+\frac{e_1 \cdot e_2}{\lVert e_1 \rVert_2 \, \lVert e_2 \rVert_2}
+\;=\; e_1 \cdot e_2 \;\in\; [-1, 1].
+\label{eq:cosine}
 \end{equation}
 
-\noindent combined with a body-half weighting that favours the upper body:
-
-\begin{equation}
-\mathrm{sim}(\mathrm{sig}_1, \mathrm{sig}_2)
-\;=\;
-0.6\, r(H_1^{\mathrm{upper}}, H_2^{\mathrm{upper}}) +
-0.4\, r(H_1^{\mathrm{lower}}, H_2^{\mathrm{lower}}).
-\label{eq:psim}
-\end{equation}
-
-\noindent Three thresholds govern the system:
-$\tau_{\mathrm{tb}} = 0.30$ (re-identification tiebreak),
-$\tau_{\mathrm{bl}} = 0.55$ (done-blacklist match), and
-$\tau_{\mathrm{twin}} = 0.85$ (twin/lookalike guard).
-
-\subsubsection{Hybrid decision rule}
+\subsubsection{Threshold-and-margin decision rule}
 \label{subsubsec:hybrid}
 
-The normalised spatial score for the single-missing-person fallback is:
+Let $\mathcal{E} = \{(s_i,\, e_i^{\mathrm{enrol}})\}$ be the enrolled
+students eligible for matching, and let the similarities of a live
+embedding $e$ against $\mathcal{E}$ be ranked so that $s^{(1)}$ is the
+highest and $s^{(2)}$ the next. Acceptance requires \emph{both} of:
 
 \begin{equation}
-s_{\text{sp}}(b_1, b_2) \;=\;
-\frac{d(b_1, b_2)}{\tfrac{1}{2}\big(\mathrm{diag}(b_1) +
-\mathrm{diag}(b_2)\big)}.
-\label{eq:spatial}
-\end{equation}
-
-\noindent In the multi-missing branch, restoration requires:
-
-\begin{equation}
-\text{restore} \;\Longleftrightarrow\;
-s^{(1)} \geq \tau_{\mathrm{tb}}
+\text{accept} \;\Longleftrightarrow\;
+\underbrace{s^{(1)} \geq \tau_{\mathrm{match}}}_{\text{resembles a known student}}
 \;\wedge\;
-s^{(1)} - s^{(2)} \geq \Delta_{\mathrm{mm}}.
-\label{eq:multi-reid}
+\underbrace{s^{(1)} - s^{(2)} \geq \tau_{\mathrm{margin}}}_{\text{resembles one student distinctly}},
+\label{eq:face-decision}
 \end{equation}
+
+\noindent with $\tau_{\mathrm{match}} = 0.30$ and
+$\tau_{\mathrm{margin}} = 0.15$. When only one student is enrolled,
+$s^{(2)}$ is defined as $-1$, so the margin condition is satisfied
+trivially and the absolute threshold alone governs.
+
+The second condition is the element original to this system. The first
+establishes only that the face resembles a known student; it does not
+establish \emph{which} student, and an absolute threshold alone will
+accept a face that resembles two enrolled students almost equally. The
+margin condition requires the best match to be better than the runner-up
+by a stated amount, so an ambiguous face is refused rather than resolved
+by taking the higher of two close scores. A refusal is not a failure of
+the system but its intended behaviour: the person remains pending and a
+member of staff resolves the case, which is preferable to issuing a
+confident but unverified identification. This also removes the need for a
+dedicated lookalike guard, since ambiguity is rejected by construction
+rather than by a special case.
+
+The same rule governs the open-set requirement. People who have not
+enrolled are never identified, because a face absent from $\mathcal{E}$
+produces neither a sufficient absolute score nor a sufficient margin.
+
+\subsubsection{Queue-number issuance}
+\label{subsubsec:minting}
+
+An accepted match is what allows a queue number to be issued without
+manual input. Three conditions govern the issuance itself.
+
+\textbf{Consent precedes issuance.} Recognition alone does not place a
+student in the queue. The student must have armed a join intent in the
+mobile client beforehand; a registered student who is recognized without
+one is classified as a bystander and issued nothing, so that somebody
+merely walking past the camera, accompanying a friend or working nearby,
+is never added to a queue they did not ask to join. The intent lapses
+after a configurable interval and is consumed once it produces a number.
+
+\textbf{One active entry per student.} Before a number is issued, the
+system checks whether that student already holds a pending or waiting
+entry. If so, nothing is issued. A student obtains a new number only
+after staff mark the previous one done, which prevents a
+recognized student from accumulating duplicate numbers by re-entering the
+camera's view.
+
+\textbf{A separate numeric range.} System-issued numbers are drawn from a
+reserved range beginning at $N_{\mathrm{face}} = 5000$:
+
+\begin{equation}
+\mathrm{number} \;=\; \min\bigl\{\, n \in \mathbb{N} \;:\;
+n \geq N_{\mathrm{face}} \;\wedge\; n \notin \mathcal{U} \,\bigr\},
+\label{eq:mint}
+\end{equation}
+
+\noindent where $\mathcal{U}$ is the set of numbers already in use. The
+service office's existing kiosk issues ordinary low numbers, so the two
+sequences cannot collide. This is what allows automatic issuance for
+registered students while leaving the established queue flow untouched,
+as the pre-oral panel required. Walk-ins never reach this path: an
+unenrolled face produces no accepted match, and walk-ins continue to
+take a ticket from the existing kiosk, which runs separately from
+\sysname{}.
 
 \vspace{0.5em}
 \noindent\rule{\linewidth}{0.8pt}
 
-\noindent\textbf{\underline{Algorithm 4: Appearance-Based Re-Identification}}
+\noindent\textbf{\underline{Algorithm 4: Face-Based Identity Validation}}
 
-\noindent\textbf{Input:} \textit{newSignature} $\mathrm{sig}_{\text{new}}$,
-\textit{boundingBox} $b_{\text{new}}$, \textit{activeQueue} $\mathcal{Q}$,
-\textit{servedBlacklist} $\mathcal{B}$, \textit{eligibleMissingSet}
-$\mathcal{M}$ (within $T_{\mathrm{rec}} = 120\ \mathrm{s}$)\\
-\noindent\textbf{Output:} \textit{restoredPerson}, \textsc{None}, or
-\textsc{Blocked}
+\noindent\textbf{Input:} \textit{faceCrop} $\mathbf{x}$ with detector
+confidence $c$, \textit{eligibleEnrolled} $\mathcal{E}$ (students not
+already served today), \textit{usedNumbers}
+$\mathcal{U}$\\
+\noindent\textbf{Output:} an issued \textit{queueNumber},
+\textsc{Bystander}, \textsc{AlreadyQueued}, or \textsc{Unrecognized}
 
 \begin{enumerate}
-  \item \textbf{IF} any $p \in \mathcal{Q}$ has
-        $\mathrm{sim}(p.\mathrm{sig},\,\mathrm{sig}_{\text{new}})
-        \geq \tau_{\mathrm{twin}}$ \textbf{THEN RETURN} \textsc{None}
-        (lookalike guard; issue a fresh number)
-  \item \textbf{IF} any $b \in \mathcal{B}$ has
-        $\mathrm{sim}(b,\,\mathrm{sig}_{\text{new}})
-        \geq \tau_{\mathrm{bl}}$ \textbf{THEN RETURN}
-        \textsc{Blocked} (already served this session)
-  \item \textbf{IF} $|\mathcal{M}| = 1$
-        (single-missing branch):
-  \item \quad \textbf{SET} $p \gets$ unique element of $\mathcal{M}$;
-        \textbf{COMPUTE} $s \gets \mathrm{sim}(p.\mathrm{sig},\,
-        \mathrm{sig}_{\text{new}})$
-  \item \quad \textbf{IF} $s \geq \tau_{\mathrm{tb}}$
-        \textbf{THEN RETURN} $p$ (appearance match)
-  \item \quad \textbf{COMPUTE} spatial score $s_{\text{sp}}$ from
-        centroid distance and mean bounding-box diagonal
-  \item \quad \textbf{IF} $s_{\text{sp}} < s_{\mathrm{fb}}^{\mathrm{app}}$
-        \textbf{THEN RETURN} $p$ (spatial fallback)
-  \item \quad \textbf{ELSE RETURN} \textsc{None}
-  \item \textbf{ELSE} (multi-missing branch):
-  \item \quad \textbf{RANK} $\mathcal{M}$ by
-        $\mathrm{sim}(\cdot,\,\mathrm{sig}_{\text{new}})$;
-        \textbf{SET} $s^{(1)}$, $s^{(2)}$ as top scores;
-        $p^{(1)}$ as best match
-  \item \quad \textbf{IF} $s^{(1)} \geq \tau_{\mathrm{tb}}$
-        \textbf{AND} $s^{(1)} - s^{(2)} \geq \Delta_{\mathrm{mm}}$
-        \textbf{THEN RETURN} $p^{(1)}$
-  \item \quad \textbf{ELSE RETURN} \textsc{None} (ambiguous)
+  \item \textbf{IF} $c < \tau_{\mathrm{det}}$ \textbf{THEN RETURN}
+        \textsc{Unrecognized} (no usable face in this frame)
+  \item \textbf{COMPUTE} $e \gets f(\mathbf{x})$, the $512$-dimensional
+        unit-length embedding
+  \item \textbf{IF} $\mathcal{E} = \emptyset$ \textbf{THEN RETURN}
+        \textsc{Unrecognized}
+  \item \textbf{COMPUTE} $\mathrm{sim}(e,\, e_i^{\mathrm{enrol}})$ for
+        every $(s_i,\, e_i^{\mathrm{enrol}}) \in \mathcal{E}$
+  \item \textbf{RANK} the similarities; \textbf{SET} $s^{(1)}$ and
+        $s^{(2)}$ as the two highest, with $s^{(2)} \gets -1$ if
+        $|\mathcal{E}| = 1$, and $p^{(1)}$ as the best-matching student
+  \item \textbf{SET} $\mathrm{margin} \gets s^{(1)} - s^{(2)}$
+  \item \textbf{RECORD} the match event with $s^{(1)}$, $\mathrm{margin}$,
+        and the accept-or-reject outcome
+  \item \textbf{IF} $s^{(1)} < \tau_{\mathrm{match}}$
+        \textbf{OR} $\mathrm{margin} < \tau_{\mathrm{margin}}$
+        \textbf{THEN RETURN} \textsc{Unrecognized}
+        (below threshold, or ambiguous between candidates)
+  \item \textbf{IF} $p^{(1)}$ has not armed a join intent
+        \textbf{THEN} mark the person a bystander and
+        \textbf{RETURN} \textsc{Bystander} (recognition is not consent)
+  \item \textbf{IF} $p^{(1)}$ already holds a pending or waiting entry
+        \textbf{THEN RETURN} \textsc{AlreadyQueued}
+  \item \textbf{SET} $\mathrm{number} \gets
+        \min\{\, n \geq N_{\mathrm{face}} : n \notin \mathcal{U} \,\}$
+  \item \textbf{LINK} $\mathrm{number}$ to $p^{(1)}$;
+        \textbf{ADD} $\mathrm{number}$ to $\mathcal{U}$;
+        \textbf{CONSUME} the join intent
+  \item \textbf{RETURN} $\mathrm{number}$
 \end{enumerate}
 \vspace{0.3em}
 
-% =====================================================================
-\subsection{No-Show Detection}
-\label{subsec:noshow}
+\noindent The set $\mathcal{E}$ is filtered by the caller to exclude
+students already served for the day, which performs the
+role the served-blacklist held in the earlier design without retaining any
+appearance data. Every evaluation, accepted or refused, is written to a
+recognition audit table together with its score and margin, which is the
+source of the accuracy results reported in Chapter~3.
 
-When the person at position~1 in the active queue becomes missing, a
-countdown is started. The elapsed time is
-
-\begin{equation}
-e(q) \;=\; t_{\text{now}} - \tau_{\mathrm{start}}(q),
-\label{eq:noshow-elapsed}
-\end{equation}
-
-\noindent and the no-show condition is
-
-\begin{equation}
-\text{no\_show}(q) \;\Longleftrightarrow\;
-e(q) \geq T_{\mathrm{ns}}
-\;\wedge\;
-\text{position}(q) = 1
-\;\wedge\;
-\text{status}(q) = \texttt{missing}.
-\label{eq:noshow}
-\end{equation}
-
-\vspace{0.5em}
-\noindent\rule{\linewidth}{0.8pt}
-
-\noindent\textbf{\underline{Algorithm 5: No-Show Detection}}
-
-\noindent\textbf{Input:} \textit{activeQueue} $\mathcal{Q}$,
-\textit{countdownTable} $S$, \textit{currentTime} $t_{\mathrm{now}}$\\
-\noindent\textbf{Output:} updated $\mathcal{Q}$ with no-show entries
-bumped and added to the done blacklist
-
-\begin{enumerate}
-  \item \textbf{FOR EACH} queue entry $q \in \mathcal{Q}$:
-  \item \quad \textbf{IF} $q.\mathrm{position} = 1$ \textbf{AND}
-        $q.\mathrm{status} = \texttt{missing}$ \textbf{THEN:}
-  \item \qquad \textbf{IF} $q \notin S$ \textbf{THEN}
-        \textbf{SET} $S[q] \gets t_{\mathrm{now}}$
-        (start countdown)
-  \item \qquad \textbf{ELSE IF} $t_{\mathrm{now}} - S[q]
-        \geq T_{\mathrm{ns}}$ \textbf{THEN:}
-  \item \qquad\quad \textbf{MARK} $q$ as \texttt{no\_show};
-        \textbf{REMOVE} $q$ from $\mathcal{Q}$
-  \item \qquad\quad \textbf{ADD} $q$'s appearance signature to
-        done blacklist $\mathcal{B}$;
-        \textbf{DELETE} $S[q]$
-  \item \quad \textbf{ELSE} \textbf{DELETE} $S[q]$ if present
-        (position changed or person visible again)
-\end{enumerate}
-\vspace{0.3em}
+Re-entry restoration, the second purpose named at the start of this
+section, applies the same decision rule to a different candidate set. When
+a queue person's track is lost and a new detection appears, the live
+embedding is compared against the stored embeddings of queue persons
+currently recorded as missing rather than against the enrolled roster, and
+Equation~\ref{eq:face-decision} governs acceptance unchanged. A match
+restores the person's original queue number; a refusal leaves them to be
+treated as a new arrival. Because one rule serves both purposes, the
+system has a single notion of what counts as a confident identification.
 
 % =====================================================================
 \subsection{Counter Assignment}
@@ -549,7 +582,7 @@ bumped and added to the done blacklist
 After every frame, the active queue $\mathcal{Q}$ is sorted by queue
 number in ascending order. Counter assignment is \emph{sticky}: once a
 counter is allocated to a queue entry, the allocation persists until
-that entry is marked done or no-show. The assignment rule is
+that entry is marked done or a no-show. The assignment rule is
 
 \begin{equation}
 \text{counter}(p) \;=\;
@@ -565,7 +598,7 @@ that entry is marked done or no-show. The assignment rule is
 \vspace{0.5em}
 \noindent\rule{\linewidth}{0.8pt}
 
-\noindent\textbf{\underline{Algorithm 6: Sticky Counter Assignment}}
+\noindent\textbf{\underline{Algorithm 5: Sticky Counter Assignment}}
 
 \noindent\textbf{Input:} \textit{activeQueue} $\mathcal{Q}$,
 \textit{numberOfCounters} $c$\\
@@ -704,7 +737,7 @@ wait, and recent prediction error.
 \vspace{0.5em}
 \noindent\rule{\linewidth}{0.8pt}
 
-\noindent\textbf{\underline{Algorithm 7: Multi-Horizon Wait-Time
+\noindent\textbf{\underline{Algorithm 6: Multi-Horizon Wait-Time
 Prediction}}
 
 \noindent\textbf{Input:} \textit{countHistory} $H$,
@@ -811,7 +844,7 @@ four-hour ticket lifetime.
 \vspace{0.5em}
 \noindent\rule{\linewidth}{0.8pt}
 
-\noindent\textbf{\underline{Algorithm 8: Ticket Generation}}
+\noindent\textbf{\underline{Algorithm 7: Ticket Generation}}
 
 \noindent\textbf{Input:} \textit{confirmedQueueNumber} $q$,
 \textit{statusPageURL} $U$, \textit{signingSecret} $K$\\
@@ -868,7 +901,7 @@ Table~\ref{tab:all-params} consolidates every tunable parameter
 referenced in this section. Values listed are those used in the
 deployed prototype.
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \small
 \renewcommand{\arraystretch}{0.94}
@@ -890,18 +923,17 @@ Candidate conf. & $N_{\mathrm{conf}}$          & $20$ frames          & Confirma
 \hline
 Track mgmt.     & $\tau_{\mathrm{iou}}^{\mathrm{rm}}$ & $0.10$   & Remap IoU threshold \\
                 & $d_{\max}$                   & $180\ \mathrm{px}$   & Remap distance cap \\
+                & $F_{\mathrm{rm}}$            & $45$ frames          & Remap absence window \\
                 & $\tau_{\mathrm{iou}}^{\mathrm{dd}}$ & $0.40$   & Dedup IoU threshold \\
                 & $f_{\mathrm{dd}}$            & $0.15$               & Centre-fraction gate \\
                 & $I_0$                        & $60$ frames          & Re-entry immunity \\
 \hline
-Re-ID           & $\tau_{\mathrm{tb}}$         & $0.30$               & Appearance tiebreak \\
-                & $\tau_{\mathrm{bl}}$         & $0.55$               & Done blacklist guard \\
-                & $\tau_{\mathrm{twin}}$       & $0.85$               & Twin guard \\
-                & $s_{\mathrm{fb}}^{\mathrm{app}}$ & $0.20$        & Spatial fallback (single) \\
-                & $\Delta_{\mathrm{mm}}$       & $0.10$               & Multi-missing score gap \\
-                & $T_{\mathrm{rec}}$           & $120\ \mathrm{s}$    & Re-entry recency window \\
-\hline
-No-show         & $T_{\mathrm{ns}}$            & $300\ \mathrm{s}$    & No-show window \\
+Face identity   & $\tau_{\mathrm{match}}$      & $0.30$               & Absolute match threshold \\
+                & $\tau_{\mathrm{margin}}$     & $0.15$               & Margin over runner-up \\
+                & $\tau_{\mathrm{det}}$        & $0.60$               & Face-detector confidence \\
+                & $d_{\mathrm{emb}}$           & $512$                & Embedding dimension \\
+                & $n_{\mathrm{enrol}}$         & $1$--$5$             & Enrolment photographs \\
+                & $N_{\mathrm{face}}$          & $5000$               & System-minted range start \\
 \hline
 Prediction      & $\alpha_{\mathrm{H}}$        & $0.4$                & Holt's level smoothing \\
                 & $\beta_{\mathrm{H}}$         & $0.2$                & Holt's trend smoothing \\
