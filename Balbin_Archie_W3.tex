@@ -1474,17 +1474,30 @@ The study is guided by the following research problems:
 
 The following assumptions delimit the proposed evaluation:
 
-\textbf{Camera visibility and queue-zone coverage.} The camera hardware
-provides sufficient video quality and coverage of the queue zone to
-enable reliable YOLO person detection under the lighting conditions and
-pedestrian densities typical of NCF service areas.
+\textbf{Camera visibility and queue-zone coverage.} The camera covers the
+queue zone with enough resolution and lighting for YOLO to detect the
+people standing in it and for their faces to be detected and recognised
+at queue-zone distance, under the lighting and crowd levels typical of
+NCF service areas.
 
-\textbf{Effectiveness of tracking and re-identification.} YOLO's
-tracking mechanism, supplemented by the system's spatial
-and appearance-based re-identification layer, produces sufficiently
-stable person identities across the queue duration to keep duplicate
-queue assignments to an acceptable rate, to be reported empirically in
-Chapter 3.
+\textbf{Stable tracking.} Person tracking keeps each person's identity
+stable for as long as they stand in the queue zone, so that their face
+can be captured and matched once, and a student who briefly leaves and
+returns can be recognised again by face.
+
+\textbf{Student participation.} Students who want a system-issued queue
+number have an Android phone and an NCF Gbox account, enrol their face
+voluntarily through the mobile application, and ask to be queued before
+they reach the queue zone.
+
+\textbf{Representative enrolment.} A student's enrolment photographs
+reflect how they look when they queue; a large change in appearance, such
+as a face covering not worn at enrolment, may lead the system to refer
+them to staff rather than recognise them.
+
+\textbf{Network availability.} The service office has a working internet
+connection to the cloud-hosted backend during the evaluation period,
+since recognition and queue-number issuance depend on it.
 
 \textbf{Usefulness of prediction outputs.} The implemented prediction
 models generate forecasts that are actionable and sufficiently accurate
