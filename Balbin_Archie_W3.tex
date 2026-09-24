@@ -1796,7 +1796,7 @@ data are used to measure queue assignment accuracy, re-identification
 reliability, ticket and token validation, detection-to-ticket latency,
 and wait-time prediction error through Mean Absolute Error (MAE) and
 Mean Absolute Percentage Error (MAPE). The five-point Likert survey
-records how service staff, administrators, and student users rate
+records how cashier staff and student users rate
 dashboard usability, layout clarity, and the usefulness of the
 prediction outputs after regular exposure to the prototype.
 Qualitative evidence comes from short semi-structured interviews, where
@@ -1827,14 +1827,14 @@ prototype. The prototype will be installed in one service office area
 coordinated with NCF administration, serving as the single-queue-zone
 test site defined in the Scope and Delimitation of Chapter~1.
 
-The study population consists of three groups who directly interact
-with the \sysname{} prototype during the evaluation period. The first
-group is the service staff assigned to the selected cashiering office
-counter. The second group is administrators and IT personnel who hold
-oversight or supervisory responsibility for the selected service office.
-The third group is currently enrolled NCF students who complete at least
-one transaction at the cashiering office and receive a \sysname{}-issued
-ticket during the evaluation period. The total population size for each
+The study population consists of the two groups who directly use the
+\sysname{} prototype. The first is the cashier staff assigned to the
+selected cashiering office counter, who operate the staff dashboard. The
+second is currently enrolled NCF students who transact at the cashiering
+office and receive a \sysname{}-issued queue number. Administrators and
+IT personnel are not surveyed: they oversee the office but do not use the
+system themselves, so they could not rate its usability, reliability, or
+clarity from experience. The total population size for each
 group will be determined prior to deployment in coordination with NCF
 administration, and the number of respondents drawn from each group is
 reported in the final evaluation phase of Chapter~3.
@@ -1842,13 +1842,12 @@ reported in the final evaluation phase of Chapter~3.
 \section{Sample and Sampling Technique}
 \label{cr:sampling}
 
-This study uses total enumeration for service staff and
-administrators, and convenience sampling for students, adapted to the
-supervised trial session in which the system is evaluated. Sampling is adapted to the
-size and role of each respondent group rather than applying one
-procedure to all participants. This allows the evaluation to include
-the operational perspective of staff, the management perspective of
-administrators, and the user experience of students.
+This study uses total enumeration for cashier staff and convenience
+sampling for students, adapted to the supervised trial session in which
+the system is evaluated. Sampling is adapted to the size and role of
+each group rather than applying one procedure to both, so that the
+evaluation includes the operational perspective of staff and the user
+experience of students.
 
 \textbf{Service staff.} Because the population of staff directly
 involved in queue-based transactions in the selected service office is
@@ -1856,12 +1855,6 @@ relatively small and bounded, total enumeration is used; all eligible
 staff will be invited to participate. The inclusion criterion is
 having operated the staff dashboard during the supervised trial
 session.
-
-\textbf{Administrators.} Total enumeration is likewise used for this
-group, since the population of administrators and IT personnel with
-oversight of the selected service office is small. The inclusion
-criterion is direct supervisory involvement with the service office
-during the evaluation period.
 
 \textbf{Students.} Student respondents are drawn by convenience
 sampling from the students who volunteer for the supervised trial
@@ -1884,7 +1877,7 @@ also small, particularly on the staff side. Its results are therefore
 read as evidence of what the current problems are and how strongly each
 group feels them, not as estimates for the whole NCF population.
 
-\textbf{Exclusion criterion.} Across all three groups, any prospective
+\textbf{Exclusion criterion.} In both groups, any prospective
 respondent below 18 years of age is excluded. The age criterion is
 enforced through a screening question that immediately precedes the
 informed consent form, and any prospective respondent indicating an age
@@ -2065,7 +2058,7 @@ as appendices.
 \label{sec:ethics}
 
 Ethical handling is treated as part of the system design, not only as a
-research requirement. Staff, administrators, and student users may join
+research requirement. Staff and student users may join
 surveys, interviews, and system testing only after giving informed
 consent. Before any questionnaire or interview is administered, the
 researchers explain the purpose of the study, the activities involved,
@@ -2255,8 +2248,8 @@ computed separately for staff and students, whose baseline items
 differ, and are interpreted on the agreement scale only. The weighted
 mean (WM) is
 computed for each Likert item, each dimension averaged across items
-within a dimension, and each respondent group: service staff,
-administrators, and students. The results are then pooled into an
+within a dimension, and each respondent group: cashier staff and
+students. The results are then pooled into an
 overall weighted mean (OWM). Per-group weighted means are reported to
 allow comparison across stakeholder perspectives; because staff and
 students answer different role-specific items for No.~4, groups are
@@ -4151,8 +4144,7 @@ them.
   \item Respondent code assigned by researchers:
         \rule{0.45\textwidth}{0.4pt}
   \item Respondent group:
-        $\square$ Service Staff \quad
-        $\square$ Administrator / IT Personnel \quad
+        $\square$ Cashier Staff \quad
         $\square$ Student
   \item For students only -- Year level:
         $\square$ 1st year \quad
@@ -4164,16 +4156,12 @@ them.
         during the session?\\
         $\square$ Automatically, after the camera recognised me \quad
         $\square$ From staff, because the system could not recognise me
-  \item For staff and administrators only -- Your role during the
-        session:
-        $\square$ Operated the staff dashboard \quad
-        $\square$ Observed or supervised
 \end{enumerate}
 
 \section*{Instructions}
 
 Answer only the form for your group: students answer Section~II, and
-staff and administrators answer Section~III. For each statement, choose
+cashier staff answer Section~III. For each statement, choose
 the box that best matches your experience with \sysname{} during the
 trial session.
 
@@ -4226,11 +4214,11 @@ C5-s & I understood what information the system keeps about me. & \rb \\
 \end{table}
 
 \clearpage
-\section*{Section III: Staff and Administrator Form}
+\section*{Section III: Cashier Staff Form}
 
 \begin{table}[H]
 \small
-\caption{Staff and administrator form (15 items).}
+\caption{Cashier staff form (15 items).}
 \label{tab:appb-staff}
 \centering
 \renewcommand{\arraystretch}{1.12}
