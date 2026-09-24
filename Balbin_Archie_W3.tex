@@ -1559,8 +1559,9 @@ database, cache, and ticket storage are cloud-hosted, and the detector
 in the office must reach the backend for every recognition and every
 queue number issued; if the connection fails, recognition and number
 issuance stop until it returns. Offline operation is outside the scope
-of this build. The evaluation is limited to one semester after
-implementation.
+of this build. The user evaluation is limited to a supervised
+trial session held before the final defense, not a semester of regular
+operation.
 
 \section{Significance of the Study}
 
@@ -1841,9 +1842,9 @@ reported in the final evaluation phase of Chapter~3.
 \section{Sample and Sampling Technique}
 \label{cr:sampling}
 
-This study uses a combination of total enumeration for service staff
-and administrators, and stratified purposive sampling guided by
-Slovin's formula for the student group. Sampling is adapted to the
+This study uses total enumeration for service staff and
+administrators, and convenience sampling for students, adapted to the
+supervised trial session in which the system is evaluated. Sampling is adapted to the
 size and role of each respondent group rather than applying one
 procedure to all participants. This allows the evaluation to include
 the operational perspective of staff, the management perspective of
@@ -1852,9 +1853,9 @@ administrators, and the user experience of students.
 \textbf{Service staff.} Because the population of staff directly
 involved in queue-based transactions in the selected service office is
 relatively small and bounded, total enumeration is used; all eligible
-staff will be invited to participate. The inclusion criterion is at
-least two weeks of regular interaction with the system in their normal
-work role during the evaluation period.
+staff will be invited to participate. The inclusion criterion is
+having operated the staff dashboard during the supervised trial
+session.
 
 \textbf{Administrators.} Total enumeration is likewise used for this
 group, since the population of administrators and IT personnel with
@@ -1862,21 +1863,15 @@ oversight of the selected service office is small. The inclusion
 criterion is direct supervisory involvement with the service office
 during the evaluation period.
 
-\textbf{Students.} Because the student population is large, the sample
-size for this group is determined using Slovin's formula at a 5\%
-margin of error:
-\begin{equation}
-  n = \frac{N}{1 + Ne^2}
-  \label{eq:slovin}
-\end{equation}
-where $n$ is the required sample size, $N$ is the population of NCF
-students who interact with the targeted service office during the
-evaluation period, and $e$ is the margin of error, set at 0.05. Student
-respondents will then be drawn through stratified purposive sampling
-across year levels to ensure that the resulting sample reflects the
-diversity of users who experience the queue. The inclusion criterion is
-at least one completed transaction involving a \sysname{}-issued ticket
-during the evaluation period.
+\textbf{Students.} Student respondents are drawn by convenience
+sampling from the students who volunteer for the supervised trial
+session. Each goes through the full sequence: signing in, enrolling a
+face, asking to be queued, and being issued a queue number at the queue
+zone. The inclusion criterion is completing that sequence at least once
+during the session. This replaces the Slovin-sized sample stratified by
+year level in the original design, as explained in
+Section~\ref{sec:datagathering}; the student sample is therefore smaller
+and is not claimed to represent all NCF students.
 
 \textbf{Baseline respondents.} The baseline survey for Statement of the
 Problem No.~1 is a separate, earlier sample drawn by convenience
@@ -1923,9 +1918,8 @@ the reference against which the \sysname{}-mediated process is later
 compared.
 
 \textbf{Phase 2: System Deployment and Performance Logging.} After
-alpha and beta testing in Section~2.10, the system will be deployed for
-regular operation in the selected service office for the evaluation
-period. During this phase, two parallel streams of data will be
+alpha testing in Section~2.10, the system will be operated in the
+selected service office during the supervised trial session. During this phase, two parallel streams of data will be
 captured. First, the system will automatically log every detection
 event, queue assignment, re-entry matching decision, ticket issuance,
 prediction output, and dashboard interaction, with associated
@@ -1936,15 +1930,33 @@ time measured from queue zone entry to counter arrival. The automated
 logs and the manual ground-truth log together support the technical
 performance metrics specified in Section~2.7.
 
-\textbf{Phase 3: Post-Evaluation Survey and Interviews.} After the
-evaluation period, the validated questionnaire in Section~2.5 will be
-administered to the three respondent groups identified in Section~2.3.
+\textbf{Phase 3: Post-Trial Survey and Interviews.} Immediately after
+the supervised trial session, the content-validated questionnaire in
+Section~2.5 will be administered to the respondent groups identified in
+Section~2.3.
 A subset of respondents from each group will be invited to a short
 semi-structured interview, scheduled at their convenience and lasting
 approximately twenty minutes. Interview audio will be recorded only
 with consent and transcribed, after which the recordings will be
 deleted. Both survey responses and interview transcripts will be
 anonymized before analysis.
+
+\textbf{Shortened evaluation protocol.} The original design allowed at
+least two weeks of regular operation before the user evaluation, a
+separate pilot of 10 to 15 respondents before the main survey, and a
+student sample sized by Slovin's formula. The time available before the
+final defense does not allow these, so the protocol was shortened in
+three ways, each reported here rather than left implicit. First, the two
+weeks of regular operation are replaced by a single supervised trial
+session, and the questionnaire is answered immediately afterwards.
+Second, the separate pilot is replaced by Cronbach's alpha computed on
+the evaluation responses themselves. Third, the student sample consists
+of the volunteers who complete the trial rather than a Slovin-sized
+sample. Content validation by the three expert raters is kept. The
+consequence for interpretation is direct: the results for Statement of
+the Problem No.~4 describe users' first experience of \sysname{} under
+supervision, not their satisfaction after sustained daily use, and they
+are reported with that qualification.
 
 \section{Research Instrument}
 \label{sec:instrument}
@@ -1990,9 +2002,11 @@ dashboard, mobile client, and ticket workflow; (b)~system's
 reliability, covering queue assignment accuracy, face recognition,
 and re-identification as perceived by users; and (c)~system clarity,
 covering the dashboard layout, live snapshot, analytics cards, counter
-controls, and the presentation of wait-time predictions. Each dimension
-contains several items rated on the five-point scale shown in
-Table~\ref{tab:likert}.
+controls, and the presentation of wait-time predictions. Each respondent
+answers fifteen items, five per dimension: two common to all groups, so
+that the groups can be compared, and three specific to their role. The
+items are rated on the five-point scale shown in Table~\ref{tab:likert}
+and listed in Appendix~\ref{app:queueflow-questionnaire}.
 
 \textbf{Semi-structured interview guide.} A short interview guide is
 prepared to explore usability problems, perceived benefits of the
@@ -2020,8 +2034,8 @@ comments.
 \end{table}
 
 \textbf{Instrument validation.} Because the questionnaire is
-researcher-made, its content validity and reliability are established
-before it is used in the main evaluation. Content validation is
+researcher-made, its content validity is established before it is
+used, and its reliability is measured on the responses. Content validation is
 conducted by three expert raters, namely the thesis adviser, one
 faculty member with expertise in research methods or statistics, and
 one faculty member with expertise in computer science or information
@@ -2031,18 +2045,21 @@ relevant. The Content Validity Index is then computed at the item level
 (I-CVI) and at the scale level (S-CVI/Average). An I-CVI of at least
 0.78 per item and an S-CVI/Average of at least 0.90 for the full scale
 are taken as acceptable thresholds, and any item falling below the
-threshold is revised or removed based on the experts' written comments
-before pilot testing.
+threshold is revised or removed based on the experts' written comments.
+Under the shortened evaluation protocol this is completed in a single
+review round before the questionnaire is administered.
 
-\textbf{Reliability testing.} After content validation, the
-questionnaire is pilot-tested with approximately 10 to 15 respondents
-drawn from the same population strata but excluded from the final
-sample. Internal-consistency reliability is then computed using
-Cronbach's alpha, with the formula given in Section~2.7 and a value of
-at least 0.70 taken as acceptable. If alpha falls below the threshold,
-items with low item-total correlation are revised and the pilot is
-repeated. The signed content validation forms and the pilot reliability
-output are attached as appendices.
+\textbf{Reliability testing.} Internal-consistency reliability is
+computed with Cronbach's alpha, using the formula in Section~2.7, for
+each dimension within each respondent group, and a value of at least
+0.70 is taken as acceptable. The original design called for a separate
+pilot of 10 to 15 respondents excluded from the final sample; under the
+shortened evaluation protocol, alpha is instead computed on the
+evaluation responses themselves, as it was for the baseline
+questionnaire. A dimension that falls below 0.70 is reported with its
+coefficient and interpreted item by item rather than as a composite. The
+signed content validation forms and the reliability output are attached
+as appendices.
 
 \section{Ethical Considerations}
 \label{sec:ethics}
@@ -2241,7 +2258,9 @@ computed for each Likert item, each dimension averaged across items
 within a dimension, and each respondent group: service staff,
 administrators, and students. The results are then pooled into an
 overall weighted mean (OWM). Per-group weighted means are reported to
-allow comparison across stakeholder perspectives.
+allow comparison across stakeholder perspectives; because staff and
+students answer different role-specific items for No.~4, groups are
+compared on the common items only.
 \begin{equation}
   \text{WM} = \frac{\sum(f \times w)}{N}
   \label{eq:weighted_mean}
@@ -2934,12 +2953,13 @@ footage. Defects in detection, tracking, ticket generation, dashboard
 rendering, and mobile-client status retrieval will be identified and
 resolved before any external user is exposed to the system.
 
-\textbf{Beta Testing.} The system will be released to a limited group
-of NCF service staff for at least two weeks of regular operation.
-During this period, the developers will observe real-world interaction
-patterns, collect informal feedback, and log any operational issues.
-Issues affecting the user experience will be addressed before the
-structured evaluation begins.
+\textbf{Beta Testing.} Under the shortened evaluation protocol, beta
+testing takes the form of a supervised trial session in which NCF
+service staff operate the system while volunteer students use it. The
+developers observe the interaction and log any operational issues, and
+the same session provides the structured evaluation described below,
+rather than following a separate two-week period of regular
+operation.
 
 \textbf{Performance Testing: Queue Assignment Accuracy.} During defined
 observation windows, an independent observer will maintain a manual
@@ -2977,15 +2997,13 @@ to the matching queue status. Failures will be logged and counted
 toward the ticket and token validation rate reported under Statement of
 the Problem No.~2.
 
-\textbf{Usability Evaluation.} After a minimum of two weeks of regular
-system use, the content-validated and pilot-tested questionnaire in
-Section~2.5 will be administered to the three respondent groups
-identified in Section~2.3. Because the questionnaire is
-researcher-made, its internal-consistency reliability is established
-through a pilot run with Cronbach's alpha before the main evaluation
-begins, as specified in Section~2.5. An alpha value of at least $0.70$
-is required; items below that threshold are revised or removed before
-the questionnaire is administered to the full sample. The baseline
+\textbf{Usability Evaluation.} Immediately after the supervised trial
+session, the content-validated questionnaire in Section~2.5 is
+administered to the respondent groups identified in Section~2.3.
+Because the questionnaire is researcher-made, its internal-consistency
+reliability is measured with Cronbach's alpha on those responses, with a
+value of at least $0.70$ taken as acceptable, as specified in
+Section~2.5. The baseline
 questionnaire for Statement of the Problem No.~1 is also researcher-made
 and was tested in the same way; its coefficients are reported with the
 results in Section~\ref{sec:sop1-results}. Responses will
@@ -3875,7 +3893,10 @@ the level of user's satisfaction in terms of system's usability,
 system's reliability, and system clarity?} Results are reported per
 dimension and per respondent group using the weighted mean and overall
 weighted mean, interpreted against the Likert scale in
-Table~\ref{tab:likert}.
+Table~\ref{tab:likert}. The responses come from the supervised trial
+session under the shortened evaluation protocol described in
+Section~\ref{sec:datagathering}, and describe users' first experience of
+the system rather than satisfaction after sustained use.
 
 % TODO: Insert weighted mean tables and interpretation here after the
 % post-evaluation survey is administered and analyzed.
@@ -4126,198 +4147,145 @@ them.
 \section*{Section I: Respondent Profile}
 
 \begin{enumerate}
+  \setlength{\itemsep}{1pt}
   \item Respondent code assigned by researchers:
         \rule{0.45\textwidth}{0.4pt}
   \item Respondent group:
         $\square$ Service Staff \quad
         $\square$ Administrator / IT Personnel \quad
         $\square$ Student
-  \item Age range:
-        $\square$ 18--22 \quad
-        $\square$ 23--30 \quad
-        $\square$ 31--40 \quad
-        $\square$ 41--50 \quad
-        $\square$ 51 and above
-  \item Gender (optional): \rule{0.45\textwidth}{0.4pt}
   \item For students only -- Year level:
         $\square$ 1st year \quad
         $\square$ 2nd year \quad
         $\square$ 3rd year \quad
         $\square$ 4th year \quad
         $\square$ 5th year or above
-  \item For students only -- Program / Course:
-        \rule{0.45\textwidth}{0.4pt}
-  \item For staff and administrators only -- Length of service at NCF:
-        $\square$ Less than 1 year \quad
-        $\square$ 1--3 years \quad
-        $\square$ 4--7 years \quad
-        $\square$ 8 years or more
-  \item During the evaluation period, how often did you interact with
-        \sysname{}?
-        $\square$ Daily \quad
-        $\square$ A few times per week \quad
-        $\square$ Weekly \quad
-        $\square$ Less than weekly
+  \item For students only -- How did you receive your queue number
+        during the session?\\
+        $\square$ Automatically, after the camera recognised me \quad
+        $\square$ From staff, because the system could not recognise me
+  \item For staff and administrators only -- Your role during the
+        session:
+        $\square$ Operated the staff dashboard \quad
+        $\square$ Observed or supervised
 \end{enumerate}
 
 \section*{Instructions}
 
-For each statement below, choose the box that best matches your actual
-experience with \sysname{} during the evaluation period. The items ask
-about the parts of the system used by your respondent group. When an
-item is outside your role, leave it blank or mark ``Not Applicable'' if
-that option is provided on the printed form.
+Answer only the form for your group: students answer Section~II, and
+staff and administrators answer Section~III. For each statement, choose
+the box that best matches your experience with \sysname{} during the
+trial session.
 
-\begin{table}[H]
-  \caption{Likert Scale Interpretation}
-  \label{tab:appb-likert}
-  \centering
-  \small
-  \begin{tabular}{c p{4.0cm} p{6.2cm}}
-    \toprule
-    \textbf{Scale} & \textbf{Response} & \textbf{Interpretation} \\
-    \midrule
-    5 & Strongly Agree & Strongly Agree / Excellent \\
-    4 & Agree & Agree / Very Satisfactory \\
-    3 & Neutral & Neutral / Satisfactory \\
-    2 & Disagree & Disagree / Poor \\
-    1 & Strongly Disagree & Strongly Disagree / Very Poor \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\noindent Tag legend: [S] = Service Staff, [A] = Administrators / IT,
-[ST] = Students.
+\medskip
+\noindent\textbf{Rating scale:} 5 = Strongly Agree \quad 4 = Agree \quad
+3 = Neutral \quad 2 = Disagree \quad 1 = Strongly Disagree
 
 \providecommand{\ratingbox}{\ensuremath{\square}}
+\newcommand{\rb}{\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox}
 
-\begingroup
-\scriptsize
-\setlength{\tabcolsep}{2.5pt}
-\setlength{\intextsep}{0.35em}
-\setlength{\floatsep}{0.35em}
-\setlength{\textfloatsep}{0.35em}
-\setlength{\abovecaptionskip}{0.2em}
-\setlength{\belowcaptionskip}{0.2em}
-\renewcommand{\arraystretch}{1.06}
+\clearpage
+\section*{Section II: Student Form}
 
 \begin{table}[H]
-\scriptsize
-\caption{Dimension A: System's Usability}
-\label{tab:appb-usability}
+\small
+\caption{Student form (15 items).}
+\label{tab:appb-student}
 \centering
-\begin{tabular}{p{0.45cm} p{7.0cm} p{2.1cm} c c c c c}
+\renewcommand{\arraystretch}{1.12}
+\begin{tabular}{p{0.9cm} p{9.3cm} c c c c c}
 \toprule
-\textbf{\#} & \textbf{Item} & \textbf{Tag} &
+\textbf{Code} & \textbf{Statement} &
 \textbf{5} & \textbf{4} & \textbf{3} & \textbf{2} & \textbf{1} \\
 \midrule
-A1 & The \sysname{} dashboard is easy to navigate. & [S] [A] &
-\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
-A2 & The actions I need to perform, such as call next, mark done, and
-mark no-show, are easy to find on the dashboard. & [S] &
-\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
-A3 & I can complete my common tasks in \sysname{} without needing help.
-& [S] [A] &
-\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
-A4 & The \sysname{} mobile interface is easy to use on my phone. & [ST] &
-\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
-A5 & Scanning the QR code on my queue ticket is straightforward. & [ST] &
-\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
-A6 & Checking my queue status on the mobile interface is quick. & [ST] &
-\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+\multicolumn{7}{l}{\textit{A.\ System's usability}} \\
+U1 & The system was easy to use without needing someone to guide me. & \rb \\
+U2 & I was able to complete what I needed to do without difficulty. & \rb \\
+U3-s & Registering my face in the mobile app was easy. & \rb \\
+U4-s & Asking to be queued from the mobile app was convenient. & \rb \\
+U5-s & I received my queue number without having to do anything else at
+  the office. & \rb \\
+\midrule
+\multicolumn{7}{l}{\textit{B.\ System's reliability}} \\
+R1 & The system worked consistently throughout the session. & \rb \\
+R2 & I did not encounter errors that stopped me from continuing. & \rb \\
+R3-s & The system recognised me correctly when I entered the queue area. & \rb \\
+R4-s & I trust that the queue number I received was mine and not someone
+  else's. & \rb \\
+R5-s & My position in the queue was updated correctly as the line moved. & \rb \\
+\midrule
+\multicolumn{7}{l}{\textit{C.\ System clarity}} \\
+C1 & The information shown on screen was easy to understand. & \rb \\
+C2 & I always knew what the system was doing or waiting for. & \rb \\
+C3-s & My position in the queue was clearly shown. & \rb \\
+C4-s & The estimated waiting time was presented in a way I could
+  understand. & \rb \\
+C5-s & I understood what information the system keeps about me. & \rb \\
 \bottomrule
 \end{tabular}
 \end{table}
 
+\clearpage
+\section*{Section III: Staff and Administrator Form}
+
 \begin{table}[H]
-\scriptsize
-\caption{Dimension B: System's Reliability}
-\label{tab:appb-reliability}
+\small
+\caption{Staff and administrator form (15 items).}
+\label{tab:appb-staff}
 \centering
-\begin{tabular}{p{0.45cm} p{7.0cm} p{2.1cm} c c c c c}
+\renewcommand{\arraystretch}{1.12}
+\begin{tabular}{p{0.9cm} p{9.3cm} c c c c c}
 \toprule
-\textbf{\#} & \textbf{Item} & \textbf{Tag} &
+\textbf{Code} & \textbf{Statement} &
 \textbf{5} & \textbf{4} & \textbf{3} & \textbf{2} & \textbf{1} \\
 \midrule
-B1 & \sysname{} correctly recognizes enrolled students and issues their
-queue numbers. & [S] [A] [ST] &
-\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
-B2 & \sysname{} rarely assigns duplicate queue numbers to the same
-person. & [S] [A] &
-\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
-B3 & When a person briefly leaves the queue area and returns, \sysname{}
-correctly recognizes them. & [S] [A] &
-\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
-B4 & The dashboard shows clearly when the person whose turn it is has
-left the queue area. & [S] &
-\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
-B5 & I trust the queue list shown on the \sysname{} dashboard. & [S] [A] &
-\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
-B6 & The queue number I received matched my actual position in the line.
-& [ST] &
-\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
+\multicolumn{7}{l}{\textit{A.\ System's usability}} \\
+U1 & The system was easy to use without needing someone to guide me. & \rb \\
+U2 & I was able to complete what I needed to do without difficulty. & \rb \\
+U3-f & Navigating the staff dashboard was easy. & \rb \\
+U4-f & Marking an entry as done or as a no-show was quick to do. & \rb \\
+U5-f & When the system could not identify someone, resolving it from the
+  dashboard was straightforward. & \rb \\
+\midrule
+\multicolumn{7}{l}{\textit{B.\ System's reliability}} \\
+R1 & The system worked consistently throughout the session. & \rb \\
+R2 & I did not encounter errors that stopped me from continuing. & \rb \\
+R3-f & The queue numbers the system issued matched the students actually
+  present. & \rb \\
+R4-f & When the system was unsure about someone, it referred them to staff
+  instead of guessing. & \rb \\
+R5-f & The queue list on the dashboard stayed accurate as students were
+  served. & \rb \\
+\midrule
+\multicolumn{7}{l}{\textit{C.\ System clarity}} \\
+C1 & The information shown on screen was easy to understand. & \rb \\
+C2 & I always knew what the system was doing or waiting for. & \rb \\
+C3-f & The dashboard layout made it easy to find what I needed. & \rb \\
+C4-f & The live camera view and the queue list were clear to read. & \rb \\
+C5-f & The wait-time predictions and analytics were presented in a way I
+  could act on. & \rb \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\begin{table}[H]
-\scriptsize
-\caption{Dimension C: System Clarity}
-\label{tab:appb-clarity}
-\centering
-\begin{tabular}{p{0.45cm} p{7.0cm} p{2.1cm} c c c c c}
-\toprule
-\textbf{\#} & \textbf{Item} & \textbf{Tag} &
-\textbf{5} & \textbf{4} & \textbf{3} & \textbf{2} & \textbf{1} \\
-\midrule
-C1 & The live camera snapshot on the dashboard is clear and easy to
-interpret. & [S] [A] &
-\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
-C2 & The queue list is easy to read at a glance. & [S] [A] &
-\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
-C3 & The analytics cards present information in a useful way. & [S] [A] &
-\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
-C4 & Pending-link alerts and counter controls are clearly labeled and
-visible. & [S] &
-\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
-C5 & The wait-time predictions are easy to understand and presented
-clearly. & [S] [A] [ST] &
-\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
-C6 & The dashboard layout makes it easy to find the information I need.
-& [S] [A] &
-\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
-C7 & The prediction cards on the dashboard are useful for managing or
-planning around the queue. & [S] [A] [ST] &
-\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
-C8 & Overall, \sysname{} is a meaningful improvement over the previous
-manual queueing process. & [S] [A] [ST] &
-\ratingbox & \ratingbox & \ratingbox & \ratingbox & \ratingbox \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\endgroup
-
-\section*{Section VII: Open-Ended Questions}
+\section*{Section IV: Additional Questions (not scored)}
 
 \begin{enumerate}
-\item What did you like most about using \sysname{}?\\[0.3em]
-        \rule{\linewidth}{0.4pt}\\[0.75em]
+  \item Did the system ever fail to recognise you, or give you a number
+        you did not expect?
+        $\square$ No \quad $\square$ Yes, once \quad
+        $\square$ Yes, more than once
+  \item If yes, what happened?\\[0.3em]
         \rule{\linewidth}{0.4pt}
-  \item What did you find most difficult or confusing when using
-        \sysname{}?\\[0.3em]
-        \rule{\linewidth}{0.4pt}\\[0.75em]
+  \item How comfortable are you with the system using your face to
+        identify you in the queue?\\
+        $\square$ Very comfortable \quad $\square$ Comfortable \quad
+        $\square$ Neutral \quad $\square$ Uncomfortable \quad
+        $\square$ Very uncomfortable
+  \item What did you like most about \sysname{}?\\[0.3em]
         \rule{\linewidth}{0.4pt}
   \item If you could change one thing about \sysname{}, what would it
         be?\\[0.3em]
-        \rule{\linewidth}{0.4pt}\\[0.75em]
-        \rule{\linewidth}{0.4pt}
-  \item What Cashiering Office situations should \sysname{} handle
-        better before it is considered for wider use?\\[0.3em]
-        \rule{\linewidth}{0.4pt}\\[0.75em]
-        \rule{\linewidth}{0.4pt}
-  \item Any other comments or suggestions?\\[0.3em]
-        \rule{\linewidth}{0.4pt}\\[0.75em]
         \rule{\linewidth}{0.4pt}
 \end{enumerate}
 
@@ -4327,29 +4295,23 @@ manual queueing process. & [S] [A] [ST] &
 
 \section*{Questionnaire Notes}
 
-The instrument contains Likert-scale statements organized across three
-dimensions corresponding to Statement of the Problem No.~4: Dimension~A
-(System's Usability, 6 items), Dimension~B (System's Reliability,
-6 items), and Dimension~C (System Clarity, 8 items). The open-ended
-questions are placed after the rating items so respondents can explain
-issues that may not appear in the numerical scores. As described in
-Sections~2.5 and 2.7, Cronbach's $\alpha$ is computed per dimension
-after the pilot run, and any item falling below the acceptable
-item-total correlation threshold is revised or removed before the
-main evaluation.
+Each respondent answers fifteen items, five in each dimension of
+Statement of the Problem No.~4. Two items in every dimension (U1--U2,
+R1--R2, C1--C2) are common to both forms, so that students and staff
+can be compared on the same statements; the other three are specific to
+the respondent's role, since a student cannot judge the staff dashboard
+and a staff member cannot judge the mobile application. Every statement
+is worded so that agreement is favourable, so no item needs
+reverse-scoring.
 
-The tags identify which respondent group should answer each item. This
-allows the same evaluation form to support staff, administrator / IT,
-and student feedback while avoiding questions that do not fit a
-respondent's role. During scoring, dimension means are computed only
-from the items administered to that respondent group.
+Weighted means are computed per item, per dimension, and per group as
+described in Section~2.7. Under the shortened evaluation protocol, the
+questionnaire is content-validated by three expert raters in a single
+review round before use, and its internal consistency is measured with
+Cronbach's alpha on the responses themselves rather than on a separate
+pilot sample. The questions in Section~IV are reported descriptively and
+do not enter any weighted mean.
 
-Before the questionnaire is used for the main evaluation, it is checked
-through expert content validation and pilot reliability testing. Items
-with weak item-total correlation are revised or removed before the
-final administration. If a Filipino version is needed, translation is
-done after the English version has passed validation, and the translated
-items are checked for equivalent meaning.
 
 % ============================================================
 % BIBLIOGRAPHY
