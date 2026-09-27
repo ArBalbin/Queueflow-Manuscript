@@ -1951,6 +1951,26 @@ the Problem No.~4 describe users' first experience of \sysname{} under
 supervision, not their satisfaction after sustained daily use, and they
 are reported with that qualification.
 
+\textbf{Change to the Statement of the Problem No.~3 evaluation.} The
+original design measured prediction accuracy during live operation, by
+comparing the system's estimates at the current, 5-minute, 15-minute,
+and 30-minute horizons with stopwatch waits. That comparison requires
+the system to be running at the counter while an observer times each
+student, and the time available before submission did not allow it. It
+is replaced by two offline evaluations, each reported in
+Section~\ref{sec:sop3-results}. The first is the date-based test of the
+Gradient Boosting predictor on the historical cashiering log
+(Section~\ref{sec:ml-training-protocol}). The second uses 166
+transactions recorded by manual observation at Windows~3, 4, and~5 on
+8, 9, and 22 September 2026. For each transaction the observer recorded
+the ticket number, the time the ticket was issued, the time service
+started, the time it ended, and the serving window. Waiting time is the
+interval from ticket issuance to the start of service. The consequence
+for interpretation is direct: the results describe how accurately wait
+time can be predicted from the information the system uses, measured on
+real observed waits, but they are not measurements of the deployed
+system's live output, and no result is reported per prediction horizon.
+
 \section{Research Instrument}
 \label{sec:instrument}
 
@@ -2241,6 +2261,21 @@ prediction horizons:
 where $y_{\text{predicted}}$ is the system's wait-time estimate at a
 given horizon and $y_{\text{actual}}$ is the wait time measured by the
 observer using a stopwatch from queue zone entry to counter arrival.
+Because MAPE divides by the actual wait, it is undefined for students
+who waited zero minutes; such cases are excluded from MAPE only. The
+Weighted Absolute Percentage Error (WAPE), which divides the total
+absolute error by the total observed wait and therefore remains defined
+when individual waits are zero, is reported alongside it:
+\begin{equation}
+  \text{WAPE} =
+  \frac{\sum |y_{\text{actual}} - y_{\text{predicted}}|}
+       {\sum y_{\text{actual}}} \times 100\%
+  \label{eq:wape}
+\end{equation}
+Every predictor is compared with a constant baseline that predicts the
+median wait of the training data for every student. A predictor is
+considered useful only if its error is lower than this baseline's on
+data it was not fitted to.
 
 \textbf{Weighted Mean and Overall Weighted Mean.} These two measures
 address Statements of the Problem No.~1 and No.~4. For No.~1 they are
@@ -3869,11 +3904,180 @@ January~21,~2026 to May~4,~2026. On the test set, the Gradient
 Boosting model obtained MAE~=~2.3512 minutes, RMSE~=~4.0858 minutes,
 MAPE~=~80.74\%, and $R^2=-0.0349$. The MAE and RMSE are used as the
 main accuracy indicators, while MAPE is reported with caution because
-short reconstructed waits inflate percentage error.
+short reconstructed waits inflate percentage error. The negative $R^2$
+means that, on the test dates, the model's squared error was slightly
+larger than that of predicting the test-period average for every
+record. Although the model's inputs included an estimate of the number
+of people ahead, the log records neither when each student joined the
+queue nor when each was called, so both that estimate and the
+reconstructed wait are approximate. The following subsection examines
+the relationship on transactions for which both times were observed.
 
-% TODO: Insert live evaluation MAE and MAPE results here after the
-% evaluation period. Report separately for the current, 5-minute,
-% 15-minute, and 30-minute prediction horizons.
+\subsection{Evaluation on Observed Cashier Transactions}
+\label{subsec:sop3-offline}
+
+\textbf{Data.} The 166 manually observed transactions
+(Section~\ref{sec:datagathering}) span three service days: 26 on
+8~September, 64 on 9~September, and 76 on 22~September~2026. The
+observed wait ranged from 0 to 12 minutes, with a mean of 3.16, a
+median of 2.0, and a standard deviation of 2.67 minutes; 18
+transactions (10.8\%) had no wait. One issuance time recorded as 00:30
+lies outside the office's hours and between tickets issued at 12:25 and
+12:36; it was corrected to 12:30 as a 12-hour-clock entry error. The
+calibrated predictor's MAE is between 1.85 and 1.88 minutes whether the
+record is corrected, removed, or kept.
+
+\textbf{People ahead at issuance.} Windows~3, 4, and~5 call from one
+shared ticket sequence, and the observations confirm that service
+followed it: fewer than 1\% of pairs of tickets on each day were called
+out of ticket-number order. The number of people ahead of a student can
+therefore be computed from what was known at the moment the ticket was
+issued, as the student's ticket number minus the highest ticket number
+already called, minus one. It could be computed for 162 of the 166
+transactions; the other four were issued before any observed ticket had
+been called that day. Because tickets that were issued but never served
+at these windows are included, this count is an overestimate, and it is
+reported as a reconstruction rather than a measured queue length.
+Figure~\ref{fig:sop3-ahead} shows that waiting time rises with it
+(Spearman $\rho = 0.31$), from a median of 2 minutes with no one ahead
+to 6 minutes with six to ten people ahead.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.85\textwidth]{sop3_wait_vs_people_ahead.png}
+  \caption[Waiting time by people ahead]{Observed waiting time by the
+  number of people ahead when the ticket was issued ($n = 162$). The
+  eleven-or-more group contains only seven transactions.}
+  \label{fig:sop3-ahead}
+\end{figure}
+
+\textbf{Validation.} Each predictor was evaluated by leave-one-day-out
+validation: it was fitted on two days and tested on the third, once
+for each day, and the errors on the three unseen days were pooled.
+Holding out whole days prevents a predictor from learning a day's
+congestion from neighbouring transactions of the same day, which a
+random split of the 166 records would allow; under a random split the
+time-of-day Random Forest appears to beat the baseline (MAE 1.93
+against 2.04 minutes), but on unseen days it does not.
+
+\textbf{Predictors compared.} Five predictors were compared with the
+constant-median baseline: the constant mean; a Random Forest using
+only the time of day, the only information on the ticket itself;
+the analytical current-wait formula (Equation~\ref{eq:wcurrent}), with
+the queue length set to the people ahead, the arrival rate estimated
+from the ticket numbers issued in the preceding 15 minutes (or since
+the day's first observed ticket when none was observed in that
+window), the service time taken from the last ten completed
+transactions (or the training days' average when fewer than three had
+been completed), and $c = 3$; the
+simpler capacity rule \emph{people ahead $\times$ service time $\div$
+counters}; and a calibrated model, a median regression of waiting time
+on the number of people ahead, capped at a value selected using the
+two training days only. The serving window and the student's own
+service time were not used, because a student is called by whichever
+window becomes free and the service time is known only after the
+transaction ends.
+
+\begin{table}[H]
+\centering
+\caption{Wait-time prediction error on unseen days (leave-one-day-out,
+$N = 166$). MAE and RMSE are in minutes; MAPE excludes the 18
+zero-minute waits.}
+\label{tab:sop3-offline}
+\begin{tabular}{lrrrrr}
+\hline
+Predictor & MAE & RMSE & MAPE & WAPE & $R^2$ \\
+\hline
+Calibrated on people ahead & $1.85$ & $2.58$ & $57.7\%$ & $58.4\%$ & $0.06$ \\
+Baseline: constant median  & $2.07$ & $2.91$ & $60.4\%$ & $65.3\%$ & $-0.19$ \\
+Baseline: constant mean    & $2.09$ & $2.68$ & $79.5\%$ & $66.2\%$ & $-0.01$ \\
+Random Forest, time of day & $2.12$ & $2.93$ & $61.8\%$ & $66.9\%$ & $-0.21$ \\
+Capacity rule (no fitting) & $2.33$ & $3.27$ & $79.8\%$ & $73.7\%$ & $-0.51$ \\
+Eq.~\ref{eq:wcurrent} formula (no fitting) & $4.10$ & $6.40$ & $189.7\%$ & $129.6\%$ & $-4.77$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\textwidth]{sop3_mae_mape.png}
+  \caption[Wait-time prediction error (MAE and MAPE) by predictor]{Mean
+  absolute error (left) and mean absolute percentage error (right) on
+  unseen days for each predictor in Table~\ref{tab:sop3-offline}. MAPE
+  excludes the 18 zero-minute waits.}
+  \label{fig:sop3-mae}
+\end{figure}
+
+\textbf{Results.} Only the predictor that uses the number of people
+ahead improved on the constant baseline (Table~\ref{tab:sop3-offline}
+and Figure~\ref{fig:sop3-mae}).
+It reduced MAE from 2.07 to 1.85 minutes, a reduction of 0.22 minutes
+(95\% bootstrap interval 0.04 to 0.40), and it did so on each of the
+three unseen days (Figure~\ref{fig:sop3-per-day}): 1.63 against 1.77
+minutes on 8~September, 2.01
+against 2.20 on 9~September, and 1.79 against 2.05 on 22~September.
+The cap selected on the training days was eight in every fold, and the
+fitted models estimate a wait of about 1.6 minutes plus 0.33 to 0.43
+minutes for each person ahead. The time-of-day Random Forest did not
+improve on the baseline: when the time is known but the queue is not,
+the wait cannot be predicted better than by its typical value.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\textwidth]{sop3_mae_per_day.png}
+  \caption[Prediction error on each held-out day]{MAE on each held-out
+  day for the predictor calibrated on people ahead and the constant-median
+  baseline. Each model was fitted on the other two days; $n$ is the number
+  of transactions on the held-out day.}
+  \label{fig:sop3-per-day}
+\end{figure}
+
+The two uncalibrated rules over-predicted. The capacity rule, which
+assumes that every person ahead occupies a counter for a full average
+service time, overestimated because the reconstructed count includes
+tickets that were never served. The current-wait formula overestimated
+far more, predicting an average of 6.7 minutes against an observed
+3.2, and over-predicting 75\% of the transactions. Under light load
+($\rho < 1$) the formula's term $Q/\lambda$ grows as arrivals slow down,
+whereas the observed waits grew by about 0.3 to 0.4 minutes per person
+ahead whether arrivals were slow, moderate, or fast.
+% AUTHOR NOTE: This paragraph reports a real weakness in Eq. (wcurrent) as
+% written. Check whether the deployed backend computes Q/lambda. If the code
+% uses a different expression, describe what the code does instead. If it does
+% use Q/lambda, keep the paragraph; see the "Evaluation Protocol" note in the
+% chat for how to frame it. Note also: the system estimates lambda from the
+% net change in the camera queue count, which is usually smaller than the
+% ticket-issuance rate used here, so the live formula would likely
+% over-predict at least as much.
+
+\subsection{Assessment of Statement of the Problem No.~3}
+\label{subsec:sop3-assessment}
+
+Statement of the Problem No.~3 asks for the level of accuracy of the
+system's wait-time prediction model in terms of MAE and MAPE. Evaluated
+offline on the held-out dates of the historical cashiering log, the
+system's Gradient Boosting predictor has an MAE of 2.35 minutes and a
+MAPE of 80.74\%. This is the direct answer to the question: the
+predictor's estimate differs from the reconstructed wait by about two
+and a half minutes on average, and the percentage error is high because
+most waits are short.
+
+The evaluation on the 166 observed transactions qualifies and extends
+this answer. On those transactions, a predictor based on the number of
+people ahead reached an MAE of 1.85 minutes and a MAPE of 57.7\% (WAPE
+58.4\%) on unseen days, lower than the 2.07 minutes of a constant-median
+baseline, while a predictor using only the time of day did not improve
+on the baseline. This predictor is not part of the deployed system. It
+shows the accuracy that is attainable when the estimate is driven by
+the live state of the queue rather than by the calendar, and the number
+of people ahead is information that \sysname{} obtains from the camera
+in real time. The results also show that the analytical formula must be
+calibrated against observed waits before its output is shown to
+students. Three limitations qualify these findings: the evaluation covers three service
+days and 166 transactions; the number of people ahead was reconstructed
+from ticket numbers rather than counted; and the live, per-horizon
+comparison of the deployed system's estimates with stopwatch waits was
+not conducted and remains to be carried out.
 
 % ----------------------------------------------------------------
 % 3.4  SOP #4 — User satisfaction (usability, reliability, clarity)
@@ -3897,11 +4101,178 @@ the system rather than satisfaction after sustained use.
 % ----------------------------------------------------------------
 % 3.5  Summary of Findings
 % ----------------------------------------------------------------
+% =====================================================================
+% CHAPTER 4: SUMMARY, CONCLUSIONS, AND RECOMMENDATIONS
+% Replaces the empty "3.5 Summary of Findings" section at the end of
+% Chapter 3. Every figure below is taken from Chapter 3 of the manuscript.
+% SOP 4 is left for the groupmate: see the "% TODO (SOP 4)" comments.
+% =====================================================================
+\chapter{Summary, Conclusions, and Recommendations}
+\label{ch:conclusions}
+
+This chapter summarizes the findings for each Statement of the Problem,
+states the conclusions drawn from them together with the limitations of
+the evaluation, and presents the recommendations that follow.
+
 \section{Summary of Findings}
 \label{sec:summary-findings}
 
-% TODO: Summarize key findings across all four SOP responses once
-% evaluation data are collected and analyzed.
+\begin{enumerate}
+  \item \textbf{Current problems with the manual queue process
+        (Statement of the Problem No.~1).} The baseline survey of 22
+        respondents, 15 students and 7 staff, found that students
+        strongly agreed that the current process leaves them without
+        information, with an overall weighted mean of $4.25$ (Strongly
+        Agree). Their highest-rated problems were that the display shows
+        only the number being served ($4.60$), that waits are long during
+        busy periods ($4.60$), and that long or unpredictable waits
+        discourage them from availing services at peak hours ($4.53$).
+        Staff returned an overall weighted mean of $3.34$ (Neutral): they
+        agreed that the display does not show the wait ($4.14$) and that
+        waits increase at peak periods ($4.29$), but did not find the
+        process difficult to run. Asked to name the biggest problem in
+        their own words, six of the seven staff named the internet
+        connection.
+
+  \item \textbf{Face-recognition accuracy and queue-number issuance
+        (Statement of the Problem No.~2).} On 45 held-out photographs of
+        17 identities, the threshold-and-margin rule linked 44 ($97.8\%$)
+        to the correct student, linked none to a wrong identity, and
+        refused one; the correct student was ranked first in every case.
+        In the open-set test, all 45 non-enrolled probes were refused,
+        including five that an absolute threshold alone would have
+        accepted as enrolled students. At the queue-zone camera, the 44
+        logged evaluations separated into 18 accepted and 26 refused with
+        no overlap in score or margin. All seven queue numbers issued
+        during testing were minted by the system without manual input,
+        with a mean of $4.80$~s from the moment the system could act to
+        the number being issued. Under a load of 50 concurrent users, the
+        backend answered 2,536 requests with no failures, 95\% of them
+        within 31~ms.
+
+  \item \textbf{Wait-time prediction accuracy (Statement of the Problem
+        No.~3).} Evaluated offline on the held-out dates of the
+        historical cashiering log, the Gradient Boosting predictor reached
+        an MAE of $2.35$ minutes, an RMSE of $4.09$ minutes, a MAPE of
+        $80.74\%$, and an $R^2$ of $-0.035$. On 166 manually observed
+        transactions evaluated on unseen days, a predictor calibrated on
+        the number of people ahead reached an MAE of $1.85$ minutes and a
+        MAPE of $57.7\%$, lower than the $2.07$ minutes of a constant-median
+        baseline on each of the three days (95\% interval for the
+        reduction: 0.04 to 0.40 minutes). A predictor using only the time
+        of day did not improve on the baseline, and the analytical
+        current-wait formula over-predicted, with an MAE of $4.10$
+        minutes.
+
+  % TODO (SOP 4, groupmate): add item 4 -- the user-satisfaction findings
+  % for usability, reliability, and clarity, per respondent group.
+\end{enumerate}
+
+\section{Conclusions}
+\label{sec:conclusions}
+
+\textbf{Statement of the Problem No.~1.} The current process does not
+fail at issuing numbers; it fails at informing the people who wait. The
+cost of that gap falls on students, who cannot see their position or
+their remaining wait, while staff, who can see the line from the
+counter, do not experience it as a problem. The features that answer the
+students' highest-rated problems are therefore the queue position, the
+estimated wait, and a notification before the turn arrives. The
+operators' own chief concern, the reliability of the internet
+connection, is not solved by \sysname{}.
+
+\textbf{Statement of the Problem No.~2.} On the calibration data, the
+face-recognition rule identified enrolled students accurately and
+refused every non-enrolled person, and the margin requirement, the
+element this study contributes, is what prevented the false
+identifications that an absolute threshold alone would have produced.
+\sysname{} can issue a queue number to a recognized student without
+manual input. These results establish that the rule works as designed;
+they do not yet establish its accuracy in regular operation, because the
+live evaluations have not been checked against an independent
+observer's log.
+
+\textbf{Statement of the Problem No.~3.} In offline testing, the
+system's wait-time predictor estimates the wait within about two and a
+half minutes on average, but no better than the typical wait itself, as
+its negative $R^2$ shows. The observed transactions show that estimates
+become more accurate when they are driven by the number of people ahead,
+which supports the design decision to measure the queue live rather than
+predict from the calendar. They also show that the analytical formula
+must be calibrated against observed waits before its estimates are shown
+to students.
+
+% TODO (SOP 4, groupmate): add the conclusion for Statement of the
+% Problem No. 4.
+
+\subsection{Limitations}
+\label{subsec:limitations}
+
+\begin{itemize}
+  \item \sysname{} as evaluated requires a working internet connection:
+        recognition and queue-number issuance stop when the office loses
+        its connection to the cloud backend.
+  \item The prototype covers one service office and one camera-defined
+        queue zone. Walk-ins continue to use the office's existing kiosk,
+        and its numbers run separately from the numbers \sysname{}
+        issues.
+  \item The live results for Statement of the Problem No.~2 come from the
+        system's own record. Queue-assignment accuracy,
+        re-identification reliability, the ticket and token validation
+        rate, and detection-to-ticket latency were not measured against
+        an independent observer.
+  \item The offline face-recognition results come from posed photographs
+        of 17 identities, on which the thresholds were also calibrated,
+        so they are an upper bound on live accuracy. The system does not
+        check whether a face belongs to a live person.
+  \item The wait-time evaluation is offline. The historical waits are
+        reconstructed from the log, the observed data cover three service
+        days, the number of people ahead was reconstructed from ticket
+        numbers rather than counted, and no result is reported per
+        prediction horizon.
+  \item The baseline survey had 22 self-selected respondents, and the
+        staff wait-time section did not reach acceptable internal
+        consistency ($\alpha = 0.288$).
+  % TODO (SOP 4, groupmate): add any limitation of the user evaluation.
+\end{itemize}
+
+\section{Recommendations}
+\label{sec:recommendations}
+
+\begin{enumerate}
+  \item \textbf{Offline-capable operation} is the highest-priority
+        recommendation: local inference at the office with deferred
+        synchronization to the cloud, so that recognition and number
+        issuance continue when the connection fails, which is the problem
+        six of the seven staff named.
+  \item \textbf{Evaluate recognition in regular operation} against an
+        independent observer's log, reporting queue-assignment accuracy,
+        re-identification reliability, the ticket and token validation
+        rate, and detection-to-ticket latency.
+  \item \textbf{Test the decision thresholds on a larger, independent set}
+        of enrolled students and strangers, and recompute the separation
+        between enrolled students as enrolment grows.
+  \item \textbf{Add a liveness check} before an accepted face can produce
+        a queue number, so that a photograph of a student cannot be used
+        in their place.
+  \item \textbf{Calibrate the current-wait estimate against observed
+        waits} and base it on the number of people ahead and the counters
+        open, which the observed transactions showed to be the
+        information that predicts the wait.
+  \item \textbf{Evaluate prediction accuracy live}, comparing the
+        system's estimates at each horizon with stopwatch waits over
+        several weeks that include every weekday and at least one peak
+        period, and record each student's queue position when the number
+        is issued.
+  \item \textbf{Connect \sysname{} with the office's kiosk sequence}, so
+        that the position and estimated wait shown to a student account
+        for walk-ins served at the same counters.
+  \item \textbf{Future researchers} may extend the prototype to several
+        queue zones and offices and to priority queues, which the present
+        scope excludes.
+  % TODO (SOP 4, groupmate): add any recommendation from the user
+  % evaluation.
+\end{enumerate}
 
 % ============================================================
 % APPENDIX A: SYNTHESIS MATRIX
