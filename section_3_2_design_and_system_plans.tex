@@ -163,7 +163,7 @@ $f_{\max}$       & $0.85$               & Maximum frame coverage (Gate~2) \\
 $r_{\min}$       & $0.60$               & Minimum portrait aspect ratio (Gate~3) \\
 $M_{\min}$       & $8\ \mathrm{px}$     & Minimum motion energy (Gate~4) \\
 $c_{\mathrm{byp}}$ & $0.70$             & Static-detection confidence bypass (Gate~4) \\
-$\alpha_{\mathrm{s}}$ & $0.45$          & Bounding-box EMA smoothing factor \\
+$\alpha_{\mathrm{s}}$ & $0.50$          & Bounding-box EMA smoothing factor \\
 \hline
 \end{tabular}
 \end{table}
@@ -807,7 +807,7 @@ $W_{\max}^{\mathrm{long}} = 60\ \mathrm{min}$.
 \subsection{Dynamic Service-Time Measurement}
 \label{subsec:service-time}
 
-The service rate $\mu$ used in Algorithm~7 is recomputed every
+The service rate $\mu$ used in Algorithm~6 is recomputed every
 $T_{\mathrm{svc}} = 300\ \mathrm{s}$ by the background measurement
 routine described in Equations~\ref{eq:gap}--\ref{eq:svc-blend}. The
 pre-deployment calibration in Section~\ref{sec:datagathering}
@@ -916,7 +916,7 @@ CV Layer        & $A_{\min}$                   & $800\ \mathrm{px}^2$ & Min.\ bo
                 & $r_{\min}$                   & $0.60$               & Min.\ portrait aspect \\
                 & $M_{\min}$                   & $8\ \mathrm{px}$     & Min.\ motion energy \\
                 & $c_{\mathrm{byp}}$           & $0.70$               & Static-conf bypass \\
-                & $\alpha_{\mathrm{s}}$        & $0.45$               & Bbox EMA factor \\
+                & $\alpha_{\mathrm{s}}$        & $0.50$               & Bbox EMA factor \\
 \hline
 Candidate conf. & $N_{\mathrm{conf}}$          & $20$ frames          & Confirmation window \\
                 & $\theta_{\mathrm{m}}$        & $1.5\ \mathrm{px}$   & Motion-gate $\sigma$ \\
