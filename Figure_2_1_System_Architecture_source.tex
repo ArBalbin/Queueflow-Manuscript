@@ -16,7 +16,7 @@
     minimum height=1.05cm, inner sep=5pt, font=\sffamily\small},
   widebox/.style={box, text width=5.1cm},
   medbox/.style={box, text width=4.05cm},
-  smallbox/.style={box, text width=3.25cm},
+  smallbox/.style={box, text width=2.75cm},
   arrow/.style={-{Latex[length=3mm]}, line width=0.9pt, black!85}
 ]
 
@@ -45,15 +45,17 @@
 \node[layer, minimum height=3.0cm] (api) at (0,-6.05) {};
 \node[header] at ([xshift=-10.5cm,yshift=1.5cm]api.center)
   {2. API LAYER \textbullet{} FastAPI (\texttt{app/main.py})};
-\node[smallbox] (pages) at (-8.1,-6.35)
+\node[smallbox] (pages) at (-8.75,-6.35)
   {\textbf{Pages Router}\\\textit{pages.py}\\login \textbullet{} dashboard\\video stream};
-\node[smallbox] (detapi) at (-4.05,-6.35)
+\node[smallbox] (students) at (-5.25,-6.35)
+  {\textbf{Student Router}\\\textit{students.py}\\Gbox sign-in \textbullet{} face\\enrol \textbullet{} join \textbullet{} my queue};
+\node[smallbox] (detapi) at (-1.75,-6.35)
   {\textbf{Detector API}\\\textit{detector\_api.py}\\/yolo/push-frame\\/yolo/update};
-\node[smallbox] (queueapi) at (0,-6.35)
+\node[smallbox] (queueapi) at (1.75,-6.35)
   {\textbf{Queue Router}\\\textit{queue.py}\\list \textbullet{} status\\prediction \textbullet{} analytics};
-\node[smallbox] (crowd) at (4.05,-6.35)
+\node[smallbox] (crowd) at (5.25,-6.35)
   {\textbf{Crowd Router}\\\textit{crowd.py}\\snapshot\\history \textbullet{} stats};
-\node[smallbox] (health) at (8.1,-6.35)
+\node[smallbox] (health) at (8.75,-6.35)
   {\textbf{Health Router}\\\textit{health.py}\\backend \textbullet{} db\\cache \textbullet{} snapshot};
 
 % Layer 3
@@ -81,6 +83,8 @@
   {\textbf{Prediction Service}\\M/M/c \textbullet{} trend\\Holt \textbullet{} mean reversion};
 \node[medbox] (counter) at (7.8,-13.35)
   {\textbf{Counter Service}\\sticky assignment\\position to counter};
+\node[medbox] (face) at (-7.4,-14.95)
+  {\textbf{Face Service}\\ArcFace embedding\\threshold + margin rule\\enrol \textbullet{} match \textbullet{} re-entry};
 \node[widebox, text width=5.7cm] (ticket) at (0,-14.95)
   {\textbf{Ticket Service / Printer}\\short code \textbullet{} JWT \textbullet{} QR\\PDF demo or thermal output};
 
@@ -89,7 +93,7 @@
 \node[halfheader, minimum width=10.1cm] at ([xshift=-5.05cm,yshift=1.375cm]persist.center)
   {5. PERSISTENCE LAYER};
 \node[box, text width=8.25cm] (mysql) at (-5.35,-18.05)
-  {\textbf{MySQL Database}\\\textit{database\_handler.py}\\users \textbullet{} queue records \textbullet{} tickets \textbullet{} events\\\textit{no raw frames or snapshots persisted}};
+  {\textbf{MySQL Database}\\\textit{database\_handler.py}\\users \textbullet{} student profiles \textbullet{} queue records\\tickets \textbullet{} events \textbullet{} recognition audit\\\textit{face embeddings only; no photographs or frames persisted}};
 
 \node[layer, minimum width=10.1cm, minimum height=2.75cm] (runtime) at (5.35,-17.85) {};
 \node[halfheader, minimum width=10.1cm] at ([xshift=-5.05cm,yshift=1.375cm]runtime.center)

@@ -285,9 +285,8 @@ of this capstone research.
 
 \vspace{2em}
 
-\noindent Queueing in many campus service offices is still handled by
-manual numbering and updates at the counter. At the cashiering office of
-Naga College Foundation, Inc.\ (NCF), students cannot see how many
+\noindent At the cashiering office of Naga College Foundation, Inc.\
+(NCF), as in many campus service offices, students cannot see how many
 people are ahead of them or how long they will wait. \sysname{} was
 built as a capstone prototype to close that gap. A YOLOv8n detector
 with ByteTrack tracks people in a calibrated queue zone, and students
@@ -296,10 +295,9 @@ be queued are identified with ArcFace face embeddings. A match is
 accepted only if its similarity reaches 0.30 and exceeds that of the
 second-best candidate by a margin of 0.15; a face that fails either test
 is referred to staff rather than guessed. An accepted student is issued
-a queue number without manual input, with a ticket carrying a QR link,
-short code, and JSON Web Token, and follows their position and
-estimated wait on the mobile application while staff manage the queue
-from a web dashboard. A baseline survey of 22 respondents found that students strongly
+a queue number and ticket without manual input and follows their
+position and estimated wait on the mobile application, while staff
+manage the queue from a web dashboard. A baseline survey of 22 respondents found that students strongly
 agreed that the current process leaves them without information
 (overall weighted mean 4.25), while staff were neutral (3.34). On 45
 held-out photographs of 17 identities, the decision rule linked 97.8\%
@@ -309,9 +307,10 @@ minted without manual input, and the backend answered 2,536 requests
 from 50 concurrent users with no failures. On 166 observed cashier
 transactions, a predictor based on the number of people ahead reached a
 mean absolute error of 1.85 minutes, against 2.07 minutes for a constant
-baseline. Fifteen students who used the system in a supervised trial
+baseline. Sixteen students who used the system in a supervised trial
 rated it Strongly Agree on usability, reliability, and clarity (overall
-weighted mean 4.39). The results show that face recognition with a
+weighted mean 4.40), and eight cashier staff rated it Agree (3.86),
+lowest on reliability. The results show that face recognition with a
 margin requirement can issue queue numbers without manual input while
 refusing uncertain matches. They come from offline tests and a short
 supervised trial, and remain to be confirmed in regular operation.
@@ -426,660 +425,429 @@ estimates needed for staff decision-making.
 \subsection{Computer Vision for Real-Time Person Detection}
 Recent computer-vision work shows why camera-based queue observation is
 technically feasible. Sindagi and Patel~\cite{sindagi2018survey}
-surveyed CNN-based crowd counting and density-estimation methods,
-noting the move from earlier scale-limited approaches to models that
-handle occlusion, complex scenes, and dense groups more reliably.
-One-stage detectors such as YOLO are relevant to this study because
-they process a frame quickly enough for live monitoring~\cite{redmon2018}.
-Terven et~al.~\cite{terven2023yolo} trace YOLO's development from
-YOLOv1 through YOLOv8 and YOLO-NAS, with attention to the
-accuracy-speed tradeoff in each generation. Wang
-et~al.~\cite{wang2025lightweight} more recently proposed a
-YOLOv8n-derived person detector for edge-device surveillance, which
-supports the decision to use a lightweight YOLOv8n base in the
-\sysname{} prototype.
+surveyed CNN-based crowd counting and density estimation, noting the
+move from scale-limited approaches to models that handle occlusion,
+complex scenes, and dense groups more reliably. One-stage detectors
+such as YOLO process a frame quickly enough for live
+monitoring~\cite{redmon2018}, and Terven et~al.~\cite{terven2023yolo}
+trace the family from YOLOv1 to YOLOv8 and YOLO-NAS with attention to
+the accuracy-speed trade-off in each generation. Varghese and
+Sambath~\cite{rrlcomp092yolov8novelobject} document YOLOv8's gains in
+performance and robustness over earlier generations, and lightweight
+variants extend it to constrained hardware: a YOLOv8n-derived person
+detector for edge surveillance~\cite{wang2025lightweight}, an
+attention-based design with better small-target recall at fewer
+parameters~\cite{rrlcomp091improvedyolov8lightweight}, and SGST-YOLOv8
+for real-time detection of small, partially occluded persons on
+campus~\cite{rrlcomp016sgstyolov8improved}. A comparison of YOLOv8 and
+YOLOv11 for person detection in crowded
+scenes~\cite{rrlcomp019evaluatingyolov8yolov11} found YOLOv8's mature
+tooling and tracking integration the more practical for deployment.
+Together these support a lightweight YOLOv8n base for the \sysname{}
+prototype.
 
-Because \sysname{} uses a camera, privacy is treated as a design
-constraint rather than an afterthought. Padilla-Lopez
-et~al.~\cite{padillalopez2015privacy} survey visual privacy protection
-methods such as camera-level anonymization, selective scrambling, and
-aggregate-only transmission. In \sysname{}, this concern is reflected in
-the decision to work with derived data: bounding boxes for detection and
-face embeddings for identification, neither of which is an image. No raw
-video, camera frame or enrolment photograph is stored or transmitted.
+People counting built on such detectors has been validated in practice.
+A YOLOv8 pipeline counts people in real time without specialized
+hardware~\cite{rrlcomp001realtimepeople}; detection combined with
+tracking yields density estimates over time in public
+spaces~\cite{rrlcomp031peoplecountingpublic} and in urban environments
+with overlapping boxes and perspective
+distortion~\cite{rrlcomp032visionpeoplecounting}; and video analysis of
+visitors holds up under the lighting variation and occlusion of live
+feeds~\cite{rrlcomp033deeplearningvideo}. Crowd anomaly research adds
+two cautions for queue-zone filtering: temporal context remains an open
+challenge~\cite{rrlcomp034deepcrowdanomaly}, and model complexity trades
+against latency in live systems~\cite{rrlcomp042surveydeeplearning}. A
+YOLOv8 framework for dense-crowd behaviour
+detection~\cite{rrlcomp043enhancedframeworkreal} shows that individuals
+can still be separated at high density when the detection zone and
+confidence thresholds are tuned, and pedestrian attribute
+recognition~\cite{rrlcomp020frameworkpedestrianattribute} shows how box
+features can be extended to classification beyond localization.
 
-Real-time people counting using YOLOv8 has been validated across varied
-environments. An IEEE conference publication~\cite{rrlcomp001realtimepeople}
-demonstrates a people-counting pipeline built on YOLOv8 object detection,
-confirming that the model's speed and accuracy are sufficient for real-time
-counting tasks without specialized hardware. In a campus-surveillance
-context, Cheng et~al.~\cite{rrlcomp016sgstyolov8improved} propose
-SGST-YOLOv8, a lightweight modification of YOLOv8 designed for real-time
-target detection on campus, showing that architectural adjustments can
-reduce inference time while maintaining detection accuracy on small,
-partially occluded persons. A comparative evaluation~\cite{rrlcomp019evaluatingyolov8yolov11}
-assesses both YOLOv8 and YOLOv11 for real-time person detection in crowded
-environments, finding that YOLOv8 offers mature tooling and tracking
-integration that make it particularly practical for deployment.
+Because \sysname{} uses a camera, privacy is a design constraint.
+Padilla-Lopez et~al.~\cite{padillalopez2015privacy} survey visual
+privacy protection such as camera-level anonymization, selective
+scrambling, and aggregate-only transmission. Later work anonymizes video
+with low latency without preventing crowd
+detection~\cite{rrlcomp013lowlatencyvideo}, protects footage at the edge
+so that identifiable images need not be
+transmitted~\cite{rrlcomp021privacypreservingsurveillance}, and
+suppresses personal identifiers before storage for GDPR
+compliance~\cite{rrlcomp040deeplearninggdpr}. User studies find that
+acceptance of smart surveillance depends on transparency about data use
+and on the absence of facial
+recognition~\cite{rrlcomp022perceptionrisksusefulness}, a finding that
+bears directly on a system that does use it. \sysname{} works with
+derived data wherever it can: bounding boxes for detection and face
+embeddings for identification. No video archive or enrolment photograph
+is kept, and camera frames reach the staff dashboard only as the latest
+annotated snapshot, which is overwritten rather than stored
+(Section~\ref{sec:ethics}).
 
-People-counting research has also explored camera-based monitoring of
-public and semi-public spaces. A 2023 IEEE
-publication~\cite{rrlcomp031peoplecountingpublic} presents a
-deep-learning system for counting and tracking people in public spaces,
-combining object detection with tracking to produce accurate density
-estimates over time. A study in the Journal of
-Imaging~\cite{rrlcomp032visionpeoplecounting} applies vision-based
-counting and tracking to urban environments, addressing challenges such
-as varying crowd density, overlapping bounding boxes, and perspective
-distortion. Deep learning video analysis has also been applied to
-visitor detection and tracking in real-world deployments~\cite{rrlcomp033deeplearningvideo},
-demonstrating operation under lighting variability and occlusion
-conditions typical of live camera feeds.
+Detection in a queue is not a per-frame problem: a number must stay with
+the same person across frames, so detection is paired with tracking.
+YOLOv8 has been combined with DeepSORT for the person
+class~\cite{rrlcomp003persondetectionproposed}, with
+OC-SORT~\cite{rrlcomp017multiobjectpedestrian} and an improved
+association stage~\cite{rrlcomp018multiobjectivepedestrian} for more
+consistent identities under crowding and occlusion, with a sliding
+innovation filter~\cite{rrlcomp098objectdetectiontracking}, and with
+centroid tracking for directional
+monitoring~\cite{rrlcomp099realtimewrong}, the last showing how a zone
+rule can be layered on ordinary tracking output, as \sysname{} does with
+its queue zone. Association rests on motion prediction, where Kalman
+filtering remains standard and has been refined with
+adaptive~\cite{rrlcomp061adaptivekalmanfilter},
+unscented~\cite{rrlcomp062achievingadaptivevisual}, and
+reliability-weighted~\cite{rrlcomp063robustvisualtracking}
+formulations. Studies of bounding-box dynamics and noise
+covariance~\cite{rrlcomp064boundingboxdynamics} show that the box itself
+is a noisy measurement, which justifies smoothing it before it is used
+for a zone decision.
 
-Crowd anomaly detection is a closely related area whose findings
-inform the design of queue-zone filtering. A Springer
-review~\cite{rrlcomp034deepcrowdanomaly} surveys the state of deep
-crowd anomaly detection, identifying temporal context modelling as an
-open challenge. A survey in Personal and Ubiquitous
-Computing~\cite{rrlcomp042surveydeeplearning} reviews distributed crowd
-anomaly detection approaches for secure video surveillance, noting the
-trade-off between model complexity and latency in live systems. More
-recently, a Springer study~\cite{rrlcomp043enhancedframeworkreal}
-proposes a YOLOv8-based framework for dense-crowd abnormal-behaviour
-detection, showing that the detector can identify individual persons
-even at high density when the detection zone and confidence thresholds
-are tuned appropriately.
-
-Architectural advances in YOLOv8 have produced lighter and more
-precise detectors. Liu et~al.~\cite{rrlcomp091improvedyolov8lightweight}
-present an improved YOLOv8 with a lightweight attention mechanism for
-cross-scale feature fusion, achieving better small-target recall with a
-reduced parameter count. Varghese and
-Sambath~\cite{rrlcomp092yolov8novelobject} evaluate YOLOv8 as a novel
-detection algorithm, documenting its enhanced performance and robustness
-relative to earlier YOLO generations. A deep-learning
-framework~\cite{rrlcomp020frameworkpedestrianattribute} for pedestrian
-attribute recognition co-processes bounding-box features and visual
-attributes, a method relevant to any application requiring person
-classification beyond simple localization.
-
-Privacy constraints apply equally to systems operating in educational
-settings. An IEEE publication~\cite{rrlcomp013lowlatencyvideo} presents
-a low-latency video anonymization pipeline that protects privacy without
-preventing crowd detection. Bonetto
-et~al.~\cite{rrlcomp021privacypreservingsurveillance} describe
-privacy-preserving surveillance as an edge service using lightweight
-video protection schemes that process and anonymize footage locally,
-removing the need to transmit identifiable images. A survey in Applied
-Sciences~\cite{rrlcomp022perceptionrisksusefulness} examines user
-perceptions of smart video surveillance, finding that acceptance depends
-on transparency about data use and the absence of facial recognition.
-An IEEE study~\cite{rrlcomp040deeplearninggdpr} further implements
-GDPR-compliant privacy safeguards in surveillance video using deep
-learning to suppress personal identifiers before storage.
-
-Detection in a queue is not a per-frame problem. A number must stay with
-the same person across frames, which requires a tracker to carry
-identity forward, and the literature pairs detection with tracking
-accordingly. Person detection using YOLOv8 with DeepSORT
-tracking~\cite{rrlcomp003persondetectionproposed} demonstrates the
-combination on the person class specifically, while pedestrian tracking
-studies based on YOLOv8 with
-OC-SORT~\cite{rrlcomp017multiobjectpedestrian} and with an improved
-association stage~\cite{rrlcomp018multiobjectivepedestrian} report
-gains in identity consistency under the crowding and partial occlusion
-typical of pedestrian scenes. YOLO has also been paired with a sliding
-innovation filter for joint detection and
-tracking~\cite{rrlcomp098objectdetectiontracking}, and with centroid
-tracking for real-time directional
-monitoring~\cite{rrlcomp099realtimewrong}, the latter illustrating how
-a zone-based rule can be layered on top of ordinary tracking output in
-the way \sysname{} applies a queue zone.
-
-The association step itself rests on motion prediction. Kalman filtering
-remains the standard mechanism, and recent work refines it in ways that
-matter for a fixed indoor camera: adaptive formulations for real-time
-visual tracking~\cite{rrlcomp061adaptivekalmanfilter}, unscented
-variants for non-linear
-motion~\cite{rrlcomp062achievingadaptivevisual}, and reliability-weighted
-object information to resist drift when observations become
-unreliable~\cite{rrlcomp063robustvisualtracking}. Studies of
-bounding-box dynamics and noise covariance
-modelling~\cite{rrlcomp064boundingboxdynamics} show that the box itself
-is a noisy measurement, which is the justification for the smoothing
-applied before any box in \sysname{} is used for a zone decision.
-
-Overlap handling is the remaining requirement, because a detector
-returning several boxes for one person would otherwise inflate a queue
-count. Non-maximum suppression is the standard remedy, and its
-limitations in crowded scenes are well documented. Work on where
-suppression belongs in a tracking
-pipeline~\cite{rrlcomp046nonmaximumsuppression} argues for applying it
-later than is conventional; multi-attribute
-NMS~\cite{rrlcomp047multiattributenms} targets pedestrian detection in
-crowds specifically, where genuine neighbouring people produce high
-mutual overlap; soft suppression
-schemes~\cite{rrlcomp086enhancednmsdetection} decay rather than
-eliminate competing boxes; spatial
-correlation~\cite{rrlcomp089spatialnonmaximum} and adaptive
-thresholding for small
-objects~\cite{rrlcomp090adaptiveiouthresholding} adjust the overlap
-criterion to the scene rather than fixing it in advance. These findings
-inform the overlap and duplicate-suppression gates described in
-Chapter~3, which operate on the same principle that a fixed global
-threshold is a poor fit for a zone where people legitimately stand close
-together.
+Overlap is the remaining problem, since several boxes for one person
+would inflate a queue count. Non-maximum suppression is the standard
+remedy, and its limits in crowds are well documented: it may belong
+later in a tracking pipeline than is
+conventional~\cite{rrlcomp046nonmaximumsuppression}; multi-attribute NMS
+targets crowds where real neighbours overlap
+heavily~\cite{rrlcomp047multiattributenms}; soft suppression decays
+rather than removes competing boxes~\cite{rrlcomp086enhancednmsdetection};
+and spatial correlation~\cite{rrlcomp089spatialnonmaximum} and adaptive
+thresholds for small objects~\cite{rrlcomp090adaptiveiouthresholding}
+fit the overlap criterion to the scene. These findings inform the
+overlap and duplicate-suppression gates in Chapter~3, which rest on the
+same principle: a fixed global threshold fits poorly where people
+legitimately stand close together.
 
 \subsection{Face Recognition and Open-Set Identification}
 
 Detection and tracking establish that a person is present and keep them
 distinct from their neighbours, but neither can say who that person is.
-The revised \sysname{} design requires exactly that: a queue number is
-issued to a named enrolled student, so the system must identify rather
-than merely count. The literature on deep face recognition provides both
-the representation used for that step and the decision framework that
-governs when an identification may be trusted.
+The revised \sysname{} design issues a queue number to a named enrolled
+student, so it must identify rather than merely count. The
+face-recognition literature supplies both the representation for that
+step and the framework for deciding when an identification can be
+trusted.
 
-\textbf{Faces as embeddings.} Modern face recognition does not compare
-images directly. Schroff et~al.~\cite{schroff2015facenet} established
-the approach \sysname{} follows, training a network to map a face into a
-compact vector space in which distance corresponds to identity, so that
-recognition, verification and clustering all reduce to distance
-comparisons between vectors. The practical consequence for a deployed
-system is that identity can be stored as a short numeric vector rather
-than as a photograph, since the mapping runs in one direction and the
-face cannot be reconstructed from the vector. Surveys of the field
-confirm that this embedding formulation, rather than any particular
-network architecture, is what unified the
-discipline~\cite{wang2021deepfacesurvey,facesurvey2022}, and they trace
-the remaining variation to how the embedding space is trained and how
-its distances are thresholded.
+\textbf{Faces as embeddings.} Schroff et~al.~\cite{schroff2015facenet}
+established the approach \sysname{} follows: a network maps a face into
+a compact vector space in which distance corresponds to identity, so
+that recognition, verification, and clustering reduce to distance
+comparisons. Identity can therefore be stored as a short vector rather
+than a photograph, and the face cannot be reconstructed from it. Surveys
+confirm that this embedding formulation unified the field, and trace the
+remaining variation to how the space is trained and how its distances
+are thresholded~\cite{wang2021deepfacesurvey,facesurvey2022}.
 
-\textbf{Margins in the representation.} The refinement that matters for
-this study concerns how such an embedding space is shaped during
-training. Liu et~al.~\cite{liu2017sphereface} began the line of work by
-constraining embeddings to a hypersphere and imposing an angular margin
-between identity classes. Wang et~al.~\cite{wang2018cosface} recast the
-idea as a large-margin cosine loss that explicitly widens the separation
-between identities while tightening each identity's own cluster, and Deng
-et~al.~\cite{deng2019arcface} extended it with an additive angular
-margin, producing the ArcFace formulation used by the recognition model
-in \sysname{}. Later refinements attach magnitude to sample quality so
-that ambiguous faces are pushed away from class
-centres~\cite{meng2021magface}, or reformulate the objective as binary
-classification to simplify training at
-scale~\cite{wen2021sphereface2}. The shared insight across all of them
-is that a recognition system becomes reliable not by scoring similarity
-more precisely but by enforcing a margin between identities. \sysname{}
-applies the same principle a second time, at the decision stage rather
-than the training stage: a margin in the representation is what makes
-identities separable, and a margin in the decision is what determines
-whether a particular comparison is separable enough to act on.
+\textbf{Margins in the representation.} Liu
+et~al.~\cite{liu2017sphereface} constrained embeddings to a hypersphere
+with an angular margin between identities; Wang
+et~al.~\cite{wang2018cosface} recast this as a large-margin cosine loss;
+and Deng et~al.~\cite{deng2019arcface} added an additive angular margin,
+the ArcFace formulation of the model \sysname{} uses. Later refinements
+tie embedding magnitude to sample quality~\cite{meng2021magface} or
+reformulate training as binary classification~\cite{wen2021sphereface2}.
+The shared insight is that recognition becomes reliable by enforcing a
+margin between identities, not by scoring similarity more precisely.
+\sysname{} applies the same principle a second time, at the decision
+stage: a margin in the representation makes identities separable, and a
+margin in the decision determines whether a particular comparison is
+separable enough to act on.
 
-\textbf{Locating the face before recognising it.} Recognition assumes an
-aligned face crop, which a person detector does not provide. Deng
-et~al.~\cite{deng2020retinaface} introduced the single-shot detector and
-five-point alignment stage that \sysname{} relies on through the same
-toolkit, jointly predicting the bounding box and the landmarks used to
-normalise pose before the embedding is computed. Because detection runs
-on every frame while recognition runs only on confident crops, the
-detector's cost dominates in practice, and work on lightweight detection
-for embedded deployment~\cite{embeddedfacedetect2025} reports the
-inference-time reductions that make CPU-only operation viable.
+\textbf{Locating the face.} Recognition needs an aligned face crop,
+which a person detector does not provide. Deng
+et~al.~\cite{deng2020retinaface} introduced single-shot face detection
+that predicts the box together with five landmarks used to normalise
+pose before the embedding is computed; \sysname{} runs a lighter
+detector from the same toolkit that predicts the same box and landmarks.
+Because detection runs on every frame while recognition runs only on
+confident crops, detection dominates the cost, and lightweight designs
+for embedded use~\cite{embeddedfacedetect2025} report the reductions
+that make CPU-only operation viable.
 
 \textbf{Recognition on modest hardware.} A campus prototype cannot
 assume a GPU. Chen et~al.~\cite{chen2018mobilefacenets} showed that a
-face-verification network under one million parameters can approach the
-accuracy of models hundreds of times larger, and the resulting
-MobileFaceNet architecture is the recognition model \sysname{} runs.
-Subsequent work has pushed the same direction through neural
-architecture search and knowledge
-distillation~\cite{pocketnet2022} and through architectures designed
-specifically for edge inference~\cite{edgeface2024}. The relevance to
-this study is that recognition accuracy and deployability are no longer
-in tension at the scale of a single service office.
+verification network under one million parameters can approach the
+accuracy of far larger models; the resulting MobileFaceNet is the
+recognition model \sysname{} runs. Neural architecture search with
+knowledge distillation~\cite{pocketnet2022} and edge-specific
+architectures~\cite{edgeface2024} push further in the same direction, so
+accuracy and deployability are no longer in tension at the scale of one
+service office.
 
-\textbf{Deciding when not to answer.} A campus service office is an open
-environment: most people who pass the camera are not enrolled, and a
-recognizer that always returns its closest match will name them anyway.
-Scheirer et~al.~\cite{scheirer2013openset} formalised this as open-set
-recognition, distinguishing it from the closed-set assumption that every
-probe belongs to some known class, and argued that a usable system must
-be able to reject. Günther et~al.~\cite{gunther2017opensetface} applied
-the requirement directly to faces, showing that open-set identification
-must handle both subjects who are known to be uninteresting and
-identities never seen before, and that rejection performance is a
-distinct quantity from ranking accuracy. These two works supply the
-justification for the acceptance rule in \sysname{}: an absolute
-similarity threshold establishes that a face resembles a known student,
-and a required margin over the runner-up establishes that it resembles
-one student distinctly, with refusal as the defined outcome when either
-condition fails. Later treatments of open-set identification frame the
-problem the same way, as a decision about whether the gallery contains
-the probe at all rather than which gallery entry ranks
-highest~\cite{indexofmax2020}.
+\textbf{Deciding when not to answer.} Most people who pass the camera in
+a service office are not enrolled, and a recognizer that always returns
+its closest match will name them anyway. Scheirer
+et~al.~\cite{scheirer2013openset} formalised this as open-set
+recognition and argued that a usable system must be able to reject.
+Günther et~al.~\cite{gunther2017opensetface} applied the requirement to
+faces, showing that open-set identification must handle both
+known-uninteresting and never-seen identities, and that rejection
+performance is distinct from ranking accuracy. Later treatments likewise
+frame the question as whether the gallery contains the probe at all, not
+which entry ranks highest~\cite{indexofmax2020}. These works justify the
+acceptance rule of \sysname{}: an absolute threshold establishes that a
+face resembles a known student, a margin over the runner-up establishes
+that it resembles one student distinctly, and refusal is the defined
+outcome when either condition fails.
 
-\textbf{Measuring a recognizer that is allowed to refuse.} Because
-refusal is a legitimate outcome, evaluation cannot reduce to a single
-accuracy figure. Biometric practice reports the trade-off between false
-matches and false non-matches across operating points, and recent work
-argues that the error rate at a fixed operating point, rather than an
-aggregate such as area under the curve or equal error rate, is what
-characterises a deployed system~\cite{operatingpoint2026}. This study
-adopts that stance, reporting scores and margins at the thresholds
-actually in force. Two further findings shape what such figures mean.
-Large-scale testing has established that accuracy is not uniform across
-demographic groups~\cite{grother2019frvt}, which is reason to treat a
-threshold calibrated on one population as provisional elsewhere. And
-image quality predicts recognition outcome strongly enough to be
-estimated before matching is
-attempted~\cite{terhorst2020serfiq,boutros2023crfiqa}, which is why a
-detector-confidence gate precedes the embedding step in \sysname{}.
-Occlusion is the clearest instance of that dependence, with accuracy
-degrading measurably when part of the face is
-covered~\cite{maskedreview2025}.
+\textbf{Measuring a recognizer that may refuse.} Because refusal is a
+legitimate outcome, evaluation cannot reduce to one accuracy figure.
+Recent work argues that the error rate at a fixed operating point,
+rather than an aggregate such as area under the curve or equal error
+rate, characterises a deployed system~\cite{operatingpoint2026}, and
+this study reports scores and margins at the thresholds actually in
+force. Accuracy is not uniform across demographic
+groups~\cite{grother2019frvt}, so a threshold calibrated on one
+population is provisional elsewhere. Image quality predicts the outcome
+well enough to be estimated before
+matching~\cite{terhorst2020serfiq,boutros2023crfiqa}, which is why a
+detector-confidence gate precedes the embedding step in \sysname{}, and
+occlusion measurably degrades accuracy~\cite{maskedreview2025}.
 
-\textbf{Threats specific to face-based entitlement.} A system that
-issues something of value on recognition invites two attacks the
-literature treats separately. A presentation attack substitutes a
-photograph or replay for a live face, and the countermeasures form their
-own research area~\cite{yu2024antispoofing}; \sysname{} does not
-implement liveness detection, which is stated as a limitation rather
-than claimed as solved. A stored template is the second exposure, since
-a biometric cannot be reissued once compromised, and template-protection
-schemes apply non-invertible transformations so that a leaked record
-cannot be matched back to a person~\cite{rathgeb2021templateprotection}.
-The present build relies on the non-invertibility of the embedding
-itself together with access control, which is weaker than a dedicated
-protection scheme and is recorded as such.
+\textbf{Threats to face-based entitlement.} A system that issues
+something of value on recognition invites two attacks. A presentation
+attack substitutes a photograph or replay for a live
+face~\cite{yu2024antispoofing}; \sysname{} does not implement liveness
+detection, and this is stated as a limitation. A stored template cannot
+be reissued once compromised, and template-protection schemes apply
+non-invertible transformations so that a leaked record cannot be matched
+back to a person~\cite{rathgeb2021templateprotection}. The present build
+relies on the non-invertibility of the embedding and on access control,
+which is weaker and is recorded as such.
 
-\textbf{Deployment in educational settings.} Face recognition is already
-in routine institutional use for attendance. Patel
-et~al.~\cite{patel2025classroomcctv} report a classroom attendance
-system built on existing CCTV infrastructure, confirming both the
-feasibility of recognition from ordinary cameras and the operational
-appeal of removing a manual recording step, and transfer-learning
-approaches report comparable results on modest
-datasets~\cite{transferattendance2021}. Campus access
-management~\cite{campusaccess2024} extends the same capability from
-recording presence to granting entry, which is closer to the present
-case because a decision follows the recognition.
+\textbf{Use in educational settings.} Face recognition is in routine
+institutional use for attendance, from classroom systems built on
+existing CCTV~\cite{patel2025classroomcctv} to transfer-learning
+approaches on modest datasets~\cite{transferattendance2021}, and campus
+access management~\cite{campusaccess2024} extends it to granting entry,
+where a decision follows recognition. The closest precedent is Handaga
+et~al.~\cite{handaga2019queue}, who adopted face recognition to remove
+the queue that formed when students recorded attendance one at a time.
+Their motivation matches this study's: the manual step, not the record,
+consumes the time. The difference is what recognition produces. Their
+system marks a student present; \sysname{} issues a queue number that
+determines when the student is served. This raises the cost of a wrong
+identification from a mistaken attendance record to a misallocated place
+in a line, which is why this study treats the refusal rule, rather than
+the recognition rate, as its central design question.
 
-The closest precedent is Handaga et~al.~\cite{handaga2019queue}, who
-adopted face recognition specifically to remove the queue that formed
-when students recorded attendance one at a time. Their motivation is the
-same as this study's: the manual step, not the record, is what consumes
-time. The difference is what the recognition produces. Their system
-marks a student present; \sysname{} issues a service entitlement, a
-queue number that determines when that student is served. Issuing an
-entitlement raises the cost of a wrong identification from a mistaken
-attendance record to a misallocated place in a line, which is the reason
-this study treats the refusal rule, rather than the recognition rate, as
-its central design question.
-
-\textbf{Proportionality.} Because face data is biometric, the decision to
-deploy is not purely technical. Negri
-et~al.~\cite{negri2024deploy} propose a framework for assessing whether
-the use of a face recognition system is proportionate to its purpose in a
-given real-world setting. Regulatory analysis points the same way:
-assessments of the European Union's AI Act treat biometric
-identification as a high-risk application requiring transparency and
-human oversight rather than prohibiting it
-outright~\cite{aiactbiometric2025}, and public-opinion research finds
-that acceptance depends heavily on whether the deployment is
-consent-based and auditable~\cite{remotebiometric2024}. Applied to this
-study, the relevant proportionality argument is that enrolment is
-voluntary and student-initiated, that recognition is confined to a
-marked queue zone and to students who have separately requested service,
-that unenrolled persons are refused rather than identified, and that no
-photograph is retained. Section~\ref{sec:ethics} sets out the resulting
-safeguards in full.
+\textbf{Proportionality.} Because face data is biometric, the decision
+to deploy is not purely technical. Negri et~al.~\cite{negri2024deploy}
+propose a framework for judging whether a face recognition system is
+proportionate to its purpose; assessments of the European Union's AI Act
+treat biometric identification as a high-risk application requiring
+transparency and human oversight rather than prohibiting it
+outright~\cite{aiactbiometric2025}; and public acceptance depends
+heavily on whether a deployment is consent-based and
+auditable~\cite{remotebiometric2024}. In \sysname{}, enrolment is
+voluntary and student-initiated, recognition is confined to a marked
+queue zone and to students who have asked for service, unenrolled
+persons are refused rather than identified, and no photograph is
+retained. Section~\ref{sec:ethics} sets out the safeguards in full.
 
 \subsection{Queue Management and Person Re-Identification}
-Camera-based monitoring of service areas enables passive observation
-of arrivals without requiring user interaction. The core technical
-challenge beyond detection is person re-identification: when a tracked
-individual temporarily disappears from view and reappears, the system
-must recognize them as the same person and restore their queue
-position rather than assigning a new number.
+Beyond detection, a queue system must recognise a person who leaves the
+camera's view and returns, and restore their place rather than issue a
+new number. Ye et~al.~\cite{ye2022reid} survey deep person
+re-identification in closed- and open-world settings along three axes:
+feature representation, metric learning, and ranking. Later
+reviews~\cite{wang2024reid,asperti2025reid} document a shift toward
+Transformer-based, self-supervised, and unsupervised methods with better
+robustness to occlusion and pose. Surveys of occluded re-identification
+categorise methods by occlusion
+type~\cite{rrlcomp006deeplearningoccluded} and note the gap between
+benchmark results and the irregular occlusion of real
+deployments~\cite{rrlcomp007occludedpersonidentification}. Other work
+aligns heterogeneous appearance representations across
+modalities~\cite{rrlcomp079crossmodalityperson} and improves matching at
+low resolution~\cite{rrlcomp088personidentificationenhanced}, a concern
+where the camera sits far from the counter.
 
-Ye et~al.~\cite{ye2022reid} survey deep learning approaches to person
-re-identification, dividing methods into
-closed-world and open-world settings and categorizing the field along
-three axes: deep feature representation learning, deep metric learning,
-and ranking optimization. Building on this foundation, more recent
-reviews by Wang et~al.~\cite{wang2024reid} and Asperti
-et~al.~\cite{asperti2025reid} document a shift toward
-Transformer-based representations, self-supervised and unsupervised
-methods, and improved robustness to occlusion and pose variation. These
-analyses underscore that practical Re-ID systems typically combine
-multiple signals: appearance-based methods using colour histograms or
-deep feature embeddings, spatial-temporal methods using last known
-position and elapsed time, and hybrid methods combining both.
-\sysname{} takes the deep-embedding branch of this tradition, but applies
-it to the face rather than to the body. An earlier version of the design
-used a split-body colour-histogram signature compared by correlation,
-supported by recency windows and spatial fallbacks. That approach was
-replaced after the pre-oral defence, for a reason that is structural
-rather than a matter of tuning: a clothing signature identifies an
-appearance, not a person. Two students in the same uniform are not
-separable by it, the same student is unrecognisable between visits after
-a change of clothes, and nothing in it can establish that the person at
-the camera is the account holder requesting service. Since the revised
-system must issue a queue number to a named student rather than merely
-keep a line in order, appearance is no longer a sufficient signal.
+Practical re-identification systems combine appearance, from colour
+histograms to deep embeddings, with spatio-temporal cues such as last
+position and elapsed time. Features from overlapping body stripes give
+robust identification without deep metric
+learning~\cite{rrlcomp078personidentificationdiscriminative}; colour
+histograms fused with trajectory models reduce error behind
+obstacles~\cite{rrlcomp058fusingappearancespatio}; multi-camera tracking
+shows that without a shared view, matching must lean on strongly
+discriminative features~\cite{rrlcomp073unveilingpersonnelmovement}; and
+a wildlife-monitoring study pairs a Kalman filter with HSV colour and
+Pearson correlation~\cite{rrlcomp077smartwildlifemonitoring}. The
+pre-oral design of \sysname{} drew on this family, using a split-body
+colour signature supported by recency windows and spatial fallbacks. It
+was replaced after the pre-oral defence for a structural reason: a
+clothing signature identifies an appearance, not a person. Two students
+in the same uniform cannot be told apart by it, the same student changes
+clothes between visits, and nothing in it confirms that the person at
+the camera is the account holder. Once the system had to name a
+particular enrolled student, no amount of fusion could make appearance
+sufficient, so \sysname{} took the deep-embedding branch of this
+tradition and applied it to the face. One comparison rule then serves
+both identification and re-entry, and the compensating mechanisms are no
+longer needed.
 
-A face embedding supplies identity directly, and one comparison rule then
-serves both purposes the earlier chain needed several mechanisms to
-cover. The tiered arrangement of recency windows, spatial fallbacks and
-lookalike guards existed to compensate for a weak signal, and is not
-required once the signal itself is discriminative. The computational cost
-this avoided is modest in a single-zone prototype, and is outweighed by
-the identification the system is now required to perform.
+The multi-object tracking literature addresses the same problem within a
+single scene. A survey~\cite{rrlcomp005deeplearningmulti} organises the
+field by how detections are associated across frames, the decision a
+queue tracker makes when a new box may continue an existing entry. For
+crowds, finite-tailed updating~\cite{rrlcomp048effectivelyfinitetailed}
+handles many competing candidates, predictive fusion with adaptive
+measurement~\cite{rrlcomp049multiobjecttracking} combines motion and
+appearance evidence, global object
+models~\cite{rrlcomp072effectivemultiobject} reason over the whole
+scene, and occlusion-aware
+tracking~\cite{rrlcomp057dettrackalgorithmmultiple} reduces identity
+fragmentation when people briefly block one another. Three-dimensional
+distance-based overlap~\cite{rrlcomp076dioudistanceintersection} and
+ultrafast architectures~\cite{rrlcomp097activemultiobject} show where the
+field is heading, beyond what a single-zone prototype needs. This work
+also sets a boundary: tracking holds an identity only while a session
+lasts, and loses it when a track drops for long enough or the camera
+restarts. \sysname{} therefore uses the tracker to keep the line in
+order and the face to establish who each person is across visits.
 
-At the application layer, Concepcion et~al.~\cite{concepcion2026smart}
-describe a Smart Queuing and Appointment Management System for Bulacan
-State University, demonstrating that web-based automated queue
-management and online scheduling in a Philippine HEI can reduce wait
-times and improve perceived service quality. That system, however,
-operates through user-initiated web ticketing and appointment booking
-rather than passive computer-vision detection of arrivals, which is
-the gap \sysname{} specifically targets.
+At the system level, camera-based queue tracking has been used to
+estimate waiting time from detected queue
+length~\cite{rrlcomp008realtimequeue}, and digital ticketing in public
+transport reduces manual errors and speeds up
+processing~\cite{rrlcomp056efficientpublictransport}, paralleling the
+ticket generation in \sysname{}. Queueing studies model arrivals that
+change with service ratings~\cite{rrlcomp067selfservicerating}, relevant
+where student experience affects repeat visits, and Jencova
+et~al.~\cite{rrlcomp068dimensioningoptimalnumber} apply M/M/c modelling
+to choose the number of parallel service desks in airport passenger
+handling, the model \sysname{} implements for counter staffing
+decisions.
 
-Re-identification of occluded persons is a critical sub-problem within
-queue management. Peng et~al.~\cite{rrlcomp006deeplearningoccluded}
-survey deep learning approaches to occluded person re-ID, categorizing
-methods by occlusion type and proposing evaluation protocols that
-distinguish partial from full occlusion. Ning
-et~al.~\cite{rrlcomp007occludedpersonidentification} provide a
-complementary survey with future directions, particularly noting the
-gap between laboratory benchmark performance and real deployment
-conditions where occlusion patterns are irregular. Person re-ID using
-discriminative local features of overlapping body
-stripes~\cite{rrlcomp078personidentificationdiscriminative} achieves
-robust identification without deep metric learning by dividing the
-person image into horizontal zones, the family of approaches from which
-\sysname{}'s pre-oral design was drawn before it moved to face
-embeddings. Cross-modality
-re-ID~\cite{rrlcomp079crossmodalityperson} aligns heterogeneous
-appearance representations, and super-resolution
-re-ID~\cite{rrlcomp088personidentificationenhanced} improves matching at
-low resolution, a concern where cameras sit at a distance from the
-counter.
-
-A recurring strategy in this literature is to strengthen a weak
-appearance signal by fusing it with others. Colour-histogram signatures
-are combined with spatio-temporal trajectory
-models~\cite{rrlcomp058fusingappearancespatio} to reduce error when
-persons move behind obstacles; multi-camera
-tracking~\cite{rrlcomp073unveilingpersonnelmovement} shows that without
-a shared view, appearance matching must lean on strongly discriminative
-features; and a wildlife-monitoring
-study~\cite{rrlcomp077smartwildlifemonitoring} pairs a Kalman filter
-with HSV and Pearson correlation. What these approaches share is a task
-definition: keeping distinct subjects apart over a short interval.
-\sysname{} began from that position, and the accumulation of
-compensating mechanisms it required is itself evidence of the
-limitation. Once the revised requirement became to name a particular
-enrolled student rather than to keep a line in order, an appearance
-signal could not satisfy it at any level of fusion, and the design moved
-to the face.
-
-Queue management systems have been studied from both the
-operations-research and applied-computing perspectives. A 2022 IEEE
-publication~\cite{rrlcomp008realtimequeue} presents a real-time queue
-tracking method for waiting-time estimation that uses camera-based
-detection of queue length, providing an empirical bridge between
-computer vision and queuing metrics. An efficient public transport
-system with digital ticketing~\cite{rrlcomp056efficientpublictransport}
-demonstrates that digital ticket issuance in transit contexts reduces
-manual errors and speeds up processing, paralleling the
-ticket-generation goals of \sysname{}. A mathematics study on
-self-service systems with rating-dependent
-arrivals~\cite{rrlcomp067selfservicerating} models queue behaviour when
-arrival rates change with service ratings, relevant to campus service
-counters where student experience affects repeat visits. Jencova
-et~al.~\cite{rrlcomp068dimensioningoptimalnumber} apply M/M/c
-modelling to determine the optimal number of parallel service desks in
-airport passenger handling, directly demonstrating the practical
-utility of the queuing model implemented in \sysname{} for counter
-staffing decisions.
-
-Philippine higher education institutions have increasingly adopted
-digital systems to address service bottlenecks. Espinosa
-et~al.~\cite{rrlcomp023automatedenrollmentqueueing} describe an
-automated enrollment queueing system at a Philippine university that
-improves student experience and operational efficiency, establishing
-local precedent for digital queue management in HEIs. The Q-Line UCLM
-system~\cite{rrlcomp025lineuclmenhancing} enhances student service flow
-through paperless queue management at a Philippine university,
-demonstrating that even simple digital queueing reduces wait times
-relative to manual systems. An ACM conference
-study~\cite{rrlcomp041evaluationimprovementhei} evaluates and proposes
-improvements to an enrollment information system in Southern
-Philippines, highlighting usability and integration gaps that motivate
-the design of more comprehensive service systems. Automation of client
-servicing in university and college admission
-offices~\cite{rrlcomp083automationclientservicing} further documents
-how automated workflows in Philippine HEI admissions reduce processing
-time, supporting the case for extending automation to queue management.
-
-The broader context of digital transformation in higher education
-reinforces the relevance of \sysname{} as an institutional initiative.
-A systematic literature review~\cite{rrlcomp082digitaltransformationhigher}
-surveys digital transformation in higher education institutions
-globally, identifying technology adoption, infrastructure readiness,
-and stakeholder buy-in as the primary determinants of success. A
-classification study on barriers to digital transformation in
-HEIs~\cite{rrlcomp080classificationbarriersdigital} documents
-organizational, technical, and cultural barriers that slow adoption,
-providing a framework for understanding why manual queue management
-persists despite the availability of automation tools. Studies on
+Philippine higher education institutions have adopted digital systems
+for the same bottlenecks. Concepcion et~al.~\cite{concepcion2026smart}
+describe a smart queuing and appointment system at Bulacan State
+University that reduced wait times and improved perceived service
+quality, but through user-initiated web ticketing and booking rather
+than camera detection of arrivals, which is the gap \sysname{} targets.
+Espinosa et~al.~\cite{rrlcomp023automatedenrollmentqueueing} and the
+paperless Q-Line UCLM system~\cite{rrlcomp025lineuclmenhancing} show
+that even simple digital queueing reduces waits relative to manual
+systems; an evaluation of an enrollment information system in Southern
+Philippines~\cite{rrlcomp041evaluationimprovementhei} highlights
+usability and integration gaps; and automated admission
+workflows~\cite{rrlcomp083automationclientservicing} reduce processing
+time. Reviews of digital transformation in higher education identify
+technology adoption, infrastructure readiness, and stakeholder buy-in as
+the determinants of success~\cite{rrlcomp082digitaltransformationhigher},
+and classify the organizational, technical, and cultural barriers that
+explain why manual processes
+persist~\cite{rrlcomp080classificationbarriersdigital}. Studies of
 digital learning environments~\cite{rrlcomp081digitallearningdigital}
-and on the role of technology interfaces in student
-satisfaction~\cite{rrlcomp085technologyinterfacestudent} further
-establish that student experience with institutional technology directly
-influences satisfaction and retention, underscoring the value of
-reducing service friction through systems such as \sysname{}.
-Supporting educational administration via emergent
-technologies~\cite{rrlcomp084supportingeducationaladministration}
-documents how emerging tools improve administrative throughput in HEIs
-without requiring proportional staffing increases.
-
-Maintaining identity across a crowded scene is the tracking-level
-counterpart of the re-identification problem, and the multi-object
-tracking literature addresses it directly. A comprehensive survey of
-deep learning approaches to multi-object
-tracking~\cite{rrlcomp005deeplearningmulti} organises the field by how
-detections are associated across frames, which is the same decision a
-queue tracker makes when it must decide whether a new box continues an
-existing entry. Crowded scenes are the difficult case: finite-tailed
-updating schemes~\cite{rrlcomp048effectivelyfinitetailed} address
-association when many candidates compete, predictive information fusion
-with adaptive measurement~\cite{rrlcomp049multiobjecttracking} combines
-motion and appearance evidence rather than relying on either alone, and
-global object models with object-level
-context~\cite{rrlcomp072effectivemultiobject} resolve ambiguity by
-reasoning over the whole scene instead of pairwise comparisons.
-Occlusion-aware tracking~\cite{rrlcomp057dettrackalgorithmmultiple}
-models occlusion explicitly and reports reduced identity fragmentation,
-a finding that applies directly to a service counter where people
-briefly block one another from view. Distance-based overlap measures
-extended to three dimensions~\cite{rrlcomp076dioudistanceintersection}
-and ultrafast tracking architectures~\cite{rrlcomp097activemultiobject}
-indicate where the field is heading, though both exceed what a
-single-zone prototype on commodity hardware requires.
-
-What this body of work establishes for the present study is a boundary.
-Tracking can hold an identity together while a person remains in view
-and can often recover it across a brief occlusion, but it is anchored to
-a session: once a track is lost for long enough, or the camera restarts,
-the association is gone. That is precisely why \sysname{} does not rest
-identity on tracking. The tracker keeps the line in order within a
-session; the face signature establishes who the person is, and survives
-between visits.
+and of technology interfaces~\cite{rrlcomp085technologyinterfacestudent}
+link students' experience with institutional technology to satisfaction
+and retention, and emergent technologies improve administrative
+throughput without proportional staffing
+increases~\cite{rrlcomp084supportingeducationaladministration}.
 
 \subsection{Predictive Analytics for Service Demand Forecasting}
 Queue staff need two kinds of forecast: a current estimate for the
 person already in line and a short look-ahead for counter planning.
-Shmueli and Koppius~\cite{shmueli2011predictive} describe predictive
-analytics as distinct from explanatory modelling because its test is
-whether empirical models produce useful predictions for decisions.
+Shmueli and Koppius~\cite{shmueli2011predictive} distinguish predictive
+analytics from explanatory modelling by its test: whether empirical
+models produce useful predictions for decisions.
 
-The M/M/c queuing model provides analytical wait-time calculations
-from real-time arrival and service rate measurements, making it
-suitable for current wait-time estimates and near-term tactical
-predictions~\cite{shortle2018fundamentals}. Together with Little's
+The M/M/c queuing model provides analytical wait-time calculations from
+real-time arrival and service rates, suited to current estimates and
+near-term predictions~\cite{shortle2018fundamentals}. With Little's
 Law~\cite{little2008law}, which relates the mean number in a system to
-the arrival rate and the mean time spent in it, the M/M/c framework
-gives \sysname{} the mathematical basis for translating live arrival
-rates into expected waiting times. Empirical work on how queue
-configuration affects operational
-performance~\cite{song2024queue} further establishes that the
-arrangement of a line, not only its length, shapes the wait each person
-experiences, which is the justification for reporting position and
-counter assignment alongside a single aggregate estimate. System
-utilization is expressed as:
+the arrival rate and the mean time spent in it, it gives \sysname{} the
+basis for translating live arrival rates into expected waits. Analyses
+of multi-server systems with heterogeneous service
+rates~\cite{rrlcomp052analysismultiserver} and of Little's Law in
+multiphase settings~\cite{rrlcomp051littleformulamultiphase} support
+M/M/c as a practical baseline for cashiering counters, and empirical
+work on queue configuration~\cite{song2024queue} shows that the
+arrangement of a line, not only its length, shapes each person's wait,
+which is why position and counter assignment are reported alongside a
+single estimate. System utilization is
 \begin{equation}
   \rho = \frac{\lambda}{c\mu}
   \label{eq:utilization}
 \end{equation}
-where $\lambda$ is the arrival rate, $\mu$ the service rate, and $c$
-the number of active servers. The mean number in the system together
-with Little's Law yields the expected wait time used by the dashboard:
+where $\lambda$ is the arrival rate, $\mu$ the service rate, and $c$ the
+number of active servers. The mean number in the system with Little's
+Law yields the expected wait used by the dashboard:
 \begin{equation}
   W = \frac{L}{\lambda}
   \label{eq:littles_law}
 \end{equation}
 For medium-term forecasting, Holt's double exponential smoothing tracks
-both queue level and trend with separate smoothing
-parameters~\cite{holt2004forecasting}. Hyndman and
-Athanasopoulos~\cite{hyndman2021forecasting} discuss exponential
-smoothing and multi-horizon forecasting, including damping factors that
-limit over-projection during temporary spikes. That point matters in
-campus offices, where a line may grow quickly during enrollment and
-then thin out once a batch of students is served. For the 30~min
-horizon implemented in \sysname{}, mean-reversion logic is used to limit
-long-forecast uncertainty.
+queue level and trend with separate smoothing
+parameters~\cite{holt2004forecasting}, and Hyndman and
+Athanasopoulos~\cite{hyndman2021forecasting} describe damping factors
+that limit over-projection during temporary spikes, as when a line grows
+during enrollment and thins once a batch is served. For the 30-minute
+horizon, \sysname{} uses mean reversion to limit long-forecast
+uncertainty.
 
-Machine learning approaches to waiting-time prediction have been
-validated in several service contexts. Kyritsis and
-Deriaz~\cite{rrlcomp015machinelearningapproach} apply machine learning
-to waiting-time prediction in queueing scenarios, showing that even
-simple regression models outperform static analytical estimates when
-historical data are available. A 2025 IEEE
-publication~\cite{rrlcomp009waitingtimeprediction} further demonstrates
-improved accuracy over M/M/c baselines when demand is non-stationary.
-For hospital outpatient settings, a study in Health Care Management
-Science~\cite{rrlcomp050dissatisfactionconsideredwaiting} integrates
-patient dissatisfaction into the prediction model, showing that
-incorporating service-quality feedback alongside queue length improves
-both prediction accuracy and practical utility. Wang
-et~al.~\cite{rrlcomp014evaluatingfairnessmachine} evaluate the fairness
-of machine learning models for prolonged wait-time prediction in
-emergency departments, noting that model accuracy alone is insufficient
-without assessing distributional equity across groups.
-
-Hospital and transit queue prediction further demonstrate the generality
-of data-driven waiting-time models. A parallel patient treatment time
-prediction algorithm for hospital
-queuing~\cite{rrlcomp059parallelpatienttreatment} shows that treatment
-time forecasts can guide patient routing across service counters, a
-problem structurally similar to the counter assignment in \sysname{}.
-A machine learning-based study on passenger waiting time prediction
-during airport check-in~\cite{rrlcomp069machinelearningprediction}
-demonstrates that historical queue data combined with real-time arrival
-information produces accurate wait forecasts at multi-server counters,
-directly reinforcing the design of the prediction service in \sysname{}.
-
-Queuing theory provides the analytical foundation for wait-time
-computation. A MDPI mathematics study~\cite{rrlcomp051littleformulamultiphase}
-examines Little's Law in multiphase queuing settings, extending the
-classical result to scenarios where customers pass through multiple
-service stages. An analysis of multi-server queuing systems with
-flexible priorities~\cite{rrlcomp052analysismultiserver} demonstrates
-the mathematical tractability of multi-server models with heterogeneous
-service rates, supporting the use of M/M/c as a practical baseline for
-campus cashiering counters. Dimensioning the optimal number of parallel
-service desks using M/M/c modelling~\cite{rrlcomp068dimensioningoptimalnumber}
-further validates the model for real operational decisions, while
-self-service system analysis with rating-dependent
-arrivals~\cite{rrlcomp067selfservicerating} shows that analytical
-queuing models can be extended to capture the feedback between service
-quality and future demand.
-
-Real-time and deep-learning approaches have been explored for delay
-estimation under uncertainty. A study on real-time prediction of delay
-distributions using mixture density
-networks~\cite{rrlcomp012realtimeprediction} models wait time as a
-distribution rather than a point estimate, providing richer uncertainty
-information to service operators. A neural computing
-study~\cite{rrlcomp036deeplearningassisted} applies deep learning to
-decongestion time prediction, demonstrating that neural models can
-handle non-linear queue dynamics where classical models underfit. These
-works justify the multi-horizon prediction architecture of \sysname{},
-which combines analytical and data-driven forecasts at different time
+Machine learning has been validated for waiting-time prediction in
+several service settings. Even simple regression outperforms static
+analytical estimates when historical data are
+available~\cite{rrlcomp015machinelearningapproach}, and learned models
+improve on M/M/c baselines when demand is
+non-stationary~\cite{rrlcomp009waitingtimeprediction}. In hospitals,
+adding patient dissatisfaction to queue length improves
+prediction~\cite{rrlcomp050dissatisfactionconsideredwaiting},
+treatment-time forecasts guide routing across service
+counters~\cite{rrlcomp059parallelpatienttreatment}, and fairness across
+patient groups must be assessed alongside
+accuracy~\cite{rrlcomp014evaluatingfairnessmachine}; at airport
+check-in, historical and real-time arrival data together give accurate
+forecasts at multi-server
+counters~\cite{rrlcomp069machinelearningprediction}. Mixture density
+networks predict a distribution of delay rather than a single
+value~\cite{rrlcomp012realtimeprediction}, and deep models handle
+non-linear queue dynamics where classical models
+underfit~\cite{rrlcomp036deeplearningassisted}. These works support
+combining analytical and data-driven forecasts at different time
 scales.
 
-Exponential smoothing and gradient boosting methods are the dominant
-non-neural forecasting approaches in service demand contexts. An
-International Journal of Forecasting study~\cite{rrlcomp010exponentialsmoothingmodel}
-evaluates exponential smoothing model selection criteria, showing that
-correct model selection substantially improves out-of-sample forecast
-accuracy. A review of forecasting methods for electricity
-consumption~\cite{rrlcomp011reviewmethodsmodels} notes that exponential
-smoothing remains competitive with deep learning on short-horizon tasks
-where data are limited. Gradient boosting regression trees have been
-applied to energy consumption
-forecasting~\cite{rrlcomp035energyconsumptionforecasts} and
-disaggregated retail demand~\cite{rrlcomp044disaggregatedretailforecasting},
-demonstrating the method's ability to capture non-linear demand
-patterns with relatively few hyperparameters. Predictive sales and
-operations planning~\cite{rrlcomp070predictivesalesoperations}
-illustrates the practical value of combining short-term smoothing with
-trend components. A 2025 IEEE publication~\cite{rrlcomp071predictiveanalyticssales}
-demonstrates an HML model combining LSTM and XGBoost for sales demand
-forecasting, showing accuracy gains over single-method baselines at
-multi-step horizons. An Applied Sciences demand forecasting
-study~\cite{rrlcomp087predictiveanalyticsdemand} applies ARIMA and
-evaluates predictions using MAPE, providing a methodological reference
-for the error metrics used to evaluate the \sysname{} prediction module.
+Among non-neural methods, exponential smoothing benefits substantially
+from correct model selection~\cite{rrlcomp010exponentialsmoothingmodel}
+and stays competitive with deep learning on short horizons with limited
+data~\cite{rrlcomp011reviewmethodsmodels}, and gradient boosting captures
+non-linear demand with few hyperparameters in
+energy~\cite{rrlcomp035energyconsumptionforecasts} and
+retail~\cite{rrlcomp044disaggregatedretailforecasting} forecasting.
+Combining short-term smoothing with trend components aids operations
+planning~\cite{rrlcomp070predictivesalesoperations}, and a hybrid of
+LSTM and XGBoost improves on single methods at multi-step
+horizons~\cite{rrlcomp071predictiveanalyticssales}. On evaluation,
+Chicco et~al.~\cite{rrlcomp093coefficientdeterminationsquared} argue
+that R\textsuperscript{2} is more informative than SMAPE, MAE, MAPE,
+MSE, or RMSE taken in isolation and recommend reporting several metrics;
+the choice of metric changes which model is
+selected~\cite{rrlcomp094comparativeevaluationmodel}; and reviews in
+wind-power~\cite{rrlcomp095evaluationmetricswind} and
+energy~\cite{rrlcomp096performanceevaluationmachine} forecasting find
+MAE and MAPE together more complete than either alone. MAPE has also
+been used to evaluate ARIMA demand
+forecasts~\cite{rrlcomp087predictiveanalyticsdemand}, and MAE to
+evaluate predictions of student academic
+success~\cite{rrlcomp100comparativeanalysismachine}, the latter in an
+educational context.
 
-Forecast evaluation metrics are an important methodological
-consideration in any predictive system. Chicco
-et~al.~\cite{rrlcomp093coefficientdeterminationsquared} argue that the
-coefficient of determination R\textsuperscript{2} provides more
-informative model evaluation than SMAPE, MAE, MAPE, MSE, and RMSE
-taken in isolation, recommending that studies report multiple metrics.
-A comparative evaluation of model accuracy using MAE, MSE, and MAPE in
-agile project management~\cite{rrlcomp094comparativeevaluationmodel}
-demonstrates that metric choice significantly affects model selection,
-reinforcing the need to report complementary error measures. A
-comprehensive review of evaluation metrics for wind power
-forecasts~\cite{rrlcomp095evaluationmetricswind} and a performance
-evaluation of machine learning models for energy consumption
-prediction~\cite{rrlcomp096performanceevaluationmachine} both confirm
-that MAPE and MAE together provide a more complete accuracy picture
-than either metric alone. A comparative analysis of machine learning
-algorithms for predicting student academic
-success~\cite{rrlcomp100comparativeanalysismachine} applies MAE in an
-educational context, further establishing the use of these metrics in
-HEI-related prediction tasks.
-
-Service-sector deployments confirm both the approach and its limits. A
-large retrospective study of waiting times in a paediatric
-hospital~\cite{pediatricwait2025} trained several machine-learning
-models on more than three hundred thousand records and found that
-queue-derived features, principally the number of people already waiting
-and the arrival rate, were the strongest predictors of waiting time.
-That finding supports the feature basis of the present prediction
-module, which is built on the same two quantities recovered from camera
-observation rather than from a booking system. Work on forecasting
-boarding time in emergency departments~\cite{boardingforecast2026}
-makes the complementary point that a prediction is operationally useful
-only if it reaches staff early enough to change a decision, which is the
-reason \sysname{} reports several horizons rather than a single current
-estimate.
+Service-sector studies confirm both the approach and its limits. A
+retrospective study that trained several machine-learning models on more
+than three hundred thousand paediatric hospital
+records~\cite{pediatricwait2025} found that the number of people
+already waiting and the arrival rate were the strongest predictors of
+waiting time, the same two quantities the \sysname{} prediction module
+recovers from camera observation. Work on forecasting
+emergency-department boarding time~\cite{boardingforecast2026} adds that
+a prediction is useful only if it reaches staff early enough to change a
+decision, which is why \sysname{} reports several horizons rather than a
+single current estimate.
 
 \section{Synthesis of the State-of-the-Art}
 \label{cr:synthesis}
@@ -1223,7 +991,7 @@ converge on the system.
   ]
   \hyphenpenalty=10000
   \exhyphenpenalty=10000
-  \node[mainbox] (qt) at (0, 8.2) {
+  \node[mainbox] (qt) at (0, 6.9) {
     {\large\textbf{Queuing Theory}}\\[3pt]
     \textit{Shortle et al.\ (2018); Yifter et al.\ (2023)}\\[6pt]
     Explains how arrivals, service capacity, and waiting lines behave.
@@ -1234,7 +1002,7 @@ converge on the system.
   };
   \node[tag, anchor=south] at ([yshift=4pt]qt.north) {MAIN THEORY};
 
-  \node[centerbox] (sys) at (0, 3.7) {
+  \node[centerbox] (sys) at (0, 3.0) {
     \sysname{}\\[4pt]
     A Computer Vision-Based Smart Queue Management\\
     and Predictive Service Delivery System
@@ -1808,8 +1576,7 @@ accuracy, the issuance of queue numbers without manual input, backend
 response under load, and wait-time prediction error through Mean
 Absolute Error (MAE) and Mean Absolute Percentage Error (MAPE). The
 five-point Likert survey records how cashier staff and students rate
-the system's usability, reliability, and clarity after supervised trial
-use. Qualitative evidence comes from the open-ended questions of both
+the system's usability, reliability, and clarity after using it. Qualitative evidence comes from the open-ended questions of both
 questionnaires, where respondents can explain problems, concerns, or
 useful features that a rating scale may not capture.
 
@@ -1864,8 +1631,7 @@ experience of students.
 involved in queue-based transactions in the selected service office is
 relatively small and bounded, total enumeration is used; all eligible
 staff are invited to participate. The inclusion criterion is
-having operated the staff dashboard during the supervised trial
-session.
+having used the staff dashboard before answering the questionnaire.
 
 \textbf{Students.} Student respondents are drawn by convenience
 sampling from the students who volunteer for the supervised trial
@@ -1942,7 +1708,9 @@ proposed in Chapter~4.
 \textbf{Phase 3: Post-Trial Survey.} Immediately after the supervised
 trial, the questionnaire in Section~2.5 was administered through an
 online form to the respondent groups identified in Section~2.3;
-responses were submitted on 25 and 26 September 2026. The form collects
+students answered from 25 to 27 September 2026. The cashier staff
+answered on 27 and 28 September 2026, after a short hands-on session
+with the staff dashboard. The form collects
 no names, and responses are analyzed in aggregate. The original design also invited a subset of respondents to
 a short semi-structured interview. The interviews were not conducted,
 so the open-ended questions in Section~IV of the questionnaire are the
@@ -3013,8 +2781,8 @@ resolved before external users were exposed to the system.
 \textbf{Beta Testing.} Under the shortened evaluation protocol, beta
 testing took the form of a supervised trial in which volunteer students
 used the system on a test installation on the NCF campus, since the
-system was not
-deployed at the cashiering office. The developers observed the
+system was not deployed at the cashiering office, and the cashier staff
+were given the staff dashboard to use. The developers observed the
 interaction, and the same trial provided the structured evaluation
 described below, rather than following a
 separate two-week period of regular operation.
@@ -4107,28 +3875,32 @@ the level of user's satisfaction in terms of system's usability,
 system's reliability, and system clarity?} Results are reported per
 dimension and per respondent group using the weighted mean and overall
 weighted mean, interpreted against the Likert scale in
-Table~\ref{tab:likert}. The responses come from the supervised trial
-session under the shortened evaluation protocol described in
-Section~\ref{sec:datagathering}, and describe users' first experience of
-the system rather than satisfaction after sustained use.
+Table~\ref{tab:likert}. The responses come from the shortened evaluation
+protocol described in Section~\ref{sec:datagathering}, and describe
+users' first experience of the system rather than satisfaction after
+sustained use.
 
-Responses were submitted on 25 and 26 September 2026. All fifteen
-respondents are students. The cashier staff were invited to take part
-but did not respond. The results below therefore describe students
-only, and the comparison between the
-two groups on the common items cannot be made
-(Section~\ref{subsec:limitations}).
+Twenty-four respondents answered: sixteen students and eight cashier
+staff. The students answered from 25 to 27 September 2026, after the
+supervised trial. The cashier staff answered on 27 and 28 September
+2026, after being given the staff dashboard to use. Because the system
+was not deployed at the cashiering office, the staff did not run it with
+a live queue at the counter; their ratings describe a short hands-on
+session with the dashboard, and items such as R3-f and R5-f, which
+concern the queue matching the students actually present, could be
+judged only from what that session showed.
 
 \subsection{Profile of the Respondents}
 \label{subsec:sop4-profile}
 
-All fifteen students confirmed that they were 18 or older and gave their
-consent before answering. Thirteen ($86.7\%$) were in fourth year, one
-($6.7\%$) in third year, and one ($6.7\%$) in fifth year or above. Asked
-how they received their queue number during the session, twelve
-($80.0\%$) answered that it was issued automatically after the camera
-recognised them, two ($13.3\%$) that they received it from staff because
-the system could not recognise them, and one did not answer.
+All twenty-four respondents confirmed that they were 18 or older and gave
+their consent before answering. Of the sixteen students, thirteen
+($81.3\%$) were in fourth year, two ($12.5\%$) in third year, and one
+($6.3\%$) in fifth year or above. Asked how they received their queue
+number during the session, thirteen students ($81.3\%$) answered that it
+was issued automatically after the camera recognised them, two
+($12.5\%$) that they received it from staff because the system could not
+recognise them, and one did not answer.
 
 \subsection{Reliability of the Questionnaire}
 \label{subsec:sop4-reliability}
@@ -4137,59 +3909,63 @@ Under the shortened protocol, the reliability of the questionnaire is
 measured on the evaluation responses themselves
 (Table~\ref{tab:sop4-reliability}). Because the questionnaire was not
 content-validated by expert raters, this is the only check on the
-instrument that is reported. All three dimensions are above the $0.70$
-threshold.
+instrument that is reported. Every dimension of both forms is above the
+$0.70$ threshold.
 
 \begin{table}[H]
 \centering
-\caption{Internal consistency of the user-evaluation questionnaire,
-student form (Cronbach's alpha).}
+\caption{Internal consistency of the user-evaluation questionnaire
+(Cronbach's alpha).}
 \label{tab:sop4-reliability}
-\begin{tabular}{lcc}
+\begin{tabular}{lcccc}
 \hline
-Dimension & $n$ & $\alpha$ \\
+ & \multicolumn{2}{c}{Students} & \multicolumn{2}{c}{Cashier staff} \\
+Dimension & $n$ & $\alpha$ & $n$ & $\alpha$ \\
 \hline
-System's usability & $14$ & $0.961$ \\
-System's reliability & $15$ & $0.934$ \\
-System clarity & $15$ & $0.947$ \\
-Whole form (15 items) & $14$ & $0.987$ \\
+System's usability & $15$ & $0.948$ & $8$ & $0.939$ \\
+System's reliability & $16$ & $0.939$ & $8$ & $0.868$ \\
+System clarity & $16$ & $0.935$ & $8$ & $0.936$ \\
+Whole form (15 items) & $15$ & $0.983$ & $8$ & $0.959$ \\
 \hline
-\multicolumn{3}{l}{\footnotesize Five items per dimension. One student
-left one usability item blank} \\
-\multicolumn{3}{l}{\footnotesize and is excluded where that item is
-used. $\alpha \geq 0.70$ is taken as acceptable.} \\
+\multicolumn{5}{l}{\footnotesize Five items per dimension. One student left
+one usability item blank and is excluded} \\
+\multicolumn{5}{l}{\footnotesize where that item is used. $\alpha \geq 0.70$
+is taken as acceptable.} \\
 \end{tabular}
 \end{table}
 
-\noindent These coefficients are higher than a five-item scale normally
-produces, and the reason lies in the responses. Eight of the fifteen
-students gave the same rating to all fifteen items: three rated every
-item~5, four rated every item~4, and one rated every item~3. A uniform
-response set makes the items rise and fall together by construction,
-which raises alpha without showing that the items measure their
-dimension well. Computed only on the seven students whose ratings
-varied (six for usability), alpha is $0.652$ for usability, $0.760$ for
-reliability, and $0.848$ for clarity. With so few respondents these
+\noindent The student coefficients are higher than a five-item scale
+normally produces, and the reason lies in the responses. Eight of the
+sixteen students gave the same rating to all fifteen items: three rated
+every item~5, four rated every item~4, and one rated every item~3. A
+uniform response set makes the items rise and fall together by
+construction, which raises alpha without showing that the items measure
+their dimension well. Computed only on the eight students whose ratings
+varied (seven for usability), alpha is $0.585$ for usability, $0.793$ for
+reliability, and $0.804$ for clarity. With so few respondents these
 values are unstable, but they indicate that reliability and clarity
 remain acceptable once the uniform response sets are set aside, while
-usability falls below the threshold. The coefficients in
-Table~\ref{tab:sop4-reliability} are therefore taken as meeting the
-threshold, not as evidence of exceptional reliability.
+usability falls below the threshold. The staff form does not share this
+problem: only one staff member gave a uniform response set, and without
+it alpha stays at $0.931$, $0.864$, and $0.882$. The student
+coefficients in Table~\ref{tab:sop4-reliability} are therefore taken as
+meeting the threshold, not as evidence of exceptional reliability.
 
 \subsection{Satisfaction of Students}
 \label{subsec:sop4-students}
 
-Students returned an overall weighted mean of $4.39$ (\emph{Strongly
+Students returned an overall weighted mean of $4.40$ (\emph{Strongly
 Agree}), which corresponds to a satisfaction level of \emph{Excellent}
-on Table~\ref{tab:likert}. All three dimensions fall in the same
-category: usability at $4.43$, clarity at $4.37$, and reliability at
-$4.36$. Table~\ref{tab:sop4-students} gives the item-level results. Of
-the 224 ratings given, 204 ($91.1\%$) were Agree or Strongly Agree, 20
-($8.9\%$) were Neutral, and none was Disagree or Strongly Disagree.
+on Table~\ref{tab:likert}. All three dimensions and all fifteen items
+fall in the same category: usability at $4.43$, reliability at $4.40$,
+and clarity at $4.38$. Table~\ref{tab:sop4-students} gives the
+item-level results. Of the 239 ratings given, 219 ($91.6\%$) were Agree
+or Strongly Agree, 20 ($8.4\%$) were Neutral, and none was Disagree or
+Strongly Disagree.
 
 \begin{table}[!htbp]
 \centering
-\caption{Satisfaction of students with \sysname{} ($n = 15$).}
+\caption{Satisfaction of students with \sysname{} ($n = 16$).}
 \label{tab:sop4-students}
 \begin{tabular}{p{0.66\textwidth}cc}
 \hline
@@ -4197,112 +3973,261 @@ Item & WM & Interpretation \\
 \hline
 \multicolumn{3}{l}{\textbf{A.\ System's usability}} \\
 U1. The system was easy to use without needing someone to guide me
-  & $4.40$ & Strongly Agree \\
+  & $4.38$ & Strongly Agree \\
 U2. I was able to complete what I needed to do without difficulty
-  & $4.33$ & Strongly Agree \\
+  & $4.31$ & Strongly Agree \\
 U3-s. Registering my face in the mobile app was easy
-  & $4.60$ & Strongly Agree \\
+  & $4.56$ & Strongly Agree \\
 U4-s. Asking to be queued from the mobile app was convenient
-  & $4.40$ & Strongly Agree \\
+  & $4.44$ & Strongly Agree \\
 U5-s. I received my queue number without having to do anything else at
-  the office$^{a}$ & $4.43$ & Strongly Agree \\
+  the office$^{a}$ & $4.47$ & Strongly Agree \\
 \hline
 \multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.43$ \\
 \hline
 \multicolumn{3}{l}{\textbf{B.\ System's reliability}} \\
 R1. The system worked consistently throughout the session
-  & $4.20$ & Agree \\
+  & $4.25$ & Strongly Agree \\
 R2. I did not encounter errors that stopped me from continuing
-  & $4.27$ & Strongly Agree \\
+  & $4.31$ & Strongly Agree \\
 R3-s. The system recognised me correctly when I entered the queue area
-  & $4.47$ & Strongly Agree \\
+  & $4.50$ & Strongly Agree \\
 R4-s. I trust that the queue number I received was mine and not
-  someone else's & $4.40$ & Strongly Agree \\
+  someone else's & $4.44$ & Strongly Agree \\
 R5-s. My position in the queue was updated correctly as the line moved
-  & $4.47$ & Strongly Agree \\
+  & $4.50$ & Strongly Agree \\
 \hline
-\multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.36$ \\
+\multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.40$ \\
 \hline
 \multicolumn{3}{l}{\textbf{C.\ System clarity}} \\
 C1. The information shown on screen was easy to understand
-  & $4.27$ & Strongly Agree \\
+  & $4.25$ & Strongly Agree \\
 C2. I always knew what the system was doing or waiting for
-  & $4.33$ & Strongly Agree \\
+  & $4.38$ & Strongly Agree \\
 C3-s. My position in the queue was clearly shown
-  & $4.40$ & Strongly Agree \\
+  & $4.38$ & Strongly Agree \\
 C4-s. The estimated waiting time was presented in a way I could
-  understand & $4.53$ & Strongly Agree \\
+  understand & $4.50$ & Strongly Agree \\
 C5-s. I understood what information the system keeps about me
-  & $4.33$ & Strongly Agree \\
+  & $4.38$ & Strongly Agree \\
 \hline
-\multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.37$ \\
+\multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.38$ \\
 \hline
-\multicolumn{2}{l}{\textbf{Overall weighted mean}} & $\mathbf{4.39}$ \\
+\multicolumn{2}{l}{\textbf{Overall weighted mean}} & $\mathbf{4.40}$ \\
 \hline
-\multicolumn{3}{l}{\footnotesize $^{a}$\,$n = 14$; one student left this
+\multicolumn{3}{l}{\footnotesize $^{a}$\,$n = 15$; one student left this
 item blank.} \\
 \end{tabular}
 \end{table}
 
-\textbf{Usability.} Usability is the highest-rated dimension,
-and its strongest item is the highest in the questionnaire: registering
-a face in the mobile app ($4.60$), the step the student completes alone
-with no staff involved. Students also agreed strongly that they could
-use the system without being guided ($4.40$) and that they received
-their number without any further step once recognised ($4.43$), which
-is the outcome the system is designed to produce.
+\textbf{Usability.} Usability is the highest-rated dimension, and its
+strongest item is the highest in the student form: registering a face
+in the mobile app ($4.56$), the step the student completes alone with no
+staff involved. Students also agreed strongly that they could use the
+system without being guided ($4.38$) and that they received their number
+without any further step once recognised ($4.47$), which is the outcome
+the system is designed to produce.
 
-\textbf{Reliability.} Reliability is the lowest of the three dimensions,
-though still \emph{Strongly Agree}, and it contains the only item below
-that category: that the system worked consistently throughout the
-session ($4.20$, Agree). It is also the dimension where the problems of
-the trial appeared. Two students reported one recognition failure while
-still receiving their number automatically, one attributing it to
-``the background lightings.'' The two students who received their
-number from staff answered ``No'' to the same question, so the two
-questions together identify four students ($26.7\%$) for whom
-recognition did not work at the first attempt, not two. In the two
-cases the system could not resolve, the student was referred to staff
-and received a number from them, which is the designed behaviour of the decision rule
-described in Section~\ref{subsec:calibration}: when the system is not
-sure, it does not guess. No respondent described receiving someone
-else's number, and students agreed strongly that the number they
-received was their own ($4.40$).
+\textbf{Reliability.} The lowest reliability item is that the system
+worked consistently throughout the session ($4.25$), and reliability is
+where the problems of the trial appeared. Two students reported one
+recognition failure while still receiving their number automatically,
+one attributing it to ``the background lightings.'' The two students who
+received their number from staff answered ``No'' to the same question,
+so the two questions together identify four students ($25.0\%$) for whom
+recognition did not work at the first attempt, not two. In the two cases
+the system could not resolve, the student was referred to staff and
+received a number from them, which is the designed behaviour of the
+decision rule described in Section~\ref{subsec:calibration}: when the
+system is not sure, it does not guess. No respondent described receiving
+someone else's number, and students agreed strongly that the number they
+received was their own ($4.44$).
 
 \textbf{Clarity.} The highest clarity item is that the estimated waiting
-time was presented in a way the student could understand ($4.53$). This
+time was presented in a way the student could understand ($4.50$). This
 answers the students' strongest complaint in the baseline survey, that
 they could not see how long they would wait
 (Section~\ref{subsec:sop1-students}). Understanding how the estimate is
 presented is not the same as the estimate being accurate, however, and
 Section~\ref{sec:sop3-results} shows that the current-wait formula
 over-predicts. Students also agreed strongly that they understood what
-information the system keeps about them ($4.33$).
+information the system keeps about them ($4.38$).
+
+\subsection{Satisfaction of Cashier Staff}
+\label{subsec:sop4-staff}
+
+Cashier staff returned an overall weighted mean of $3.86$
+(\emph{Agree}), which corresponds to a satisfaction level of \emph{Very
+Satisfactory} on Table~\ref{tab:likert}. Clarity is rated highest at
+$4.28$ (\emph{Strongly Agree}), followed by usability at $3.75$ and
+reliability at $3.55$ (both \emph{Agree}).
+Table~\ref{tab:sop4-staff} gives the item-level results. Of the 120
+ratings given, 74 ($61.7\%$) were Agree or Strongly Agree, 41 ($34.2\%$)
+were Neutral, and 5 ($4.2\%$) were Disagree or Strongly Disagree; all
+five came from one staff member.
+
+\begin{table}[!htbp]
+\centering
+\caption{Satisfaction of cashier staff with \sysname{} ($n = 8$).}
+\label{tab:sop4-staff}
+\begin{tabular}{p{0.66\textwidth}cc}
+\hline
+Item & WM & Interpretation \\
+\hline
+\multicolumn{3}{l}{\textbf{A.\ System's usability}} \\
+U1. The system was easy to use without needing someone to guide me
+  & $3.88$ & Agree \\
+U2. I was able to complete what I needed to do without difficulty
+  & $3.88$ & Agree \\
+U3-f. Navigating the staff dashboard was easy
+  & $3.75$ & Agree \\
+U4-f. Marking an entry as done or as a no-show was quick to do
+  & $3.75$ & Agree \\
+U5-f. When the system could not identify someone, resolving it from the
+  dashboard was straightforward & $3.50$ & Agree \\
+\hline
+\multicolumn{2}{l}{\textbf{Section weighted mean}} & $3.75$ \\
+\hline
+\multicolumn{3}{l}{\textbf{B.\ System's reliability}} \\
+R1. The system worked consistently throughout the session
+  & $3.50$ & Agree \\
+R2. I did not encounter errors that stopped me from continuing
+  & $3.00$ & Neutral \\
+R3-f. The queue numbers the system issued matched the students actually
+  present & $3.75$ & Agree \\
+R4-f. When the system was unsure about someone, it referred them to
+  staff instead of guessing & $3.50$ & Agree \\
+R5-f. The queue list on the dashboard stayed accurate as students were
+  served & $4.00$ & Agree \\
+\hline
+\multicolumn{2}{l}{\textbf{Section weighted mean}} & $3.55$ \\
+\hline
+\multicolumn{3}{l}{\textbf{C.\ System clarity}} \\
+C1. The information shown on screen was easy to understand
+  & $4.50$ & Strongly Agree \\
+C2. I always knew what the system was doing or waiting for
+  & $4.00$ & Agree \\
+C3-f. The dashboard layout made it easy to find what I needed
+  & $4.38$ & Strongly Agree \\
+C4-f. The live camera view and the queue list were clear to read
+  & $4.38$ & Strongly Agree \\
+C5-f. The wait-time predictions and analytics were presented in a way I
+  could act on & $4.13$ & Agree \\
+\hline
+\multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.28$ \\
+\hline
+\multicolumn{2}{l}{\textbf{Overall weighted mean}} & $\mathbf{3.86}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{Clarity.} The staff rated what the dashboard shows more highly
+than anything else: the on-screen information was easy to understand
+($4.50$), the layout made it easy to find what they needed ($4.38$), and
+the live camera view and queue list were clear to read ($4.38$).
+
+\textbf{Usability.} The staff agreed that the dashboard is usable, and
+the lowest usability item is the one that matters most to the design:
+resolving a person the system could not identify ($3.50$). This is the
+pending-link path through which every refusal by the decision rule
+reaches staff, so it is the step whose ease the system most depends on.
+
+\textbf{Reliability.} Reliability is the staff's lowest dimension, and it
+contains the only Neutral item in either form: that they did not
+encounter errors that stopped them from continuing ($3.00$). One staff
+member reported that the system failed more than once, writing:
+``System failure due to glitch or several times of brown out causing
+system crash. Offline.'' The failure it describes, the system going
+offline, is the problem six of the seven staff named in the baseline
+survey, the internet connection (Section~\ref{subsec:sop1-connectivity}),
+and follows from the system's dependence on a working connection stated
+in the Scope and Delimitation. With eight
+respondents, a single staff member's answers move an item's mean by as
+much as half a point, so these item means are read as indications, not
+precise estimates.
+
+\subsection{Comparison Between the Two Groups}
+\label{subsec:sop4-comparison}
+
+The two forms share six items, two per dimension, and only these are
+compared (Table~\ref{tab:sop4-common}).
+
+\begin{table}[H]
+\centering
+\caption{Weighted means of the common items by respondent group.}
+\label{tab:sop4-common}
+\begin{tabular}{p{0.56\textwidth}cc}
+\hline
+Common item & Students & Cashier staff \\
+\hline
+U1. The system was easy to use without needing someone to guide me
+  & $4.38$ & $3.88$ \\
+U2. I was able to complete what I needed to do without difficulty
+  & $4.31$ & $3.88$ \\
+R1. The system worked consistently throughout the session
+  & $4.25$ & $3.50$ \\
+R2. I did not encounter errors that stopped me from continuing
+  & $4.31$ & $3.00$ \\
+C1. The information shown on screen was easy to understand
+  & $4.25$ & $4.50$ \\
+C2. I always knew what the system was doing or waiting for
+  & $4.38$ & $4.00$ \\
+\hline
+Mean of the common items & $4.31$ & $3.79$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\noindent Students rated five of the six common items higher than the
+staff did, and the widest gap is on errors that stopped the user from
+continuing ($4.31$ against $3.00$). The one item the staff rated higher
+is that the on-screen information was easy to understand. The staff were
+also more reserved than the students in the baseline survey, where they
+agreed less strongly on every section (Section~\ref{subsec:sop1-gap}). A
+likely reason is that the students judge the system by what it does for
+them in the queue, while the staff judge it as the people who would have
+to keep it running at the counter. The two groups also used it
+differently. The
+students went through the full sequence of enrolling, asking to be
+queued, and being recognised, while the staff had a short session with
+the dashboard, so the comparison describes two perspectives, not two
+measurements of the same experience.
 
 \subsection{Comfort with Face Recognition and Open-Ended Responses}
 \label{subsec:sop4-supplementary}
 
 Asked how comfortable they were with the system using their face to
-identify them in the queue, four students ($26.7\%$) answered very
-comfortable, seven ($46.7\%$) comfortable, and four ($26.7\%$) neutral.
-None answered uncomfortable. These answers are reported separately and
-do not enter any weighted mean.
+identify them in the queue, four students ($25.0\%$) answered very
+comfortable, eight ($50.0\%$) comfortable, and four ($25.0\%$) neutral.
+Among the staff, one answered very comfortable, three comfortable, and
+four neutral. No respondent in either group answered uncomfortable.
+These answers are reported separately and do not enter any weighted
+mean.
 
-Nine students described what they liked most. Five named its ease of
-use or convenience, for example ``the UI/UX is accessible and very easy
-to navigate. The queue number was quick and convenient.'' Three named
-face recognition, one of them the face login: ``when you log in you not
-need to type your gbox you can tap the log in with face and
-automatically log in to your account.'' One named the notification for
-the student's turn. Asked what they would change, seven of the eight
-who answered wrote that they would change nothing. The eighth wrote:
-``I would like to change something about the face recognition because I
-think not all students are comfortable with it.'' Together with the
-four neutral answers on comfort, this comment indicates that face
-recognition should remain a choice rather than a requirement. In the
-present design it is: a student may sign in with Gbox instead of the
-face, and a student who does not want to be recognised can still take
-a printed ticket from the office kiosk.
+Ten students described what they liked most. Six named its ease of use
+or convenience, for example ``the UI/UX is accessible and very easy to
+navigate. The queue number was quick and convenient.'' Three named face
+recognition, one of them the face login: ``when you log in you not need
+to type your gbox you can tap the log in with face and automatically log
+in to your account.'' Asked what they would change, eight of the nine
+students who answered wrote that they would change nothing. The ninth
+wrote: ``I would like to change something about the face recognition
+because I think not all students are comfortable with it.'' Together
+with the four neutral answers on comfort, this comment indicates that
+face recognition should remain a choice rather than a requirement. In
+the present design it is: a student may sign in with Gbox instead of the
+face, and a student who does not want to be recognised can still take a
+printed ticket from the office kiosk.
+
+Among the staff, one wrote that \sysname{} ``makes the queuing process
+more convenient and organized. Students can simply get a queue number
+instead of waiting in a long line, which saves time and makes the
+payment process more efficient.'' Two staff members asked for better
+notification, one of them ``so students can easily know when their queue
+number is approaching. This would help them manage their time while
+waiting.'' That request echoes a problem the students rated in the
+baseline survey, that there is no notification to tell them when their
+turn is near (Section~\ref{subsec:sop1-students}).
 
 % ----------------------------------------------------------------
 % 3.5  Summary of Findings
@@ -4371,17 +4296,20 @@ the evaluation, and presents the recommendations that follow.
         minutes.
 
   \item \textbf{User satisfaction (Statement of the Problem No.~4).}
-        Fifteen students who used \sysname{} in the supervised trial
+        Sixteen students who used \sysname{} in the supervised trial
         rated it \emph{Strongly Agree} (Excellent) on all three
-        dimensions, with an overall weighted mean of $4.39$: usability
-        $4.43$, clarity $4.37$, and reliability $4.36$. The highest-rated
-        item was registering a face in the mobile app ($4.60$) and the
-        lowest was that the system worked consistently throughout the
-        session ($4.20$, Agree). Four students reported that recognition
-        did not work at the first attempt; two of them received their
-        number from staff. Eleven of the fifteen were comfortable or very
-        comfortable with face recognition and four were neutral. No
-        cashier staff response was received.
+        dimensions, with an overall weighted mean of $4.40$: usability
+        $4.43$, reliability $4.40$, and clarity $4.38$. Their
+        highest-rated item was registering a face in the mobile app
+        ($4.56$). Four students reported that recognition did not work at
+        the first attempt; two of them received their number from staff.
+        Eight cashier staff, after a short hands-on session with the staff
+        dashboard, rated it \emph{Agree} (Very Satisfactory), with an
+        overall weighted mean of $3.86$: clarity $4.28$, usability $3.75$,
+        and reliability $3.55$. Their only Neutral item was that they did
+        not encounter errors that stopped them ($3.00$), and one reported
+        the system going offline during brownouts. Students rated five of
+        the six common items higher than the staff did.
 \end{enumerate}
 
 \section{Conclusions}
@@ -4418,17 +4346,20 @@ predict from the calendar. They also show that the analytical formula
 must be calibrated against observed waits before its estimates are shown
 to students.
 
-\textbf{Statement of the Problem No.~4.} On first experience, students
-are highly satisfied with \sysname{}: they find it easy to use without
-guidance, clear about their position and their estimated wait, and
-reliable in giving them their own number. Reliability is the weakest of
-the three dimensions, and it is where the trial's problems appeared:
-recognition did not work at the first attempt for four of the fifteen
-students. In each case the system either recognised the student on a
-later attempt or referred the student to staff rather than guessing, and
-no student reported receiving someone else's number. Whether the
-same satisfaction holds after sustained daily use, and whether the
-cashier staff share it, cannot be concluded from the present data.
+\textbf{Statement of the Problem No.~4.} On first experience, both
+groups are satisfied with \sysname{}, the students highly so. Students
+find it easy to use without guidance, clear about their position and
+their estimated wait, and reliable in giving them their own number; when
+recognition did not work at the first attempt, the system either
+recognised them on a later attempt or referred them to staff rather than
+guessing, and no student reported receiving someone else's number. The
+cashier staff find the dashboard clear and usable but are less sure of
+its reliability, and their concern is not wrong identifications but the
+system stopping, as it does when the connection or power fails. For both
+groups, satisfaction is highest with what the system shows and lowest
+with whether it keeps running. Whether this satisfaction holds after
+sustained daily use at the cashiering office cannot be concluded from
+the present data.
 
 \subsection{Limitations}
 \label{subsec:limitations}
@@ -4463,16 +4394,18 @@ cashier staff share it, cannot be concluded from the present data.
         NCF campus
         with volunteer students, not from students transacting at the
         counter during office hours.
-  \item The user evaluation reflects fifteen volunteer students, thirteen
-        of them in fourth year, answering after their first supervised
-        use of the system; the cashier staff were invited but did not
-        respond, so the staff side of Statement of the Problem No.~4 is
-        unreported. Eight
-        of the fifteen students gave the same rating to every item, which
-        inflates Cronbach's alpha; on the remaining seven, the usability
-        dimension falls below the $0.70$ threshold ($\alpha = 0.652$).
-        The questionnaire was not content-validated by expert raters, so
-        no Content Validity Index supports its items.
+  \item The user evaluation reflects sixteen volunteer students,
+        thirteen of them in fourth year, answering after their first
+        supervised use of the system, and eight cashier staff answering
+        after a short hands-on session with the staff dashboard rather
+        than after running a live queue at the counter. Eight of the
+        sixteen students gave the same rating to every item, which
+        inflates Cronbach's alpha; on the remaining eight, the usability
+        dimension falls below the $0.70$ threshold ($\alpha = 0.585$).
+        With eight staff respondents, one person's answers move an item's
+        mean by as much as half a point. The questionnaire was not
+        content-validated by expert raters, so no Content Validity Index
+        supports its items.
 \end{itemize}
 
 \section{Recommendations}
@@ -4483,7 +4416,10 @@ cashier staff share it, cannot be concluded from the present data.
         recommendation: local inference at the office with deferred
         synchronization to the cloud, so that recognition and number
         issuance continue when the connection fails, which is the problem
-        six of the seven staff named.
+        six of the seven staff named, together with a backup power supply
+        for the detector machine and network equipment, since a staff
+        member in the evaluation reported the system going offline during
+        brownouts.
   \item \textbf{Evaluate recognition in regular operation} against an
         independent observer's log, reporting queue-assignment accuracy,
         re-identification reliability, the ticket and token validation
@@ -4521,8 +4457,15 @@ cashier staff share it, cannot be concluded from the present data.
         failure students explained was attributed to background lighting.
   \item \textbf{Keep face recognition optional}, and state in the mobile
         app that a student may sign in with Gbox and take a printed kiosk
-        ticket instead, since four of the fifteen students were neutral
+        ticket instead, since four of the sixteen students were neutral
         about being identified by face and one asked for it to change.
+  \item \textbf{Strengthen the notification before a student's turn},
+        which two cashier staff asked for and which students rated as a
+        problem of the current process in the baseline survey.
+  \item \textbf{Simplify resolving a person the system could not
+        identify} from the staff dashboard, the lowest-rated staff
+        usability item, since every refusal by the decision rule reaches
+        staff through that step.
 \end{enumerate}
 
 % ============================================================

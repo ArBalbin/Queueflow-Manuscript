@@ -29,11 +29,11 @@
 \node[proc] (remap) at (0,-10.55)
   {\textbf{Track-ID Remap}\\IoU match first \textbullet{} distance fallback for close continuity};
 \node[proc] (dedup) at (0,-12.65)
-  {\textbf{Duplicate Suppression}\\IoU + centroid proximity \textbullet{} re-entry immunity \textbullet{} appearance safeguard};
+  {\textbf{Duplicate Suppression}\\IoU + centroid proximity \textbullet{} re-entry immunity \textbullet{} younger entry dropped};
 \node[proc] (reid) at (0,-14.95)
-  {\textbf{Appearance-First Re-Entry Match}\\Pearson HSV histogram \textbullet{} 120 s recency gate\\spatial fallback only for single missing person};
+  {\textbf{Face Identity Validation}\\ArcFace 512-d embedding \textbullet{} cosine similarity vs enrolled\\accept only if score $\geq 0.30$ \textbf{and} margin over runner-up $\geq 0.15$};
 \node[proc] (queue) at (0,-17.25)
-  {\textbf{Queue State, No-Show, and Sticky Counter}\\queue number \textbullet{} position \textbullet{} no-show timer \textbullet{} smallest free counter};
+  {\textbf{Number Issuance, No-Show, and Sticky Counter}\\join intent required \textbullet{} system-minted from 5000+ range\\position \textbullet{} no-show timer \textbullet{} smallest free counter};
 \node[proc] (predict) at (0,-19.55)
   {\textbf{Wait-Time Estimate}\\M/M/c baseline \textbullet{} trend \textbullet{} Holt smoothing \textbullet{} mean reversion};
 \node[proc] (ticket) at (0,-21.85)
