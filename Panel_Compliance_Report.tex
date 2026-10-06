@@ -1,0 +1,95 @@
+% Compliance report for the panel comments shown in the supplied image.
+% Build Balbin_Archie_W3.tex first so the external page references are current.
+\documentclass[11pt,letterpaper]{article}
+\usepackage[margin=0.9in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{xr}
+\externaldocument{Balbin_Archie_W3}
+
+\setlength{\parindent}{0pt}
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.22}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\begin{document}
+\begin{center}
+  {\Large\bfseries COMPLIANCE REPORT ON PANEL COMMENTS}\\[0.4em]
+  {\bfseries QUEUEX: A COMPUTER VISION-BASED SMART QUEUE MANAGEMENT\\
+  AND PREDICTIVE SERVICE DELIVERY SYSTEM}\\[0.4em]
+  Archie D. Balbin and Joshua Rovic P. Sanota\\
+  6 October 2026
+\end{center}
+
+This report addresses the six comments visible on the supplied panel
+sheet. The page numbers in the first column are those on the panel
+sheet; locations in the last column refer to the current manuscript.
+``Addressed'' describes a revision present in the manuscript, not panel
+approval or a signed certification.
+
+\smallskip
+\small
+\begin{longtable}{|L{3.55cm}|L{8.15cm}|L{3.0cm}|}
+\hline
+\textbf{Panel comment} & \textbf{Action taken} &
+\textbf{Page} \\ \hline
+\endfirsthead
+\hline
+\textbf{Panel comment} & \textbf{Action taken} &
+\textbf{Page} \\ \hline
+\endhead
+
+Preliminaries: wrong content for Editor's Certification
+& \textbf{} Replaced the copied secretary's
+certification with a statement about editorial review. Anna Loretta C.
+Romulo, PhD is printed above the signature line. The editor's signature
+and date remain blank.
+& Preliminaries: Editor's Certification \\ \hline
+
+Background of the Study: introduce queue management in your own words
+& \textbf{} Added an original opening paragraph explaining
+how a queue management system orders service, displays queue status,
+and helps clients and staff during busy periods.
+& Background of the Study, p.~\pageref{cr:background} \\ \hline
+
+p.~23: Operational Log is for System Performance
+& \textbf{} The methodology identifies the operational log
+as an automatically generated record of detection, recognition,
+queue assignment, ticket issuance, prediction, and dashboard actions.
+The system-performance section uses it for live results and distinguishes
+those records from independent observed ground truth.
+& Research Instrument, p.~\pageref{sec:instrument}; System Performance,
+p.~\pageref{sec:sop2-results} \\ \hline
+
+p.~40: How was Cronbach's alpha computed?
+& \textbf{} The statistical-treatment section gives
+the alpha formula. The user-satisfaction results explain the pooled
+calculation for 28 student and staff responses, including the six
+common items, item variances, total-score variance, and
+$\alpha=0.902$. The baseline questionnaire's Table~3.1 reports alpha
+coefficients but does not show a worked variance calculation; that
+calculation still needs to be documented if Table~3.1 was the target
+of this comment.
+& Baseline Table~3.1, p.~\pageref{tab:sop1-reliability}; user evaluation,
+p.~\pageref{tab:sop4-reliability} \\ \hline
+
+p.~84: Present the questionnaire using the actual form (now p.~87)
+& \textbf{} The baseline appendix now includes 19
+screenshots of the actual blank student Google Form. The staff form
+remains transcribed because its original form was not supplied. Some
+mobile screenshots cut off the rightmost rating choices; a full
+Google Forms printout or PDF export is still needed for a complete,
+readable reproduction.
+& Baseline Questionnaire appendix, p.~\pageref{app:sop1-questionnaire}
+onward \\ \hline
+
+System: provide a statistician's report on the system-evaluation metrics
+& \textbf{Pending.}
+& System Performance, p.~\pageref{sec:sop2-results}; Wait-Time Prediction,
+p.~\pageref{sec:sop3-results} \\ \hline
+
+\end{longtable}
+\end{document}

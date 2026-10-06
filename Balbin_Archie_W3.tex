@@ -4,6 +4,7 @@
 \documentclass{research}
 
 \usepackage{float}
+\usepackage{graphicx}
 \usepackage{longtable}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
@@ -32,6 +33,14 @@
 \titlespacing*{\subsubsection}{0pt}{1.2ex plus .4ex minus .2ex}{0.6ex plus .1ex}
 
 \graphicspath{{images/}}
+\DeclareGraphicsRule{.jpe}{jpg}{.jpe}{}
+\newcommand{\studentformscreenshot}[1]{%
+  \clearpage
+  \begin{center}
+    \textbf{Student baseline Google Form --- screenshot #1 of 19}\par\smallskip
+    \includegraphics[width=\textwidth,height=0.88\textheight,keepaspectratio]{surveyquestions/survey#1.jpe}
+  \end{center}
+}
 \addbibresource{Balbin_Archie_W3.bib}
 
 % Keep text inside the margins: let long URLs in the references break at
@@ -223,18 +232,25 @@ City of Naga
 \end{center}
 \vspace{1.5em}
 
-\noindent This capstone research of \textbf{ARCHIE D. BALBIN} and
-\textbf{JOSHUA ROVIC P. SANOTA}
-entitled \textbf{``QUEUEX: A COMPUTER VISION-BASED SMART QUEUE MANAGEMENT AND
-PREDICTIVE SERVICE DELIVERY SYSTEM''} was prepared and submitted in
-partial fulfillment of the requirements for the degree of Bachelor of
-Science in Computer Science. It has been examined and is recommended
-for acceptance and approval for oral examination.
+\noindent I certify that I have reviewed the manuscript entitled
+\textbf{``QUEUEX: A COMPUTER VISION-BASED SMART QUEUE MANAGEMENT AND
+PREDICTIVE SERVICE DELIVERY SYSTEM''} by \textbf{ARCHIE D. BALBIN} and
+\textbf{JOSHUA ROVIC P. SANOTA} for grammar, spelling, punctuation,
+sentence structure, clarity, and consistency of language. Editorial
+corrections and suggestions were communicated to the researchers, and
+the revised manuscript was checked for language and presentation.
 
-\vspace{2em}
+\noindent This certification concerns editorial review. The
+researchers remain responsible for the study's design, data, analyses,
+findings, and conclusions.
+
+\vspace{3em}
 \begin{center}
-\textbf{}\\
-Editor
+\textbf{ANNA LORETTA C. ROMULO, PhD}\\[0.4em]
+\rule{0.58\textwidth}{0.4pt}\\
+Signature over printed name of editor\\[1em]
+\rule{0.38\textwidth}{0.4pt}\\
+Date
 \end{center}
 
 \newpage
@@ -307,9 +323,9 @@ minted without manual input, and the backend answered 2,536 requests
 from 50 concurrent users with no failures. On 166 observed cashier
 transactions, a predictor based on the number of people ahead reached a
 mean absolute error of 1.85 minutes, against 2.07 minutes for a constant
-baseline. Sixteen students who used the system in a supervised trial
+baseline. Twenty students who used the system in a supervised trial
 rated it Strongly Agree on usability, reliability, and clarity (overall
-weighted mean 4.40), and eight cashier staff rated it Agree (3.86),
+weighted mean 4.32), and eight cashier staff rated it Agree (3.86),
 lowest on reliability. The results show that face recognition with a
 margin requirement can issue queue numbers without manual input while
 refusing uncertain matches. They come from offline tests and a short
@@ -338,6 +354,16 @@ supervised trial, and remain to be confirmed in regular operation.
 \section{Background of the Study}
 \label{cr:background}
 
+A queue management system organizes the order in which people receive a
+service. A basic system gives each person a number and shows which
+number is being served; more advanced systems can also show queue
+position, estimate waiting time, and help staff see when demand is
+building. At a college cashiering office, this information lets
+students plan where to wait and helps staff manage the line during busy
+periods. The system is most useful when its displayed status reflects
+the people who have actually arrived and the service being provided at
+the counters.
+
 Queue management inefficiency is a recognized challenge in service delivery organizations worldwide. Research from banking, healthcare, government service desks, and academic institutions consistently documents that manual queue processes cannot provide real-time status visibility, accurate wait-time estimates, or adaptive counter management when demand increases rapidly~\cite{nair2025survey,batcharo2025smart,yifter2023modeling}. As organizations in various sectors have introduced automated queue systems—which combine digital ticketing, camera-based monitoring, and predictive analytics—the operational gap between manual and automated queue management has widened~\cite{rashid2023smartqueue,zou2026customer}. In these settings, the absence of automated observation and prediction leaves both service staff and clients without the information needed to manage or navigate the service flow efficiently.
 
 In the Philippines, this gap is visible across higher education institutions (HEIs). Enrollment, payment, and clearance cycles bring concentrated student arrivals to service windows within compressed periods, creating queue conditions that manual staff management cannot easily absorb. Philippine studies document the persistence of long enrollment queues and the operational pressure that rising student volumes place on service windows~\cite{concepcion2026smart,mallari2022clique,rrlcomp023automatedenrollmentqueueing,rrlcomp025lineuclmenhancing}. Existing Philippine HEI queue solutions primarily address web-based ticketing and appointment-booking rather than real-time passive observation of student arrivals at service areas.
@@ -356,11 +382,14 @@ prediction.
 
 \sysname{} responds to this gap through a camera-connected queue
 management prototype for campus service offices. Its central mechanism
-is identification rather than counting: a student enrols a face
-signature once from their own phone, requests a place in the queue when
-they need one, and is then issued a queue number automatically when the
-queue-zone camera recognizes them, with no staff encoding and no manual
-entry at the counter. Detection establishes that somebody is present;
+is identification rather than counting: a student voluntarily enrols a
+face signature through the mobile application for the supervised trial,
+requests a place in the queue when needed, and is then issued a queue
+number automatically when the queue-zone camera recognizes them, with
+no staff encoding or manual entry at the counter. Enrolment ends on
+withdrawal or deletion under the 15-day trial retention policy; later
+enrolment requires fresh consent and capture. Detection establishes that
+somebody is present;
 recognition establishes \emph{who}, which is what allows a number to be
 issued to a named student rather than merely added to a count.
 
@@ -1446,13 +1475,15 @@ coordinate using factor $\alpha_{\mathrm{s}} = 0.50$, producing the
 visually stable boxes rendered in the staff dashboard's annotated
 snapshot.
 
-\textbf{Face Enrolment.} The one-time process by which a student becomes
-known to the recognizer. The student signs in with their institutional
-account and then submits one to five photographs from the mobile client,
-from which a single averaged ArcFace embedding is computed and stored
-against their profile. The photographs are discarded once the embedding
-is derived and are never written to storage. A student may repeat the
-process, which replaces the stored embedding.
+\textbf{Face Enrolment.} The voluntary process by which a student
+becomes known to the recognizer for the supervised trial. The student
+signs in with an institutional account and submits one to five
+photographs from the mobile client, from which a single averaged ArcFace
+embedding is computed and stored against their profile. The photographs
+are discarded once the embedding is derived and are never written to the
+system database. Enrolment requires the student's consent and ends on
+withdrawal or deletion under the 15-day trial retention limit. A later
+enrolment requires fresh consent and capture.
 
 \textbf{Holt's Double Exponential Smoothing.} A classical forecasting
 algorithm~\cite{holt2004forecasting} used for the medium-horizon
@@ -1705,10 +1736,10 @@ than measurements against an observer. The measures that depend on it
 are defined in Section~2.7 and are recommended for the evaluation
 proposed in Chapter~4.
 
-\textbf{Phase 3: Post-Trial Survey.} Immediately after the supervised
+\textbf{Phase 3: Post-Trial Survey.} After the supervised
 trial, the questionnaire in Section~2.5 was administered through an
 online form to the respondent groups identified in Section~2.3;
-students answered from 25 to 27 September 2026. The cashier staff
+students answered from 25 to 28 September 2026. The cashier staff
 answered on 27 and 28 September 2026, after a short hands-on session
 with the staff dashboard. The form collects
 no names, and responses are analyzed in aggregate. The original design also invited a subset of respondents to
@@ -1848,14 +1879,17 @@ three dimensions named in Statement of the Problem No.~4, and each
 role-specific item refers to a feature the respondent actually used
 during the trial. Its reliability is measured on the responses.
 
-\textbf{Reliability testing.} Internal-consistency reliability is
-computed with Cronbach's alpha, using the formula in Section~2.7, for
-each dimension within each respondent group, and a value of at least
-0.70 is taken as acceptable. The original design called for a separate
+\textbf{Reliability testing.} Internal-consistency reliability for the
+user-evaluation questionnaire is computed with Cronbach's alpha, using
+the formula in Section~2.7, on the six items worded identically in the
+student and staff forms. The responses are pooled across the groups,
+with two common items per dimension and all six together; a value of at
+least 0.70 is taken as acceptable. The nine role-specific items in each
+form are not treated as common items. The original design called for a separate
 pilot of 10 to 15 respondents excluded from the final sample; under the
 shortened evaluation protocol, alpha is instead computed on the
 evaluation responses themselves, as it was for the baseline
-questionnaire. A dimension that falls below 0.70 is reported with its
+questionnaire. A common-item scale that falls below 0.70 is reported with its
 coefficient and interpreted item by item rather than as a composite. The
 coefficients are reported with the results, in
 Tables~\ref{tab:sop1-reliability} and~\ref{tab:sop4-reliability}.
@@ -1877,12 +1911,14 @@ age below 18 is not enrolled. No data from minors is collected or
 stored at any point in the study.
 
 For confidentiality, personal identifiers are removed before analysis.
-Questionnaires do not collect names. Results are reported in aggregate form so that individual
-respondents are not identifiable. Digital files are kept in
-password-protected storage accessible only to the researchers and the
-thesis adviser, while hard-copy materials are placed in locked storage
-and shredded after the retention period. Study data are kept for a
-maximum of three years after completion and are then destroyed.
+Questionnaires do not collect names. Results are reported in aggregate
+form so that individual respondents are not identifiable. Digital study
+records are kept in password-protected storage accessible only to the
+researchers and the thesis adviser, while hard-copy materials are placed
+in locked storage. Non-biometric study records are kept for a maximum
+of three years after completion and are then destroyed; hard copies are
+shredded. The shorter, 15-day limit for face embeddings and study-held
+working copies of face photographs is stated below.
 
 \textbf{Camera Snapshot Handling.} The system captures live video
 frames from the queue zone solely for automated person detection and
@@ -1925,12 +1961,32 @@ No table in the database holds a face image, and the embedding is a
 one-way numeric representation from which the original face cannot be
 reconstructed.
 
+Before face capture, the student is informed that the enrolment embedding
+is used only for identification in the supervised trial, that enrolment
+is voluntary, that consent may be withdrawn, and that the embedding will
+be deleted no later than 15 days after the final supervised student trial
+session. This notice is separate from the questionnaire consent form.
+
 That embedding, held in \texttt{student\_profiles}, is the only biometric
 artefact the system retains. Embeddings computed at the queue-zone camera
 during operation exist in process memory for the lifetime of a person's
 track and are never written to the database; the recognition audit table
 records only the matched student identifier, the similarity score, the
 margin over the runner-up, and the accept-or-reject outcome.
+
+\textbf{Embedding Retention.} Enrolment embeddings in
+\texttt{student\_profiles} are retained only for the supervised student
+trial and verification of its recognition results. They are removed from
+the active database no later than 15 days after the final supervised
+student trial session, even if result checking is unfinished. Any
+database backup containing an identifiable copy must be purged or expire
+by the same deadline. After deletion, a restored backup must not
+reintroduce an embedding into the active recognition roster. The
+researchers record the deletion date and account identifier without
+retaining the embedding. Non-biometric, de-identified survey and
+aggregate performance results remain subject to the separate three-year
+maximum. Any later operational deployment requires a new, disclosed
+retention period and fresh consent before face enrolment.
 
 Recognition is not treated as consent to be queued. A recognized student
 is issued a number only if they have separately requested one in the
@@ -1941,10 +1997,13 @@ identified: acceptance requires both an absolute similarity threshold and
 a margin over the next-best candidate, and the matcher refuses rather than
 guesses when either condition fails.
 
-Withdrawal is supported. A hard-delete path removes a student profile
-together with its embedding in support of erasure requests under the Act,
-and a student may re-enrol at any time, which replaces the stored
-embedding rather than adding to it.
+Withdrawal is supported. When a student withdraws face-enrolment
+consent, the existing hard-delete path removes the student profile and
+embedding from the active database promptly rather than waiting for the
+trial-end deadline. A backup copy is purged or expires within 15 days of
+withdrawal and, in every case, by the trial-end deadline above,
+whichever comes first. Re-enrolment requires a new face-capture step and
+consent; the previous embedding is not reused.
 
 \textbf{Access Control and Transparency.} Dashboard access is
 restricted to authenticated staff through session login, with JWT-based
@@ -1953,14 +2012,16 @@ student-facing mobile client exposes only the requesting student's own
 queue status, reached either through the signed-in student's own session
 or through the ticket QR code and short-code credential issued to that
 student; it does not display the camera feed or any other student's
-status. Deployment requires physical signage at the
-service-office entrance informing visitors that the area is monitored
-by an automated queue management system for service-delivery purposes,
-that students who have enrolled a face signature are identified by the
-camera while all other persons are detected but never identified, and
-that enrolment is voluntary and may be withdrawn. The signage cites the
-Data Privacy Act of 2012, or Republic Act No.~10173, and provides
-researcher contact for data-subject requests. The camera is
+status. Deployment requires physical signage at the service-office
+entrance informing visitors that the area is monitored by an automated
+queue management system, that enrolled students may be identified while
+unenrolled visitors are detected without identification, and that face
+enrolment is voluntary and may be withdrawn. The signage states that
+student enrolment embeddings are deleted no later than 15 days after the
+final supervised student trial session, cites the Data Privacy Act of
+2012, or Republic Act No.~10173, and gives a researcher contact for
+withdrawal and data-subject requests. The face-capture notice provides
+the same retention period before enrolment. The camera is
 mounted visibly, not concealed. Consistent with the proportionality
 principle of the Act, only the minimum data necessary for queue
 management is processed; no marketing, profiling, or third-party data
@@ -2522,7 +2583,11 @@ The database holds student profiles and their face embeddings, queue
 records with their short codes, tokens, statuses, and timestamps,
 operational events, and the audit of every recognition decision. Raw
 camera frames, live snapshots, enrolment photographs, and the in-memory
-queue state are intentionally never persisted.
+queue state are intentionally never persisted. The student profile
+embedding is subject to the 15-day trial retention limit described in
+Section~\ref{sec:ethics}. The active profile and any identifiable
+database backup copies must be removed within that period; queue records
+and recognition audits do not retain the embedding.
 
 \textbf{Cache and Runtime State Layer.} This layer comprises an in-memory
 state module, \texttt{app/state.py}, holding the latest detector output,
@@ -3132,6 +3197,15 @@ photograph was used for enrolment.
 This produced 45 held-out probes. Each probe was compared with every one
 of the 17 stored identities, giving 765 comparisons: 45 genuine pairs
 and 720 impostor pairs (Table~\ref{tab:eval-dataset}).
+
+The 17 offline test identities were separate from the nine students
+enrolled in the live trial. Embeddings derived for this offline
+evaluation, and any working copies of the face photographs held by the
+researchers for this study, are deleted no later than 15 days after the
+final offline evaluation run. The study retains only aggregate metrics
+and non-identifying evaluation counts for reporting. This policy does
+not claim to control the classmate's original photo collection outside
+the study's possession.
 
 \begin{table}[!htbp]
 \centering
@@ -3880,8 +3954,8 @@ protocol described in Section~\ref{sec:datagathering}, and describe
 users' first experience of the system rather than satisfaction after
 sustained use.
 
-Twenty-four respondents answered: sixteen students and eight cashier
-staff. The students answered from 25 to 27 September 2026, after the
+Twenty-eight respondents answered: twenty students and eight cashier
+staff. The students answered from 25 to 28 September 2026, after the
 supervised trial. The cashier staff answered on 27 and 28 September
 2026, after being given the staff dashboard to use. Because the system
 was not deployed at the cashiering office, the staff did not run it with
@@ -3893,79 +3967,80 @@ judged only from what that session showed.
 \subsection{Profile of the Respondents}
 \label{subsec:sop4-profile}
 
-All twenty-four respondents confirmed that they were 18 or older and gave
-their consent before answering. Of the sixteen students, thirteen
-($81.3\%$) were in fourth year, two ($12.5\%$) in third year, and one
-($6.3\%$) in fifth year or above. Asked how they received their queue
-number during the session, thirteen students ($81.3\%$) answered that it
-was issued automatically after the camera recognised them, two
-($12.5\%$) that they received it from staff because the system could not
-recognise them, and one did not answer.
+All twenty-eight respondents confirmed that they were 18 or older and gave
+their consent before answering. Of the twenty students, sixteen
+($80.0\%$) were in fourth year, two ($10.0\%$) in third year, one
+($5.0\%$) in first year, and one ($5.0\%$) in fifth year or above. Asked
+how they received their queue number during the session, fifteen students
+($75.0\%$) answered that it was issued automatically after the camera
+recognised them, four ($20.0\%$) that they received it from staff because
+the system could not recognise them, and one ($5.0\%$) did not answer.
 
 \subsection{Reliability of the Questionnaire}
 \label{subsec:sop4-reliability}
 
-Under the shortened protocol, the reliability of the questionnaire is
-measured on the evaluation responses themselves
-(Table~\ref{tab:sop4-reliability}). Because the questionnaire was not
-content-validated by expert raters, this is the only check on the
-instrument that is reported. Every dimension of both forms is above the
-$0.70$ threshold.
+Under the shortened protocol, internal consistency is measured on the
+evaluation responses themselves (Table~\ref{tab:sop4-reliability}). The
+student and staff forms share six identically worded items: U1--U2 for
+usability, R1--R2 for reliability, and C1--C2 for clarity. Only these
+items are pooled across the two respondent groups; the other nine items
+in each form describe role-specific tasks. All twenty-eight respondents
+answered the six shared items. Because the questionnaire was not
+content-validated by expert raters, alpha is the only reported check on
+the instrument's measurement properties. Every common-item scale is
+above the $0.70$ threshold.
 
 \begin{table}[H]
 \centering
-\caption{Internal consistency of the user-evaluation questionnaire
-(Cronbach's alpha).}
+\caption{Internal consistency of shared user-evaluation items across
+students and cashier staff (Cronbach's alpha).}
 \label{tab:sop4-reliability}
-\begin{tabular}{lcccc}
+\begin{tabular}{lccc}
 \hline
- & \multicolumn{2}{c}{Students} & \multicolumn{2}{c}{Cashier staff} \\
-Dimension & $n$ & $\alpha$ & $n$ & $\alpha$ \\
+Shared-item scale & Items ($k$) & Complete responses ($n$) & $\alpha$ \\
 \hline
-System's usability & $15$ & $0.948$ & $8$ & $0.939$ \\
-System's reliability & $16$ & $0.939$ & $8$ & $0.868$ \\
-System clarity & $16$ & $0.935$ & $8$ & $0.936$ \\
-Whole form (15 items) & $15$ & $0.983$ & $8$ & $0.959$ \\
+System's usability (U1--U2) & $2$ & $28$ & $0.916$ \\
+System's reliability (R1--R2) & $2$ & $28$ & $0.896$ \\
+System clarity (C1--C2) & $2$ & $28$ & $0.771$ \\
+All six shared items & $6$ & $28$ & $0.902$ \\
 \hline
-\multicolumn{5}{l}{\footnotesize Five items per dimension. One student left
-one usability item blank and is excluded} \\
-\multicolumn{5}{l}{\footnotesize where that item is used. $\alpha \geq 0.70$
-is taken as acceptable.} \\
 \end{tabular}
 \end{table}
 
-\noindent The student coefficients are higher than a five-item scale
-normally produces, and the reason lies in the responses. Eight of the
-sixteen students gave the same rating to all fifteen items: three rated
-every item~5, four rated every item~4, and one rated every item~3. A
-uniform response set makes the items rise and fall together by
-construction, which raises alpha without showing that the items measure
-their dimension well. Computed only on the eight students whose ratings
-varied (seven for usability), alpha is $0.585$ for usability, $0.793$ for
-reliability, and $0.804$ for clarity. With so few respondents these
-values are unstable, but they indicate that reliability and clarity
-remain acceptable once the uniform response sets are set aside, while
-usability falls below the threshold. The staff form does not share this
-problem: only one staff member gave a uniform response set, and without
-it alpha stays at $0.931$, $0.864$, and $0.882$. The student
-coefficients in Table~\ref{tab:sop4-reliability} are therefore taken as
-meeting the threshold, not as evidence of exceptional reliability.
+\noindent Each answer was coded from 1 to 5; none required reverse
+scoring. For each row, the sample variance of every included item was
+calculated across the respondents. Each respondent's item scores were
+then summed, and the sample variance of those total scores was
+calculated. Substituting the item count $k$, the sum of item variances,
+and the total-score variance into Equation~\ref{eq:cronbach_alpha}
+produces alpha. For all six common items, the sum of item variances was
+$3.628307$ and the variance of total scores was $14.617725$, giving
+$\alpha=(6/5)(1-3.628307/14.617725)=0.902145$, reported as $0.902$.
+These coefficients come from pooled responses, not from averaging
+separate student and staff coefficients.
+
+Eleven of the twenty-eight respondents gave the same rating to all six
+shared items. Excluding those uniform sets leaves seventeen respondents
+and lowers the six-item alpha to $0.808$. The pooled coefficient meets
+the study's threshold, but a two-item dimension and a mixed-role
+respondent group warrant cautious interpretation. Alpha measures
+internal consistency, not content validity.
 
 \subsection{Satisfaction of Students}
 \label{subsec:sop4-students}
 
-Students returned an overall weighted mean of $4.40$ (\emph{Strongly
+Students returned an overall weighted mean of $4.32$ (\emph{Strongly
 Agree}), which corresponds to a satisfaction level of \emph{Excellent}
-on Table~\ref{tab:likert}. All three dimensions and all fifteen items
-fall in the same category: usability at $4.43$, reliability at $4.40$,
-and clarity at $4.38$. Table~\ref{tab:sop4-students} gives the
-item-level results. Of the 239 ratings given, 219 ($91.6\%$) were Agree
-or Strongly Agree, 20 ($8.4\%$) were Neutral, and none was Disagree or
-Strongly Disagree.
+on Table~\ref{tab:likert}. All three dimensions fall in that category:
+usability at $4.34$, reliability at $4.31$, and clarity at $4.31$.
+Table~\ref{tab:sop4-students} gives the item-level results. Four items
+have means of exactly $4.20$ and fall in the \emph{Agree} category.
+Of the 299 ratings given, 268 ($89.6\%$) were Agree or Strongly Agree,
+31 ($10.4\%$) were Neutral, and none was Disagree or Strongly Disagree.
 
 \begin{table}[!htbp]
 \centering
-\caption{Satisfaction of students with \sysname{} ($n = 16$).}
+\caption{Satisfaction of students with \sysname{} ($n = 20$).}
 \label{tab:sop4-students}
 \begin{tabular}{p{0.66\textwidth}cc}
 \hline
@@ -3973,85 +4048,84 @@ Item & WM & Interpretation \\
 \hline
 \multicolumn{3}{l}{\textbf{A.\ System's usability}} \\
 U1. The system was easy to use without needing someone to guide me
-  & $4.38$ & Strongly Agree \\
+  & $4.20$ & Agree \\
 U2. I was able to complete what I needed to do without difficulty
-  & $4.31$ & Strongly Agree \\
+  & $4.25$ & Strongly Agree \\
 U3-s. Registering my face in the mobile app was easy
-  & $4.56$ & Strongly Agree \\
+  & $4.40$ & Strongly Agree \\
 U4-s. Asking to be queued from the mobile app was convenient
-  & $4.44$ & Strongly Agree \\
+  & $4.45$ & Strongly Agree \\
 U5-s. I received my queue number without having to do anything else at
-  the office$^{a}$ & $4.47$ & Strongly Agree \\
+  the office$^{a}$ & $4.42$ & Strongly Agree \\
 \hline
-\multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.43$ \\
+\multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.34$ \\
 \hline
 \multicolumn{3}{l}{\textbf{B.\ System's reliability}} \\
 R1. The system worked consistently throughout the session
-  & $4.25$ & Strongly Agree \\
+  & $4.20$ & Agree \\
 R2. I did not encounter errors that stopped me from continuing
-  & $4.31$ & Strongly Agree \\
+  & $4.20$ & Agree \\
 R3-s. The system recognised me correctly when I entered the queue area
-  & $4.50$ & Strongly Agree \\
+  & $4.40$ & Strongly Agree \\
 R4-s. I trust that the queue number I received was mine and not
-  someone else's & $4.44$ & Strongly Agree \\
+  someone else's & $4.35$ & Strongly Agree \\
 R5-s. My position in the queue was updated correctly as the line moved
-  & $4.50$ & Strongly Agree \\
+  & $4.40$ & Strongly Agree \\
 \hline
-\multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.40$ \\
+\multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.31$ \\
 \hline
 \multicolumn{3}{l}{\textbf{C.\ System clarity}} \\
 C1. The information shown on screen was easy to understand
-  & $4.25$ & Strongly Agree \\
+  & $4.20$ & Agree \\
 C2. I always knew what the system was doing or waiting for
-  & $4.38$ & Strongly Agree \\
+  & $4.30$ & Strongly Agree \\
 C3-s. My position in the queue was clearly shown
-  & $4.38$ & Strongly Agree \\
+  & $4.35$ & Strongly Agree \\
 C4-s. The estimated waiting time was presented in a way I could
-  understand & $4.50$ & Strongly Agree \\
+  understand & $4.40$ & Strongly Agree \\
 C5-s. I understood what information the system keeps about me
-  & $4.38$ & Strongly Agree \\
+  & $4.30$ & Strongly Agree \\
 \hline
-\multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.38$ \\
+\multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.31$ \\
 \hline
-\multicolumn{2}{l}{\textbf{Overall weighted mean}} & $\mathbf{4.40}$ \\
+\multicolumn{2}{l}{\textbf{Overall weighted mean}} & $\mathbf{4.32}$ \\
 \hline
-\multicolumn{3}{l}{\footnotesize $^{a}$\,$n = 15$; one student left this
+\multicolumn{3}{l}{\footnotesize $^{a}$\,$n = 19$; one student left this
 item blank.} \\
 \end{tabular}
 \end{table}
 
 \textbf{Usability.} Usability is the highest-rated dimension, and its
-strongest item is the highest in the student form: registering a face
-in the mobile app ($4.56$), the step the student completes alone with no
-staff involved. Students also agreed strongly that they could use the
-system without being guided ($4.38$) and that they received their number
-without any further step once recognised ($4.47$), which is the outcome
-the system is designed to produce.
+strongest item is also the highest in the student form: asking to be
+queued from the mobile app was convenient ($4.45$). Students agreed
+strongly that registering a face was easy ($4.40$) and that they received
+their number without any further step once recognised ($4.42$), which
+is the outcome the system is designed to produce. The statement that
+they could use the system without guidance received $4.20$ (Agree).
 
-\textbf{Reliability.} The lowest reliability item is that the system
-worked consistently throughout the session ($4.25$), and reliability is
-where the problems of the trial appeared. Two students reported one
-recognition failure while still receiving their number automatically,
-one attributing it to ``the background lightings.'' The two students who
-received their number from staff answered ``No'' to the same question,
-so the two questions together identify four students ($25.0\%$) for whom
-recognition did not work at the first attempt, not two. In the two cases
-the system could not resolve, the student was referred to staff and
-received a number from them, which is the designed behaviour of the
-decision rule described in Section~\ref{subsec:calibration}: when the
-system is not sure, it does not guess. No respondent described receiving
-someone else's number, and students agreed strongly that the number they
-received was their own ($4.44$).
+\textbf{Reliability.} The lowest reliability items are that the system
+worked consistently and that no errors stopped the user from continuing
+(both $4.20$, Agree). Three students reported one recognition failure;
+four said staff issued their number because recognition failed. One
+student appears in both groups, so six distinct students reported at
+least one of these outcomes. Three of the four who received a number
+from staff nevertheless answered ``No'' to the failure question; these
+self-reports do not establish an exact count of first-attempt failures.
+One student attributed a failure to ``the background lightings.''
+Referring an unresolved recognition to staff follows the decision rule
+in Section~\ref{subsec:calibration}. No respondent described receiving
+someone else's number, and students agreed strongly that the number
+they received was their own ($4.35$).
 
 \textbf{Clarity.} The highest clarity item is that the estimated waiting
-time was presented in a way the student could understand ($4.50$). This
+time was presented in a way the student could understand ($4.40$). This
 answers the students' strongest complaint in the baseline survey, that
 they could not see how long they would wait
 (Section~\ref{subsec:sop1-students}). Understanding how the estimate is
 presented is not the same as the estimate being accurate, however, and
 Section~\ref{sec:sop3-results} shows that the current-wait formula
 over-predicts. Students also agreed strongly that they understood what
-information the system keeps about them ($4.38$).
+information the system keeps about them ($4.30$).
 
 \subsection{Satisfaction of Cashier Staff}
 \label{subsec:sop4-staff}
@@ -4161,26 +4235,26 @@ compared (Table~\ref{tab:sop4-common}).
 Common item & Students & Cashier staff \\
 \hline
 U1. The system was easy to use without needing someone to guide me
-  & $4.38$ & $3.88$ \\
+  & $4.20$ & $3.88$ \\
 U2. I was able to complete what I needed to do without difficulty
-  & $4.31$ & $3.88$ \\
+  & $4.25$ & $3.88$ \\
 R1. The system worked consistently throughout the session
-  & $4.25$ & $3.50$ \\
+  & $4.20$ & $3.50$ \\
 R2. I did not encounter errors that stopped me from continuing
-  & $4.31$ & $3.00$ \\
+  & $4.20$ & $3.00$ \\
 C1. The information shown on screen was easy to understand
-  & $4.25$ & $4.50$ \\
+  & $4.20$ & $4.50$ \\
 C2. I always knew what the system was doing or waiting for
-  & $4.38$ & $4.00$ \\
+  & $4.30$ & $4.00$ \\
 \hline
-Mean of the common items & $4.31$ & $3.79$ \\
+Mean of the common items & $4.23$ & $3.79$ \\
 \hline
 \end{tabular}
 \end{table}
 
 \noindent Students rated five of the six common items higher than the
 staff did, and the widest gap is on errors that stopped the user from
-continuing ($4.31$ against $3.00$). The one item the staff rated higher
+continuing ($4.20$ against $3.00$). The one item the staff rated higher
 is that the on-screen information was easy to understand. The staff were
 also more reserved than the students in the baseline survey, where they
 agreed less strongly on every section (Section~\ref{subsec:sop1-gap}). A
@@ -4197,24 +4271,24 @@ measurements of the same experience.
 \label{subsec:sop4-supplementary}
 
 Asked how comfortable they were with the system using their face to
-identify them in the queue, four students ($25.0\%$) answered very
-comfortable, eight ($50.0\%$) comfortable, and four ($25.0\%$) neutral.
-Among the staff, one answered very comfortable, three comfortable, and
-four neutral. No respondent in either group answered uncomfortable.
+identify them in the queue, four students ($20.0\%$) answered very
+comfortable, ten ($50.0\%$) comfortable, five ($25.0\%$) neutral, and
+one ($5.0\%$) uncomfortable. Among the staff, one answered very
+comfortable, three comfortable, and four neutral; none answered
+uncomfortable.
 These answers are reported separately and do not enter any weighted
 mean.
 
-Ten students described what they liked most. Six named its ease of use
-or convenience, for example ``the UI/UX is accessible and very easy to
-navigate. The queue number was quick and convenient.'' Three named face
-recognition, one of them the face login: ``when you log in you not need
-to type your gbox you can tap the log in with face and automatically log
-in to your account.'' Asked what they would change, eight of the nine
-students who answered wrote that they would change nothing. The ninth
-wrote: ``I would like to change something about the face recognition
-because I think not all students are comfortable with it.'' Together
-with the four neutral answers on comfort, this comment indicates that
-face recognition should remain a choice rather than a requirement. In
+Twelve students described what they liked most, mentioning convenience,
+ease of use, and face recognition. One wrote that ``the UI/UX is
+accessible and very easy to navigate. The queue number was quick and
+convenient.'' Asked what they would change, eight of the ten students
+who answered wrote that they would change nothing. One asked for a
+change to face recognition because not all students are comfortable
+with it, and one requested an offline transaction option because of
+internet-connection difficulties. Together with the five neutral and
+one uncomfortable answers on face recognition, this indicates that
+it should remain a choice rather than a requirement. In
 the present design it is: a student may sign in with Gbox instead of the
 face, and a student who does not want to be recognised can still take a
 printed ticket from the office kiosk.
@@ -4296,13 +4370,14 @@ the evaluation, and presents the recommendations that follow.
         minutes.
 
   \item \textbf{User satisfaction (Statement of the Problem No.~4).}
-        Sixteen students who used \sysname{} in the supervised trial
+        Twenty students who used \sysname{} in the supervised trial
         rated it \emph{Strongly Agree} (Excellent) on all three
-        dimensions, with an overall weighted mean of $4.40$: usability
-        $4.43$, reliability $4.40$, and clarity $4.38$. Their
-        highest-rated item was registering a face in the mobile app
-        ($4.56$). Four students reported that recognition did not work at
-        the first attempt; two of them received their number from staff.
+        dimensions, with an overall weighted mean of $4.32$: usability
+        $4.34$, reliability $4.31$, and clarity $4.31$. Their
+        highest-rated item was the convenience of asking to be queued
+        from the mobile app ($4.45$). Three students reported one
+        recognition failure, and four said staff issued their number
+        because recognition failed; one student appears in both counts.
         Eight cashier staff, after a short hands-on session with the staff
         dashboard, rated it \emph{Agree} (Very Satisfactory), with an
         overall weighted mean of $3.86$: clarity $4.28$, usability $3.75$,
@@ -4348,16 +4423,15 @@ to students.
 
 \textbf{Statement of the Problem No.~4.} On first experience, both
 groups are satisfied with \sysname{}, the students highly so. Students
-find it easy to use without guidance, clear about their position and
-their estimated wait, and reliable in giving them their own number; when
-recognition did not work at the first attempt, the system either
-recognised them on a later attempt or referred them to staff rather than
-guessing, and no student reported receiving someone else's number. The
-cashier staff find the dashboard clear and usable but are less sure of
-its reliability, and their concern is not wrong identifications but the
-system stopping, as it does when the connection or power fails. For both
-groups, satisfaction is highest with what the system shows and lowest
-with whether it keeps running. Whether this satisfaction holds after
+rate mobile queue joining most highly and agree that the system shows
+their position and estimated wait clearly. Some reported recognition
+failures or receiving a number from staff, but none reported receiving
+someone else's number. The cashier staff find the dashboard clear and
+usable but are less sure of its reliability, and their concern is not
+wrong identifications but the system stopping, as it does when the
+connection or power fails. Usability is the students' highest-rated
+dimension, while clarity is the staff's; reliability is the staff's
+lowest. Whether this satisfaction holds after
 sustained daily use at the cashiering office cannot be concluded from
 the present data.
 
@@ -4394,14 +4468,14 @@ the present data.
         NCF campus
         with volunteer students, not from students transacting at the
         counter during office hours.
-  \item The user evaluation reflects sixteen volunteer students,
-        thirteen of them in fourth year, answering after their first
+  \item The user evaluation reflects twenty volunteer students,
+        sixteen of them in fourth year, answering after their first
         supervised use of the system, and eight cashier staff answering
         after a short hands-on session with the staff dashboard rather
-        than after running a live queue at the counter. Eight of the
-        sixteen students gave the same rating to every item, which
-        inflates Cronbach's alpha; on the remaining eight, the usability
-        dimension falls below the $0.70$ threshold ($\alpha = 0.585$).
+        than after running a live queue at the counter. Eleven of the
+        twenty-eight respondents gave the same rating to all six shared
+        items, which can raise Cronbach's alpha; excluding those responses
+        reduces the six-item coefficient from $0.902$ to $0.808$.
         With eight staff respondents, one person's answers move an item's
         mean by as much as half a point. The questionnaire was not
         content-validated by expert raters, so no Content Validity Index
@@ -4457,8 +4531,9 @@ the present data.
         failure students explained was attributed to background lighting.
   \item \textbf{Keep face recognition optional}, and state in the mobile
         app that a student may sign in with Gbox and take a printed kiosk
-        ticket instead, since four of the sixteen students were neutral
-        about being identified by face and one asked for it to change.
+        ticket instead, since five of the twenty students were neutral
+        about being identified by face, one was uncomfortable, and one
+        asked for it to change.
   \item \textbf{Strengthen the notification before a student's turn},
         which two cashier staff asked for and which students rated as a
         problem of the current process in the baseline survey.
@@ -4585,11 +4660,14 @@ the gaps identified that motivated the present work.
 \chapter{Baseline Questionnaire on the Current Queue Process}
 \label{app:sop1-questionnaire}
 
-This instrument addresses Statement of the Problem No.~1 and was
-administered before deployment. It has a staff form and a student form
-answered against the same five-point scale (5 = Strongly Agree,
-1 = Strongly Disagree). Every item states a problem; agreement means the
-problem is present.
+These baseline instruments address Statement of the Problem No.~1 and
+were administered before deployment. The staff/cashier form is
+transcribed below, followed by screenshots of the student Google Form
+as presented to respondents. The problem statements use a five-point
+agreement scale (5 = Strongly Agree, 1 = Strongly Disagree); agreement
+means the stated problem is present. The student form also includes
+screening, profile, queueing-practice, open-ended, and optional
+face-registration questions.
 
 \section*{Staff / Cashier Form}
 
@@ -4636,49 +4714,32 @@ personally handle queue management during busy periods?
 \noindent\textbf{Open-ended.} In your own words, what is the biggest
 problem you experience with the current queue process?
 
-\section*{Student Form}
+\clearpage
+\section*{Student Form: Google Form Screenshots}
 
-\noindent\textbf{Profile.} (1)~Year level. (2)~How often do you avail of
-services that require queuing during busy periods?
+The following 19 screenshots show the student baseline form in order.
+They were captured in a mobile browser; the rightmost response choices
+of some rating grids fall outside the captured viewport.
 
-\medskip
-\noindent\textbf{Perceived problems on wait-time}
-\begin{enumerate}
-  \item The display screen only shows the number currently being served,
-        not how long I still need to wait.
-  \item I have experienced long wait times when transacting during busy
-        periods.
-  \item I have no way of knowing my estimated wait time after getting my
-        paper ticket.
-  \item I need to keep watching the display screen to know when my
-        number will be called.
-  \item I have missed my turn because I was not near the display when my
-        number was called.
-  \item Waiting time feels unpredictable, especially during busy periods.
-  \item Long or unpredictable wait times discourage me from availing
-        certain services during peak hours.
-\end{enumerate}
-
-\noindent\textbf{Perceived problems on user experience}
-\begin{enumerate}
-  \item I find it inconvenient that I have to physically watch the
-        screen or ask staff to know my queue status.
-  \item I get confused about whether a window is closed, on break, or
-        just not yet available when its display shows no number.
-  \item I feel frustrated when I do not know how many people are still
-        ahead of me.
-  \item There is no notification or alert to tell me when my turn is
-        near.
-  \item I find it inconvenient to wait without knowing how much time is
-        left.
-  \item The lack of a wait-time estimate affects my overall experience
-        in transacting at the office.
-  \item Overall, I am dissatisfied with the current queue management
-        process.
-\end{enumerate}
-
-\noindent\textbf{Open-ended.} In your own words, what is the biggest
-problem you experience while waiting in line at this office?
+\studentformscreenshot{1}
+\studentformscreenshot{2}
+\studentformscreenshot{3}
+\studentformscreenshot{4}
+\studentformscreenshot{5}
+\studentformscreenshot{6}
+\studentformscreenshot{7}
+\studentformscreenshot{8}
+\studentformscreenshot{9}
+\studentformscreenshot{10}
+\studentformscreenshot{11}
+\studentformscreenshot{12}
+\studentformscreenshot{13}
+\studentformscreenshot{14}
+\studentformscreenshot{15}
+\studentformscreenshot{16}
+\studentformscreenshot{17}
+\studentformscreenshot{18}
+\studentformscreenshot{19}
 
 \clearpage
 \chapter{\sysname{} Evaluation Questionnaire}
