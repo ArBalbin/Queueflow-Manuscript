@@ -1,0 +1,368 @@
+% =====================================================================
+% Final Defense Compliance Report
+% Page numbers are read from the manuscript's .aux file through the xr
+% package, so compile Balbin_Archie_W3.tex first; the numbers here then
+% always match the current manuscript.
+% =====================================================================
+\documentclass[12pt,letterpaper]{article}
+\usepackage[top=1in,bottom=1in,left=1.25in,right=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{xr}
+\externaldocument{Balbin_Archie_W3}
+
+\newcommand{\sysname}{QueuEx}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\setlength{\parindent}{0pt}
+\renewcommand{\arraystretch}{1.25}
+
+\newcolumntype{S}{>{\raggedright\arraybackslash}m{5.55cm}}
+\newcolumntype{A}{>{\raggedright\arraybackslash}m{5.55cm}}
+\newcolumntype{P}{>{\centering\arraybackslash}m{2.3cm}}
+\newcommand{\pg}[1]{\large #1}
+
+% One table head, reused by every section.
+\newcommand{\complianceHead}{%
+\hline
+\multicolumn{1}{|c|}{\bfseries SUGGESTIONS/} &
+\multicolumn{1}{c|}{\bfseries ACTION} &
+\multicolumn{1}{c|}{\bfseries PAGE} \\
+\multicolumn{1}{|c|}{\bfseries RECOMMENDATIONS} &
+\multicolumn{1}{c|}{\bfseries TAKEN} &
+\multicolumn{1}{c|}{\bfseries NUMBER} \\
+\hline}
+
+\begin{document}
+
+\begin{center}
+  {\large\bfseries FINAL DEFENSE COMPLIANCE REPORT}
+\end{center}
+
+\vspace{0.4em}
+\noindent{\bfseries TITLE: QUEUEX: A COMPUTER VISION-BASED SMART QUEUE
+MANAGEMENT AND PREDICTIVE SERVICE DELIVERY SYSTEM}
+
+\vspace{1em}
+\begin{tabular}{@{}p{3.6cm}p{0.6cm}l@{}}
+RESEARCHERS   & : & ARCHIE D. BALBIN \\
+              &   & JOSHUA ROVIC P. SANOTA \\[0.8em]
+ADVISER       & : & FRITZGERALD ENRIC T. IMPERIAL, MIT \\[0.8em]
+CHAIRMAN      & : & ANNA LORETTA C. ROMULO, PhD \\
+PANEL MEMBERS & : & RONEL B. SIMON, DIT \\
+              &   & EMMANUEL N. ENALPE III \\[0.8em]
+SECRETARY     & : & LIELA B. GARDOSE, MBA \\
+\end{tabular}
+
+\vspace{1.2em}
+\noindent This report lists the panel's suggestions from the pre-final
+defense on 29~September~2026 and the action taken on each. Part~II
+covers the review of the system by the school's Technology Resources
+Center on 10~November~2026, and Part~III lists the other changes made to
+the system since the pre-final defense. Page numbers refer to the
+revised manuscript.
+
+\vspace{1em}
+\noindent{\bfseries PART I. PRE-FINAL DEFENSE SUGGESTIONS}
+
+\vspace{0.5em}
+\small
+\begin{longtable}{|S|A|P|}
+\complianceHead
+\endfirsthead
+\complianceHead
+\endhead
+\hline
+\endfoot
+
+\textbf{Preliminaries:}\newline
+Wrong content for the Editor's Certification.
+&
+Replaced the copied certification with a statement of editorial review
+of grammar, spelling, punctuation, sentence structure, clarity, and
+consistency, with the editor's name above the signature line.
+&
+\pg{\pageref{cr:editor}} \\ \hline
+
+\textbf{Background of the Study:}\newline
+Introduce queue management in your own words.
+&
+Added an original opening paragraph explaining what a queue management
+system does, how it orders service and shows queue status, and how it
+helps students and staff at a college cashiering office during busy
+periods.
+&
+\pg{\pageref{cr:background}} \\ \hline
+
+\textbf{Research Instrument (p.~23):}\newline
+The operational log is for System Performance.
+&
+Moved the description of the operational log and observation record
+from the Research Instrument section to System Performance, which it
+serves. It identifies the operational log as the record the system
+generates of detection, recognition, queue-number issuance, ticketing,
+prediction, and dashboard actions, the source of the live recognition
+and issuance results, kept separate from the manual observation record
+used for the wait-time results. The Research Instrument section now
+points to it.
+&
+\pg{\pageref{cr:oplog}} \\ \hline
+
+\textbf{Reliability (p.~40):}\newline
+How was Cronbach's alpha computed? Treat the respondents as one group,
+not separately as staff and students.
+&
+The user-evaluation alpha is now computed on all respondents as one
+group, students and staff pooled, on the six statements both groups
+answered (two each for usability, reliability, and clarity). The item
+variances, the variance of the total scores, and the resulting
+coefficient are shown step by step with the formula. The user
+acceptance test uses the same six statements, so its alpha is also
+computed on all respondents as one group. The baseline questionnaire is
+likewise computed on all twenty-two respondents as one group, by section
+and as a whole, with its worked calculation.
+&
+\pg{\pageref{tab:sop1-reliability}, \pageref{tab:sop4-reliability}} \\ \hline
+
+\textbf{Appendix (p.~84):}\newline
+Present the questionnaire using the actual form.
+&
+The baseline appendix now shows the actual student Google Form as
+nineteen screenshots, in the order respondents saw it. The staff form
+is reproduced from its content.
+&
+\pg{\pageref{app:sop1-questionnaire}} \\ \hline
+
+\textbf{System Evaluation:}\newline
+Provide a statistician's report on the system-evaluation metrics.
+&
+\textbf{In progress.} A user acceptance test of the completed system is
+conducted in the week of 16~November~2026, facilitated by a BS
+Information Systems student, using the test script and acceptance
+statements added as an appendix. Its pass rates, weighted means, and
+pooled Cronbach's alpha, together with the system-evaluation metrics of
+Chapter~4, are evaluated by a statistician, whose report will be
+attached to the manuscript.
+&
+\pg{\pageref{cr:uat}, \pageref{app:uat}} \\ \hline
+
+\textbf{System:}\newline
+Show that the system can scale to the whole university (10,000
+students).
+&
+Replaced the face matcher, which reloaded every enrolled face from the
+database for each person, with an in-memory index that scores a face
+against all enrolled students at once. At 10,000 enrolled students a
+match now takes about 3~ms instead of 10~s and uses about 20~MB. The
+backend was load-tested again with up to 400 simultaneous users; no
+request received an HTTP error.
+&
+\pg{\pageref{subsec:load-test}--\pageref{tab:scale-load}} \\ \hline
+
+\textbf{System:}\newline
+Show a data-privacy consent screen before registration.
+&
+The mobile application shows a Data Privacy Notice and Consent screen
+before any account is created. It states what is collected, why, who
+may access it, how long it is kept, and the student's rights under
+R.A.~10173. No account is created until the student taps
+\emph{I agree}; the backend records the version agreed to and refuses
+to create an account, enrol a face, or accept a request for a number
+without it. Existing accounts must accept at their next sign-in.
+&
+\pg{\pageref{cr:consent}} \\ \hline
+
+\textbf{System:}\newline
+Define a data-retention policy for student data.
+&
+An account with no sign-in or queue request for one year is archived:
+deactivated, with its face data erased. An account archived for one
+more year is deleted. A daily background process applies the policy,
+staff can archive or delete accounts at any time from the dashboard's
+Data Retention page (for example, graduates), and students can delete
+their own account from the app.
+&
+\pg{\pageref{cr:retention}} \\ \hline
+
+\end{longtable}
+
+\normalsize
+\vspace{1em}
+\noindent{\bfseries PART II. REVIEW BY THE TECHNOLOGY RESOURCES CENTER
+(10 NOVEMBER 2026)}
+
+\vspace{0.5em}
+\noindent The school's Technology Resources Center (TRC) reviewed a
+demonstration of the system. With the adviser, the researchers adopted
+the suggestions that keep the panel-approved design, and recorded the
+others in the scope and delimitation and the recommendations.
+
+\vspace{0.5em}
+\small
+\begin{longtable}{|S|A|P|}
+\complianceHead
+\endfirsthead
+\complianceHead
+\endhead
+\hline
+\endfoot
+
+\textbf{Payment form:}\newline
+The student should state the kind of payment and the amount, and the
+cashier should see it.
+&
+\textbf{Adopted.} The request for a number now includes a payment-slip
+form laid out like the cashier's paper Payment Slip (Tuition, Books,
+Special Exam with the subject, Others with a description), with an
+amount per line and a TOTAL. The cashier sees the lines and the TOTAL on
+the dashboard when the student is called.
+&
+\pg{\pageref{cr:presentation}} \\ \hline
+
+\textbf{Mobile application:}\newline
+Improve the terminology, user interface, and flow so users are not
+confused.
+&
+\textbf{Adopted.} One term is used for each step (\emph{Get a Queue
+Number}, \emph{Request Number}, \emph{Face check}, \emph{Your number}),
+and \emph{window} is used throughout. The app shows a three-step
+progress indicator, who is being served at each window, a warning before
+a long wait, an \emph{It's your turn} screen with the window number, and
+a notice when a number is skipped. A \sysname{} loading screen was also
+added at the researchers' initiative.
+&
+\pg{\pageref{cr:presentation}} \\ \hline
+
+\textbf{Computer vision:}\newline
+The face check at the camera does not shorten the line, since students
+still queue at the camera; issue the number from the app instead.
+&
+\textbf{Not adopted; stated as a delimitation.} Identifying the student
+by camera before a number is issued is the computer-vision component
+required of this Computer Science capstone and approved by the panel,
+and the adviser decided to keep it. The point is stated in the scope and
+delimitation, and an app-issued number with a passive camera is listed
+as a recommendation for future work.
+&
+\pg{\pageref{cr:trc-scope}, \pageref{sec:recommendations}} \\ \hline
+
+\textbf{Other offices:}\newline
+A document-request organizer for the Registrar.
+&
+\textbf{Outside the scope}, stated in the scope and delimitation.
+&
+\pg{\pageref{cr:trc-scope}} \\ \hline
+
+\end{longtable}
+
+\normalsize
+\vspace{1em}
+\noindent{\bfseries PART III. OTHER CHANGES TO THE SYSTEM SINCE THE
+PRE-FINAL DEFENSE}
+
+\vspace{0.5em}
+\small
+\begin{longtable}{|>{\raggedright\arraybackslash}m{4.2cm}|>{\raggedright\arraybackslash}m{6.9cm}|P|}
+\hline
+\multicolumn{1}{|c|}{\bfseries CHANGE} &
+\multicolumn{1}{c|}{\bfseries DESCRIPTION} &
+\multicolumn{1}{c|}{\bfseries PAGE} \\ \hline
+\endfirsthead
+\hline
+\multicolumn{1}{|c|}{\bfseries CHANGE} &
+\multicolumn{1}{c|}{\bfseries DESCRIPTION} &
+\multicolumn{1}{c|}{\bfseries PAGE} \\ \hline
+\endhead
+\hline
+\endfoot
+
+Calling by window
+&
+Each staff account takes one window and presses \emph{Call next} to call
+the next number to it; all staff see the same waiting list. A switch on
+the dashboard changes to automatic calling.
+&
+\pg{\pageref{cr:calling}} \\ \hline
+
+Faster confirmation
+&
+A person whose face has been captured is confirmed after one second in
+the queue zone instead of after a fixed number of camera updates, which
+had become slow over the internet to the cloud backend.
+&
+\pg{\pageref{subsec:candidate}} \\ \hline
+
+Wait estimate
+&
+The student's wait is now estimated by simulating the line window by
+window; every issued number records its estimate and its real wait, and
+the dashboard scores the estimate as numbers are served.
+&
+\pg{\pageref{subsubsec:queue-engine}} \\ \hline
+
+Algorithms
+&
+Grouped into four major algorithms --- person detection and tracking,
+presence confirmation, face-based identity validation and number
+issuance, and wait-time estimation --- with calling and ticket
+generation stated as supporting procedures. To keep Chapters 1 to 4
+within the page limit, the four are summarised in Chapter~2 and their
+full specification, with equations, parameters, and numbered steps, is
+in an appendix.
+&
+\pg{\pageref{cr:algorithms}, \pageref{app:algorithms}} \\ \hline
+
+Wait-time model
+&
+The Gradient Boosting predictor is stated as trained and evaluated but
+not deployed, with the reasons, in the scope and delimitation; the
+deployed estimate simulates the line, with the people-ahead regression
+as fallback. Retraining on the system's own wait log is recommended.
+&
+\pg{\pageref{cr:gb-scope}, \pageref{sec:ml-training-protocol}} \\ \hline
+
+Diagrams
+&
+The conceptual framework, the system architecture, and the
+detection-to-ticket pipeline were redrawn for the current system:
+payment slip, consent, calling by window, the line-simulation wait
+estimate, the retention service, and the current API routers.
+&
+\pg{\pageref{fig:conceptual-framework}, \pageref{fig:system-architecture}, \pageref{fig:detection-ticket-pipeline}} \\ \hline
+
+Access control
+&
+Every dashboard page except the public display now requires a staff
+sign-in, and the camera stream and the full queue list are staff-only.
+&
+\pg{\pageref{cr:presentation}} \\ \hline
+
+\end{longtable}
+
+\normalsize
+\vspace{2em}
+\noindent Prepared by:
+
+\vspace{2.5em}
+\begin{tabular}{@{}p{7cm}p{7cm}@{}}
+\rule{6cm}{0.4pt} & \rule{6cm}{0.4pt} \\
+ARCHIE D. BALBIN & JOSHUA ROVIC P. SANOTA \\
+Researcher & Researcher \\
+\end{tabular}
+
+\vspace{2em}
+\noindent Noted by:
+
+\vspace{2.5em}
+\noindent\rule{6cm}{0.4pt}\\
+FRITZGERALD ENRIC T. IMPERIAL, MIT\\
+Adviser
+
+\end{document}

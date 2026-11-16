@@ -21,3 +21,6 @@ Balbin_Archie_W3.pdf
 # OS files
 Thumbs.db
 .DS_Store
+
+# Raw survey responses: never publish (the repository is public)
+*.csv

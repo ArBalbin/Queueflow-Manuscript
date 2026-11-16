@@ -1,21 +1,25 @@
 % =====================================================================
 % Section 3.2: Design and System Plans
 % Reformatted per panel recommendation: numbered-list algorithm style,
-% consolidated from 12 to 7 algorithms.
+% consolidated to four major algorithms and three supporting procedures.
 % =====================================================================
 
 % Section heading is provided by the parent file (Chapter 3, SOP #2).
 % This file begins directly with the introductory paragraph.
 
-Section~3.2 records the design routines behind the implemented
-\sysname{} prototype. Section~\ref{sec:architecture} (\S2.8.3)
-identifies the major layers and responsibilities; this section moves
-one level closer to the code by stating each routine's inputs, outputs,
-equations, parameter values, and numbered steps. The discussion follows
-the detection-to-ticket flow in Figure~\ref{fig:detection-ticket-pipeline}
-(Figure~2.2): camera-frame filtering, queue-zone confirmation,
-tracker maintenance, re-identification, queue-state updates, prediction,
-and ticket output.
+This appendix records the design routines behind the implemented
+\sysname{} prototype. Section~\ref{sec:architecture} identifies the
+major layers and responsibilities, and
+Section~\ref{subsec:major-algorithms} summarises the four major
+algorithms; this appendix moves one level closer to the code by stating
+each routine's inputs, outputs, equations, parameter values, and
+numbered steps. The discussion follows the detection-to-ticket flow in
+Figure~\ref{fig:detection-ticket-pipeline}: camera-frame filtering,
+queue-zone confirmation, tracker maintenance, re-identification,
+queue-state updates, prediction, and ticket output. Algorithms~1 to~4
+are the major algorithms; Procedures~A to~C, calling the next number to
+a window, automatic window assignment, and ticket generation, apply
+fixed rules and are supporting procedures.
 
 \subsection{Notation}
 \label{subsec:notation}
@@ -110,12 +114,14 @@ exponential moving average before being forwarded:
 
 \noindent applied independently to $x_1$, $y_1$, $x_2$, and $y_2$.
 Algorithm~1 below formalises the complete detection processing routine,
-combining all five quality gates with bounding-box smoothing.
+combining all five quality gates with bounding-box smoothing; its
+track-management step follows in Section~\ref{subsec:dedup}.
 
 \vspace{0.5em}
 \noindent\rule{\linewidth}{0.8pt}
 
-\noindent\textbf{\underline{Algorithm 1: Detection Quality Filtering}}
+\noindent\textbf{\underline{Algorithm 1: Person Detection and Tracking ---
+Quality Filtering}}
 
 \noindent\textbf{Input:} \textit{currentFrame} $F_t$,
 \textit{previousGreyFrame} $G_{t-1}$, \textit{rawDetections} $D$ from YOLOv8n\\
@@ -241,9 +247,17 @@ number, continue accumulating, or reject as static)
 \end{enumerate}
 \vspace{0.3em}
 
-\noindent At $N_{\mathrm{conf}} = 20$ frames and $12$--$15$~fps, a
-person must remain in the zone for approximately $1.3$--$1.7$~s before
-receiving a queue number. The motion threshold
+\noindent The present build uses $N_{\mathrm{conf}} = 14$ updates. Counting
+updates alone made confirmation depend on how fast the detector reaches
+the backend: on the office computer it sends about 14 updates a second,
+but over the internet to the cloud backend only two to three, which
+stretched confirmation to five seconds or more. A candidate whose face
+the detector has already captured is therefore also confirmed by time:
+once it has been in the zone for at least $T_{\mathrm{conf}} = 1.0$~s and
+has at least $3$ updates carrying a face embedding, step~2 is passed
+without waiting for $N_{\mathrm{conf}}$. A candidate with no face still
+needs the full $N_{\mathrm{conf}}$ updates, so that the motion test has
+enough positions to reject a poster or a chair. The motion threshold
 $\theta_{\mathrm{m}} = 1.5\ \mathrm{px}$ rejects static mis-detections;
 the confidence bypass at $0.70$ admits a momentarily stationary person
 whose detection is unambiguous.
@@ -259,7 +273,8 @@ ByteTrack occasionally assigns a new $\mathrm{tid}$ to a person who
 briefly left and re-entered the camera frame (handled by Part~A
 below), or assigns two distinct $\mathrm{tid}$ values to the same
 physical person within the same frame (a \emph{ghost track}, handled
-by Part~B). Both cases are resolved in Algorithm~3.
+by Part~B). Both cases are resolved in the track-management step of
+Algorithm~1.
 
 Remapping uses IoU (Equation~\ref{eq:iou}) and centroid Euclidean
 distance:
@@ -319,8 +334,7 @@ $I_0$                               & $60\ \text{frames}$ & Re-entry immunity \\
 \vspace{0.5em}
 \noindent\rule{\linewidth}{0.8pt}
 
-\noindent\textbf{\underline{Algorithm 3: Track Management ---
-Remapping and Duplicate Suppression}}
+\noindent\textbf{\underline{Algorithm 1 (continued): Track Management}}
 
 \noindent\textbf{Input:} \textit{incomingDetection} $d$ with new
 track ID $\mathrm{tid}_{\mathrm{new}}$, \textit{activeQueue}
@@ -516,7 +530,8 @@ take a ticket from the existing kiosk, which runs separately from
 \vspace{0.5em}
 \noindent\rule{\linewidth}{0.8pt}
 
-\noindent\textbf{\underline{Algorithm 4: Face-Based Identity Validation}}
+\noindent\textbf{\underline{Algorithm 3: Face-Based Identity Validation
+and Number Issuance}}
 
 \noindent\textbf{Input:} \textit{faceCrop} $\mathbf{x}$ with detector
 confidence $c$, \textit{eligibleEnrolled} $\mathcal{E}$ (students not
@@ -579,6 +594,40 @@ system has a single notion of what counts as a confident identification.
 \subsection{Counter Assignment}
 \label{subsec:counters}
 
+Windows are assigned in one of two modes, chosen on the staff dashboard.
+In the default \emph{staff} mode, a number is assigned only when the
+cashier at a window asks for it. Each staff account holds one window
+$w$ at a time; the claim lapses two minutes after the dashboard stops
+renewing it.
+
+\vspace{0.5em}
+\noindent\rule{\linewidth}{0.8pt}
+
+\noindent\textbf{\underline{Procedure A: Call Next (staff mode)}}
+
+\noindent\textbf{Input:} \textit{activeQueue} $\mathcal{Q}$,
+\textit{window} $w$ held by the requesting staff account\\
+\noindent\textbf{Output:} the number called to $w$, or the reason none
+was called
+
+\begin{enumerate}
+  \item \textbf{IF} $w$ is closed \textbf{THEN RETURN} (closed)
+  \item \textbf{IF} some $p \in \mathcal{Q}$ has
+        $p.\text{counter} = w$ \textbf{THEN RETURN} (busy: finish the
+        current student first)
+  \item \textbf{SET} $p^{*} \gets$ the waiting entry with the lowest
+        queue number and $p^{*}.\text{counter} = \text{none}$
+  \item \textbf{IF} no such $p^{*}$ \textbf{THEN RETURN} (empty)
+  \item \textbf{SET} $p^{*}.\text{counter} \gets w$;
+        $p^{*}.\text{called\_at} \gets$ now; \textbf{RETURN} $p^{*}$
+\end{enumerate}
+\vspace{0.3em}
+
+\noindent The student's application shows the window at its next
+status check, and the entry keeps the window until it is marked done or
+a no-show. In the optional \emph{automatic} mode, the system calls
+numbers itself with the rule below.
+
 After every frame, the active queue $\mathcal{Q}$ is sorted by queue
 number in ascending order. Counter assignment is \emph{sticky}: once a
 counter is allocated to a queue entry, the allocation persists until
@@ -598,7 +647,8 @@ that entry is marked done or a no-show. The assignment rule is
 \vspace{0.5em}
 \noindent\rule{\linewidth}{0.8pt}
 
-\noindent\textbf{\underline{Algorithm 5: Sticky Counter Assignment}}
+\noindent\textbf{\underline{Procedure B: Automatic Window Assignment
+(sticky)}}
 
 \noindent\textbf{Input:} \textit{activeQueue} $\mathcal{Q}$,
 \textit{numberOfCounters} $c$\\
@@ -648,7 +698,26 @@ service, then blended with the previous estimate:
 \label{eq:svc-blend}
 \end{equation}
 
-\subsubsection{M/M/c baseline (current wait)}
+\subsubsection{Queue simulation (current wait, deployed)}
+\label{subsubsec:queue-engine}
+
+The wait shown to a student is computed by simulating the line. Let
+$f_k$ be the time at which window $k$ becomes free: now, if it is idle;
+$\max\!\big(t_k + \widehat{\mathrm{svc}},\ \text{now} +
+0.75\,\widehat{\mathrm{svc}}\big)$ if it is serving a student called at
+$t_k$; or the reopening time, if staff closed it until then. The
+waiting entries are taken in queue order. Each is given to the window
+with the smallest $f_k$, its turn starts at $f_k$, and $f_k$ then
+advances by $\widehat{\mathrm{svc}}$. A student's estimated wait is the
+start of their turn minus now. The $0.75\,\widehat{\mathrm{svc}}$ floor
+reflects the cashier log: a transaction that had already run past its
+usual length still took, on average, three quarters of a service time
+more. This estimator replaced the M/M/c baseline below for the
+student-facing wait, and each issued number records its estimate so
+that the dashboard compares it with the real wait once the number is
+called.
+
+\subsubsection{M/M/c baseline (earlier current-wait estimate)}
 \label{subsubsec:mmc-baseline}
 
 With $\rho = \lambda/(c\mu)$, the current wait estimate is:
@@ -725,89 +794,72 @@ Q_{\mathrm{recent}} \cdot (0.7\,g + 0.3)\Big).
 \label{eq:qlong}
 \end{equation}
 
-\subsubsection{Hybrid AI predictor}
-\label{subsubsec:hybrid-ai-prediction}
+\noindent The trend, Holt, and growth-ratio projections above are used
+on the crowd-analytics view to project the head count in the queue zone.
+Their parameter values are $\alpha_{\mathrm{H}} = 0.4$,
+$\beta_{\mathrm{H}} = 0.2$, $\varphi = 0.85$, $h = 20$, and
+$W_{\max}^{\mathrm{long}} = 60\ \mathrm{min}$; they are not validated
+against observed waits.
 
-The deployed AI model uses the analytical outputs
-$W_{\mathrm{current}}$, $W_{\mathrm{short}}$, $W_{\mathrm{medium}}$,
-and $W_{\mathrm{long}}$ as features for a Gradient Boosting regressor,
-calibrated at runtime with current service speed, yesterday's same-hour
-wait, and recent prediction error.
+\subsubsection{Regression benchmark and fallback}
+\label{subsubsec:wait-regression}
+
+A median regression of waiting time on the number of people ahead, the
+form that was most accurate on the observed transactions
+(Section~\ref{subsec:sop3-offline}), is kept as the benchmark and as a
+fallback that a configuration setting switches on without changing the
+code. Refitted on 528 cashier transactions from October~2026 and stored
+as plain coefficients, it is
+\begin{equation}
+W_{\mathrm{reg}} \;=\; 1.1214 + 0.1445 \cdot a \cdot \frac{3}{c},
+\label{eq:wait-regression}
+\end{equation}
+where $a$ is the number of people ahead and $c$ the number of open
+windows. A Gradient Boosting predictor was also trained and evaluated
+offline (Section~\ref{sec:ml-training-protocol}); it is not part of the
+deployed system.
 
 \vspace{0.5em}
 \noindent\rule{\linewidth}{0.8pt}
 
-\noindent\textbf{\underline{Algorithm 6: Multi-Horizon Wait-Time
-Prediction}}
+\noindent\textbf{\underline{Algorithm 4: Wait-Time Estimation}}
 
-\noindent\textbf{Input:} \textit{countHistory} $H$,
-\textit{currentQueueLength} $Q$, \textit{activeCounters} $c$,
-\textit{serviceRate} $\mu$ (from dynamic measurement),
-\textit{trainedModel} $G$\\
-\noindent\textbf{Output:} \textit{currentWait} $W_{\mathrm{current}}$,
-\textit{shortWait} $W_{\mathrm{short}}$,
-\textit{mediumWait} $W_{\mathrm{medium}}$,
-\textit{longWait} $W_{\mathrm{long}}$,
-\textit{finalWait} $W_{\mathrm{final}}$
+\noindent\textbf{Input:} \textit{waitingLine} $\mathcal{Q}$ in queue
+order, \textit{windows} $k = 1,\ldots,c$ with their state (idle, serving
+since $t_k$, or closed until $r_k$), \textit{serviceTime}
+$\widehat{\mathrm{svc}}$ (from dynamic measurement),
+\textit{arrivalRate} $\lambda$\\
+\noindent\textbf{Output:} \textit{estimatedWait} $W_p$ for every waiting
+entry $p$, and the forecast waits $W^{(h)}$ for a student arriving in
+$h \in \{5, 15, 30\}$ minutes
 
 \begin{enumerate}
-  \item \textbf{APPEND} current $Q$ and timestamp to $H$
-  \item \textbf{COMPUTE} $\lambda$ from recent count differences
-        using Equation~\ref{eq:arrival};
-        \textbf{COMPUTE} $\rho \gets \lambda/(c\mu)$
-  \item \textbf{COMPUTE} $W_{\mathrm{current}}$ using M/M/c formula
-        (Equation~\ref{eq:wcurrent})
-  \item \textbf{FIT} OLS slope $\beta$ to the latest
-        $W_{\mathrm{tr}}$ samples;
-        \textbf{COMPUTE} $\hat{Q}_{\text{short}} \gets
-        \max(0, Q + \beta \cdot \mathrm{fps} \cdot T_{\mathrm{sh}})$
-  \item \textbf{SET} $W_{\mathrm{short}} \gets$ M/M/c wait from
-        $\hat{Q}_{\text{short}}$
-  \item \textbf{UPDATE} Holt level $L_t$ and trend $T_t$ using
-        $\alpha_{\mathrm{H}}$, $\beta_{\mathrm{H}}$
-        (Equations~\ref{eq:holt-level}--\ref{eq:holt-trend})
-  \item \textbf{COMPUTE} $\hat{Q}_{t+h} \gets L_t + T_t
-        \sum_{i=1}^{h}\varphi^i$;
-        \textbf{SET} $W_{\mathrm{medium}} \gets$ M/M/c wait from
-        $\hat{Q}_{t+h}$
-  \item \textbf{SPLIT} $H$ into thirds;
-        \textbf{COMPUTE} growth ratio $g \gets Q_{\mathrm{recent}} /
-        \max(Q_{\mathrm{early}}, 1)$
-  \item \textbf{COMPUTE} $\hat{Q}_{\text{long}} \gets
-        \max\!\big(0,\; Q_{\mathrm{recent}}(0.7g + 0.3)\big)$
-  \item \textbf{SET} $W_{\mathrm{long}} \gets
-        \min\!\big(W_{\max}^{\mathrm{long}},\;
-        \text{M/M/c wait from } \hat{Q}_{\text{long}}\big)$
-  \item \textbf{BUILD} feature vector $x$ from queue-state features,
-        recent-demand features, academic-period indicators, and
-        $\{W_{\mathrm{current}}, W_{\mathrm{short}},
-        W_{\mathrm{medium}}, W_{\mathrm{long}}\}$
-  \item \textbf{COMPUTE} $W_{\mathrm{AI}} \gets G(x)$;
-        \textbf{APPLY} recent error correction $e_{\mathrm{recent}}$:
-        $W_{\mathrm{AI,corr}} \gets \max(0, W_{\mathrm{AI}} +
-        e_{\mathrm{recent}})$
-  \item \textbf{COMPUTE} runtime baseline $W_{\mathrm{base}}$ from
-        current service speed and yesterday's same-hour average
-  \item \textbf{SET} $\gamma \gets
-        \min(\text{completed\_today}/10,\, 1)$
-  \item \textbf{COMPUTE} $W_{\mathrm{final}} \gets
-        0.6\,W_{\mathrm{AI,corr}} + 0.4\,W_{\mathrm{base}}$
-  \item \textbf{RETURN}
-        $(W_{\mathrm{current}}, W_{\mathrm{short}},
-        W_{\mathrm{medium}}, W_{\mathrm{long}},
-        W_{\mathrm{final}}, \rho, \lambda)$
+  \item \textbf{FOR EACH} window $k$: \textbf{SET} $f_k \gets$ now if
+        idle; $\max(t_k + \widehat{\mathrm{svc}},\ \text{now} +
+        0.75\,\widehat{\mathrm{svc}})$ if serving; $r_k$ if closed
+  \item \textbf{FOR EACH} $p \in \mathcal{Q}$ in queue order:
+  \item \quad \textbf{SET} $k^{*} \gets \arg\min_k f_k$;
+        $W_p \gets f_{k^{*}} - \text{now}$
+  \item \quad \textbf{SET} $f_{k^{*}} \gets f_{k^{*}} +
+        \widehat{\mathrm{svc}}$
+  \item \textbf{FOR EACH} horizon $h$: \textbf{SET} $W^{(h)} \gets$ the
+        wait at position $|\mathcal{Q}| + 1 + \lambda h$, capped at
+        120~minutes
+  \item \textbf{IF} the fallback is selected \textbf{THEN} replace steps
+        1--4 with $W_p \gets W_{\mathrm{reg}}$, taking $a$ as the
+        number of people ahead of $p$ (Equation~\ref{eq:wait-regression})
+  \item \textbf{RECORD} with each issued number its $W_p$, the people
+        ahead, and $c$; when the number is called, \textbf{RECORD} the
+        call time, so that the real wait can be compared with $W_p$
+  \item \textbf{RETURN} $\{W_p\}$ and $\{W^{(h)}\}$
 \end{enumerate}
 \vspace{0.3em}
-
-The deployed parameter values are $\alpha_{\mathrm{H}} = 0.4$,
-$\beta_{\mathrm{H}} = 0.2$, $\varphi = 0.85$, $h = 20$, and
-$W_{\max}^{\mathrm{long}} = 60\ \mathrm{min}$.
 
 % =====================================================================
 \subsection{Dynamic Service-Time Measurement}
 \label{subsec:service-time}
 
-The service rate $\mu$ used in Algorithm~6 is recomputed every
+The service time used in Algorithm~4 is recomputed every
 $T_{\mathrm{svc}} = 300\ \mathrm{s}$ by the background measurement
 routine described in Equations~\ref{eq:gap}--\ref{eq:svc-blend}. The
 pre-deployment calibration in Section~\ref{sec:datagathering}
@@ -844,7 +896,7 @@ four-hour ticket lifetime.
 \vspace{0.5em}
 \noindent\rule{\linewidth}{0.8pt}
 
-\noindent\textbf{\underline{Algorithm 7: Ticket Generation}}
+\noindent\textbf{\underline{Procedure C: Ticket Generation}}
 
 \noindent\textbf{Input:} \textit{confirmedQueueNumber} $q$,
 \textit{statusPageURL} $U$, \textit{signingSecret} $K$\\
@@ -918,7 +970,8 @@ CV Layer        & $A_{\min}$                   & $800\ \mathrm{px}^2$ & Min.\ bo
                 & $c_{\mathrm{byp}}$           & $0.70$               & Static-conf bypass \\
                 & $\alpha_{\mathrm{s}}$        & $0.50$               & Bbox EMA factor \\
 \hline
-Candidate conf. & $N_{\mathrm{conf}}$          & $20$ frames          & Confirmation window \\
+Candidate conf. & $N_{\mathrm{conf}}$          & $14$ updates         & Confirmation window \\
+                & $T_{\mathrm{conf}}$          & $1.0\ \mathrm{s}$, $\geq 3$ face updates & Time rule, face seen \\
                 & $\theta_{\mathrm{m}}$        & $1.5\ \mathrm{px}$   & Motion-gate $\sigma$ \\
 \hline
 Track mgmt.     & $\tau_{\mathrm{iou}}^{\mathrm{rm}}$ & $0.10$   & Remap IoU threshold \\
