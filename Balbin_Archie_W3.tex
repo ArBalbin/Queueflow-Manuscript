@@ -2329,7 +2329,8 @@ wait, a download of the service records as CSV, and the Data Retention
 page. The \emph{student mobile application}, built in Flutter, opens on a
 \sysname{} loading screen and handles sign-in with the student's NCF Gbox
 account or face, the data-privacy consent, voluntary face enrolment, and
-the request for a number. The request is made by tapping \emph{Get a
+the request for a number. Face sign-in opens only the account last used
+on that phone, and only if Algorithm~3's clear best match is that account. The request is made by tapping \emph{Get a
 Queue Number} and filling in a payment-slip form laid out like the
 cashier's paper Payment Slip (Tuition, Books, Special Exam with the
 subject, and Others with a description, each with an amount, and a
@@ -2338,7 +2339,9 @@ application then shows the student's number, the people ahead, the
 estimated wait, the windows open, and the numbers being served; warns
 before a request when the wait would be 15 minutes or more; and changes
 to \emph{It's your turn} with the window number when the student is
-called, or to a notice when staff marked the number as skipped. It never
+called, or to a notice when staff marked the number as skipped. At an
+estimated five minutes or less, and again at first in line, it notifies
+the phone, vibrates, and shows a message. It never
 shows the camera feed or any other student's status. Its wording follows
 one term for each step --- \emph{Get a Queue Number}, \emph{Request
 Number}, \emph{Face check}, \emph{Your number} --- and \emph{window}
@@ -2362,7 +2365,8 @@ and recent history; \texttt{retention.py} serves the retention policy
 and the staff archive and delete actions; and \texttt{health.py} reports
 the state of the backend, database, cache, and snapshot feed. The
 backend runs on Render's paid 0.5-CPU instance, which does not sleep
-when idle.
+when idle. Face photos are processed in a worker thread, one at a time,
+so other requests are answered meanwhile.
 
 \textbf{Computer Vision Layer.} This layer is a separate Python process
 running on the office computer attached to the camera, implemented in
@@ -2914,14 +2918,12 @@ the historical cashiering log and on the 166 observed cashier
 transactions, using the formulas in Section~2.7.
 
 \textbf{Performance Testing: Latency and Ticket Flow.} The time from a
-person's arrival in the queue zone to an issued queue number is
-measured from the timestamps the system logs at each step
-(Section~\ref{subsec:sop2-issuance}). The detection-to-ticket latency
-measured from the first detection that passes the quality gates of the
-Computer Vision Layer (\S\ref{subsec:cv-layer}), and the ticket flow
-validation, in which the short code, QR link, and JWT of each ticket are
-checked to resolve to the matching queue status, were not measured
-separately and are recommended for the evaluation in Chapter~4.
+person's arrival in the queue zone to an issued number is measured from
+the timestamps the system logs (Section~\ref{subsec:sop2-issuance}).
+Latency from the first detection that passes the quality gates
+(\S\ref{subsec:cv-layer}), and the check that each ticket's short code,
+QR link, and JWT resolve to its queue status, were not measured
+separately; both are recommended in Chapter~4.
 
 \textbf{Usability Evaluation.} Immediately after the supervised trial
 session, the questionnaire in Section~2.5 is administered to the
@@ -2931,12 +2933,11 @@ with Cronbach's alpha, $0.70$ or more being acceptable (Section~2.5).
 Responses are analysed with the procedures in Section~2.7, and the
 open-ended answers are read for problems the ratings do not capture.
 
-\textbf{Load Testing.} To assess whether the backend stays responsive
-under concurrent use, a load test was conducted with Locust, simulating
-simultaneous users polling the FastAPI backend: students checking their
-queue status, the public display board, staff viewing analytics, and
-staff logins. The metrics are response time under load and error rate
-(Section~\ref{subsec:load-test}); recovery from overload was not tested.
+\textbf{Load Testing.} A Locust load test simulated simultaneous users
+of the backend --- students checking their status, the public display,
+staff analytics, and staff sign-ins --- and measured response time and
+error rate (Section~\ref{subsec:load-test}); recovery from overload was
+not tested.
 
 % ============================================================
 % CHAPTER 3: RESULTS AND DISCUSSIONS
@@ -4742,19 +4743,71 @@ discarded but that a ``face signature'' computed from them is kept; this
 student appears to have taken in only the first half, even though C5-s,
 on understanding what the system keeps, was rated $4.14$.
 
+\subsection{Problems Found and Fixed After the Test}
+\label{subsec:uat-fixes}
+
+The researchers' observations, the students' remarks, and the system's
+log point to three problems in the system itself, apart from the
+connection, and the students made one suggestion. Each was addressed
+after the session. The changes pass the system's automated tests but have
+not yet been used by students.
+
+\textbf{The server stalled while faces were processed.} Several students
+were stuck at face registration, and some were told that the app could
+not connect to the server. The backend runs as a single process, and
+turning a photo into a face signature, which keeps the CPU busy for a
+second or more, ran inside that process's request loop. While one photo
+was processed, every other request --- other registrations, sign-ins, and
+every app's status checks --- waited, and with many students registering
+at once, requests queued until phones gave up. The registrations that
+took 5 to 20 minutes and the three that never saved
+(Table~\ref{tab:uat-log}) are consistent with this as well as with the
+poor connection. The photo work now runs in a worker thread, one photo at
+a time, so the server keeps answering everyone else.
+
+\textbf{A face could open another student's account.} One student signed
+in and saw another student's name. Face sign-in compared the face with
+every enrolled student and opened the account of the clear best match, so
+a student whose own face was not registered could be matched to a
+classmate who looked similar, if the score and margin cleared the rule.
+The log is consistent with this: one account was signed in to three
+times with scores of $0.45$ to $0.47$ and margins of $0.16$ to $0.18$,
+just above the $0.15$ required, while students signing in shortly after
+registering scored $0.77$ to $0.92$. Face sign-in now opens only the
+account last used on that phone; the same rule is applied, and sign-in
+succeeds only if its clear best match is that account. This narrows where
+the rule is used, without changing its thresholds.
+
+\textbf{Error messages did not say what to do.} A student who had not
+registered a face tried to sign in with it, waited, and was told only
+that the app could not connect to the backend. The application now says
+that the face is not registered before any photo is taken, and tells a
+slow or busy server apart from a lost connection, without showing the
+server's address.
+
+\textbf{A heads-up before the turn.} A student suggested a warning about
+five minutes before being called, which answers a problem students rated
+highly in the baseline survey ($4.49$). The application now gives a phone
+notification, a vibration, and a message on screen when the estimated
+wait falls to five minutes or less, and notifies again when the student
+is first in line. These reach the student while the application is
+running, but not once it has been closed, which would need notifications
+sent from the server.
+
 Taken together, the UAT shows that students accept the mobile
 application's steps of the completed system --- signing in, registering
 a face, and joining the queue --- and that these steps depend on the
-internet connection: on a poor connection, three of the eighteen face
-registrations were lost and three more took five minutes or longer. It
-does not show whether students accept the camera step, the number, or
-being called, because those steps were shown on the diorama but not
-run; students last used them
+internet connection and on the server keeping up with many students at
+once: three of the eighteen face registrations were lost and three more
+took five minutes or longer. It does not show whether students accept the
+camera step, the number, or being called, because those steps were shown
+on the diorama but not run; students last used them
 in the September trial (Section~\ref{sec:sop4-results}), before the
 changes for the final defense. This supports two recommendations
 (Section~\ref{sec:recommendations}): offline-capable operation, which
 the staff's chief concern in the baseline survey already called for, and
-repeating the UAT with the queue-zone camera running.
+repeating the UAT with the queue-zone camera running and the changes
+above in place.
 
 % ----------------------------------------------------------------
 % 3.5  Summary of Findings
@@ -4853,7 +4906,12 @@ the evaluation, and presents the recommendations that follow.
         signing in with Gbox was rated highest ($4.38$). The system's log
         shows fifteen of eighteen face registrations saved and 26 of 39
         face sign-ins accepted. Seven students were uncomfortable with
-        being identified by face, and nineteen were neutral.
+        being identified by face, and nineteen were neutral. Three
+        problems found in the session --- the server stalling while
+        photos were processed, a face sign-in that could open another
+        student's account, and error messages that did not say what to
+        do --- were fixed afterwards, and a five-minute heads-up before
+        the turn, suggested by a student, was added.
 \end{enumerate}
 
 \section{Conclusions}
@@ -4906,9 +4964,13 @@ the present data.
 
 \textbf{User acceptance test.} Students accept the mobile application's
 steps of the completed system: signing in, registering a face, and
-joining the queue. These steps depend on the internet connection; on a
-poor connection, three of eighteen face registrations were lost and
-three more took five minutes or longer. Whether students accept the
+joining the queue. These steps depend on the internet connection and on
+the server keeping up with many students at once: three of eighteen face
+registrations were lost and three more took five minutes or longer. The
+test also showed that face sign-in, as first built, could open a
+classmate's account: even a rule that refuses uncertain matches should be
+used only where a wrong match cannot give one student another student's
+account. Whether students accept the
 camera step and the steps that follow it after the final-defense changes
 cannot be concluded, because the detector was not run during the test.
 Identification by face is also accepted less readily than the rest of
@@ -4970,7 +5032,9 @@ the system.
         only watched the app being used, and the questionnaire cannot
         separate them from those who used it. Its questionnaire differs
         from the September one and, like it, was not content-validated,
-        and nine students gave the same rating to every statement.
+        and nine students gave the same rating to every statement. The
+        changes made after the test are verified by automated tests
+        only, not yet by students.
 \end{itemize}
 
 \section{Recommendations}
@@ -5052,13 +5116,16 @@ the system.
         detector running}, cashier staff at the dashboard, and a reliable
         connection, so that recognition at the queue area, the issuing of
         the number, calling by window, and the estimated against the
-        actual wait are tested by the people who use them; record which
+        actual wait are tested by the people who use them, together with
+        the changes made after the first test; record which
         respondents used the app themselves, and word the recognition
         questions so that they name the step, since students took the
         face sign-in for recognition at the queue area.
-  \item \textbf{Strengthen the notification before a student's turn},
-        which two cashier staff asked for and which students rated as a
-        problem of the current process in the baseline survey.
+  \item \textbf{Send the turn notifications from the server}, so that
+        the five-minute heads-up added after the user acceptance test
+        also reaches a student whose app has been closed; two cashier
+        staff asked for better notification, and students rated its
+        absence a problem of the current process in the baseline survey.
   \item \textbf{Simplify resolving a person the system could not
         identify} from the staff dashboard, the lowest-rated staff
         usability item, since every refusal by the decision rule reaches

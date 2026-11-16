@@ -349,6 +349,16 @@ sign-in, and the camera stream and the full queue list are staff-only.
 &
 \pg{\pageref{cr:presentation}} \\ \hline
 
+Fixes after the user acceptance test
+&
+Face photos are processed off the server's request loop, so many
+students registering at once no longer stall everyone else; face
+sign-in opens only the account last used on that phone, after a student
+saw a classmate's name; the app's errors say what to do; and a
+five-minute heads-up before the turn, suggested by a student, was added.
+&
+\pg{\pageref{subsec:uat-fixes}} \\ \hline
+
 \end{longtable}
 
 \normalsize
