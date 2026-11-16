@@ -63,7 +63,37 @@
 \widowpenalty=10000
 \clubpenalty=10000
 \displaywidowpenalty=10000
+
+% Each chapter adds a 10pt gap to the lists of figures and tables; with
+% many chapters and appendices this pushed the last line of the List of
+% Tables onto a page of its own. Inside the two lists only, the gap is
+% 4pt. (\@starttoc reads each list inside a group, so nothing else is
+% affected.)
+% Float placement. With LaTeX's defaults a table taller than 70% of a page
+% cannot share a page with text, so it is sent to a page of its own and
+% centred there, leaving blank space above and below it. These settings
+% let a large table sit at the top of a text page, and put any float-only
+% page's floats at the top.
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.08}
+\renewcommand{\floatpagefraction}{0.8}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
+
+\makeatletter
+\setlength{\@fptop}{0pt}
+\setlength{\@fpsep}{12pt plus 2fil}
+\setlength{\@fpbot}{0pt plus 1fil}
+\let\QXorigaddvspace\addvspace
+\newcommand{\QXsmallvspace}[1]{\QXorigaddvspace{4\p@}}
+\newcommand{\QXtightlist}{\let\addvspace\QXsmallvspace}
+\makeatother
+
 \begin{document}
+\addtocontents{lot}{\protect\QXtightlist}
+\addtocontents{lof}{\protect\QXtightlist}
 
 % ============================================================
 % TITLE PAGE
@@ -284,30 +314,30 @@ of this capstone research.
 \begin{center}
 {\large\textbf{Abstract}}
 \end{center}
-\vspace{1.5em}
+\vspace{0.8em}
 
 \noindent
 \begin{tabular}{p{0.30\textwidth} p{0.63\textwidth}}
 \textbf{Title:} &
   \textbf{\sysname{}: A Computer Vision-Based Smart Queue Management and
-  Predictive Service Delivery System} \\[0.6em]
+  Predictive Service Delivery System} \\[0.25em]
 \textbf{Researcher:} &
-  Archie D. Balbin and Joshua Rovic P. Sanota \\[0.6em]
+  Archie D. Balbin and Joshua Rovic P. Sanota \\[0.25em]
 \textbf{Type of Document:} &
-  Unpublished Undergraduate Capstone Research (2027) \\[0.6em]
+  Unpublished Undergraduate Capstone Research (2027) \\[0.25em]
 \textbf{Host/Accrediting School:} &
-  Naga College Foundation, Inc. \\[0.6em]
-\textbf{City:} & Naga City \\[0.6em]
-\textbf{Region:} & Region V \\[0.6em]
-\textbf{Year of Completion:} & 2027 \\[0.6em]
-\textbf{Adviser:} & Fritzgerald Enric T. Imperial, MIT \\[0.6em]
+  Naga College Foundation, Inc. \\[0.25em]
+\textbf{City:} & Naga City \\[0.25em]
+\textbf{Region:} & Region V \\[0.25em]
+\textbf{Year of Completion:} & 2027 \\[0.25em]
+\textbf{Adviser:} & Fritzgerald Enric T. Imperial, MIT \\[0.25em]
 \textbf{Keywords:} &
   Queue management, computer vision, YOLOv8, face recognition, ArcFace,
   open-set identification, wait-time prediction, mean absolute error,
   FastAPI, Flutter \\
 \end{tabular}
 
-\vspace{2em}
+\vspace{1em}
 
 \noindent At the cashiering office of Naga College Foundation, Inc.\
 (NCF), as in many campus service offices, students cannot see how many
@@ -2849,9 +2879,9 @@ testing took the form of a supervised trial in which volunteer students
 used the system on a test installation on the NCF campus, since the
 system was not deployed at the cashiering office, and the cashier staff
 were given the staff dashboard to use. The developers observed the
-interaction, and the same trial provided the structured evaluation
-described below, rather than following a
-separate two-week period of regular operation.
+interaction, and the same trial, rather than a separate two-week period
+of regular operation, provided the structured evaluation described
+below.
 
 \textbf{User Acceptance Testing.} The final check is whether the people
 who would use \sysname{} accept the completed system, including the
@@ -2894,26 +2924,19 @@ checked to resolve to the matching queue status, were not measured
 separately and are recommended for the evaluation in Chapter~4.
 
 \textbf{Usability Evaluation.} Immediately after the supervised trial
-session, the questionnaire in Section~2.5 is
-administered to the respondent groups identified in Section~2.3.
-Because the questionnaire is researcher-made, its internal-consistency
-reliability is measured with Cronbach's alpha on those responses, with a
-value of at least $0.70$ taken as acceptable, as specified in
-Section~2.5. The baseline
-questionnaire for Statement of the Problem No.~1 is also researcher-made
-and was tested in the same way; its coefficients are reported with the
-results in Section~\ref{sec:sop1-results}. Responses were analyzed
-using the statistical procedures in Section~2.7, and the open-ended
-answers were read for problems and features that the Likert ratings
-alone do not capture.
+session, the questionnaire in Section~2.5 is administered to the
+respondent groups of Section~2.3. Its reliability, like that of the
+baseline questionnaire (Section~\ref{sec:sop1-results}), is measured
+with Cronbach's alpha, $0.70$ or more being acceptable (Section~2.5).
+Responses are analysed with the procedures in Section~2.7, and the
+open-ended answers are read for problems the ratings do not capture.
 
 \textbf{Load Testing.} To assess whether the backend stays responsive
 under concurrent use, a load test was conducted with Locust, simulating
 simultaneous users polling the FastAPI backend: students checking their
 queue status, the public display board, staff viewing analytics, and
 staff logins. The metrics are response time under load and error rate
-(Section~\ref{subsec:load-test}). Recovery behavior when traffic exceeds
-normal operational levels was not tested.
+(Section~\ref{subsec:load-test}); recovery from overload was not tested.
 
 % ============================================================
 % CHAPTER 3: RESULTS AND DISCUSSIONS
@@ -3020,7 +3043,7 @@ experience. Of their 1,162 ratings, 1,092 ($94.0\%$) were Agree or
 Strongly Agree. Table~\ref{tab:sop1-students} gives the item-level
 results.
 
-\begin{table}[H]
+\begin{table}[!tbp]
 \centering
 \caption{Problems with the current queue process as reported by
 students ($n = 83$).}
@@ -3061,7 +3084,7 @@ Overall, I am dissatisfied with the current queue process & $4.52$ & Strongly Ag
 \end{tabular}
 \end{table}
 
-\noindent Every wait-time statement is at or above $4.75$, and the
+Every wait-time statement is at or above $4.75$, and the
 highest describe one condition from different angles: the display shows
 only the number being served ($4.86$), so the student must keep watching
 it ($4.80$), the wait feels unpredictable ($4.78$), and turns are missed
@@ -3114,7 +3137,7 @@ Staff returned an overall weighted mean of $3.34$ (\emph{Neutral}) ---
 substantially lower than the students, and the more informative result
 of the two. Table~\ref{tab:sop1-staff} gives the item-level figures.
 
-\begin{table}[H]
+\begin{table}[!tbp]
 \centering
 \caption{Problems with the current queue process as reported by staff
 ($n = 7$).}
@@ -3153,7 +3176,7 @@ Overall, the current system negatively affects service quality & $2.71$ & Neutra
 \end{tabular}
 \end{table}
 
-\noindent Staff agree with the students on what the display fails to
+Staff agree with the students on what the display fails to
 show ($4.14$) and on what happens at peak hours ($4.29$), but they do
 not agree that the process is hard to run. They disagree that a closing
 window is difficult to manage ($2.43$), and they are neutral on whether
@@ -5213,7 +5236,6 @@ personally handle queue management during busy periods?
 \noindent\textbf{Open-ended.} In your own words, what is the biggest
 problem you experience with the current queue process?
 
-\clearpage
 \section*{Student Form: Google Form Screenshots}
 
 The following 19 screenshots show the student baseline form in order.
@@ -5458,23 +5480,28 @@ section is reproduced here.
         $\square$ I did not receive a queue number
 \end{enumerate}
 
-\clearpage
 \section*{Section II: Acceptance Statements}
 
 \noindent\textbf{Rating scale:} 5 = Strongly Agree \quad 4 = Agree \quad
 3 = Neutral \quad 2 = Disagree \quad 1 = Strongly Disagree
 
-\begin{table}[H]
-\small
-\caption{UAT student statements (15 items).}
-\label{tab:appe-student}
-\centering
+{\small
 \renewcommand{\arraystretch}{1.12}
-\begin{tabular}{p{0.9cm} p{9.3cm} c c c c c}
+\begin{longtable}{p{0.9cm} p{9.3cm} c c c c c}
+\caption{UAT student statements (15 items).}
+\label{tab:appe-student}\\
 \toprule
 \textbf{Code} & \textbf{Statement} &
 \textbf{5} & \textbf{4} & \textbf{3} & \textbf{2} & \textbf{1} \\
 \midrule
+\endfirsthead
+\toprule
+\textbf{Code} & \textbf{Statement} &
+\textbf{5} & \textbf{4} & \textbf{3} & \textbf{2} & \textbf{1} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 \multicolumn{7}{l}{\textit{A.\ System's usability}} \\
 U1-s & Registering my face (\emph{Register My Face}) in the mobile app
   was easy to do without anyone's help. & \rb \\
@@ -5508,9 +5535,8 @@ C4-s & The estimated waiting time was close to the \emph{Total wait}
   shown after I was served. & \rb \\
 C5-s & I understood what information the system keeps about me and how
   to delete it. & \rb \\
-\bottomrule
-\end{tabular}
-\end{table}
+\end{longtable}
+}
 
 \section*{Section III: Additional Questions (not scored)}
 
