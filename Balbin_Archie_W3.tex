@@ -321,9 +321,10 @@ second-best candidate by a margin of 0.15; a face that fails either test
 is referred to staff rather than guessed. An accepted student is issued
 a queue number and ticket without manual input and follows their
 position and estimated wait on the mobile application, while staff
-manage the queue from a web dashboard. A baseline survey of 22 respondents found that students strongly
-agreed that the current process leaves them without information
-(overall weighted mean 4.25), while staff were neutral (3.34). On 45
+manage the queue from a web dashboard. A baseline survey of 83 students
+and 7 staff found that students strongly agreed that the current process
+leaves them without information (overall weighted mean 4.64), while
+staff were neutral (3.34). On 45
 held-out photographs of 17 identities, the decision rule linked 97.8\%
 to the correct student and none to a wrong one, and it refused all 45
 non-enrolled probes. All seven numbers issued during testing were
@@ -334,10 +335,13 @@ mean absolute error of 1.85 minutes, against 2.07 minutes for a constant
 baseline. Twenty students who used the system in a supervised trial
 rated it Strongly Agree on usability, reliability, and clarity (overall
 weighted mean 4.32), and eight cashier staff rated it Agree (3.86),
-lowest on reliability. The results show that face recognition with a
+lowest on reliability. In a user acceptance test of the mobile
+application, held without the queue-zone detector and on a poor
+connection, 42 students rated its steps Agree (4.13), and 15 of 18 face
+registrations were saved. The results show that face recognition with a
 margin requirement can issue queue numbers without manual input while
-refusing uncertain matches. They come from offline tests and a short
-supervised trial, and remain to be confirmed in regular operation.
+refusing uncertain matches. They come from offline tests and short
+supervised sessions, and remain to be confirmed in regular operation.
 
 \newpage
 
@@ -1465,15 +1469,25 @@ Section~\ref{sec:datagathering}; the student sample is therefore smaller
 and is not claimed to represent all NCF students.
 
 \textbf{Baseline respondents.} The baseline survey for Statement of the
-Problem No.~1 is a separate, earlier sample drawn by convenience
-sampling. A link to the online questionnaire was shared with students
-and service staff of NCF, and those who chose to answer formed the
-sample: 22 in all, 15 students and 7 staff members. Because respondents
-selected themselves, the sample may over-represent people with stronger
-views about the queue, and it was not sized by Slovin's formula; it is
-also small, particularly on the staff side. Its results are therefore
+Problem No.~1 is a separate sample drawn by convenience sampling. Links
+to the online questionnaire were shared with service staff and with
+students of NCF, and those who chose to answer formed the sample. Seven
+staff members answered from 16 to 23 September 2026. The student form,
+revised to add questions on current practice, the current display, and
+face registration, received 155 submissions on 3 October and from 11 to
+16 November 2026; after excluding invalid and unconfirmed submissions
+(Section~\ref{sec:sop1-results}), 83 students are analysed. Because
+respondents selected themselves, the sample may over-represent people
+with stronger views about the queue, and it was not sized by Slovin's
+formula; it is particularly small on the staff side. Its results are therefore
 read as evidence of what the current problems are and how strongly each
 group feels them, not as estimates for the whole NCF population.
+
+\textbf{User acceptance test respondents.} The UAT sample is also a
+convenience sample: the forty-two students who took part in the UAT
+session on 16~November~2026, by using the mobile application or watching
+it used, and answered the UAT questionnaire
+(Section~\ref{sec:uat-results}). No cashier staff took part.
 
 \textbf{Exclusion criterion.} In both groups, any prospective
 respondent below 18 years of age is excluded. The age criterion is
@@ -1501,8 +1515,11 @@ transactions at Windows~3, 4, and~5 were recorded by manual observation
 on 8, 9, and 22 September 2026, as described at the end of this
 section. The cashier staff were consulted during this data collection
 and were invited to take part in the evaluation. The baseline questionnaire described in
-Section~\ref{sec:instrument} was administered online through a shared
-questionnaire link from 16 to 23 September 2026, and its results
+Section~\ref{sec:instrument} was administered online through shared
+questionnaire links, to staff from 16 to 23 September 2026 and, in its
+revised student form, to students on 3 October and from 11 to 16
+November 2026; because \sysname{} was not deployed at the office, the
+students' answers still describe the current process. Its results
 answer Statement of the Problem No.~1. These baseline accounts establish
 the reference against which the \sysname{}-mediated process is
 compared.
@@ -1538,19 +1555,23 @@ so the open-ended questions in Section~IV of the questionnaire are the
 only qualitative evidence from users of the system.
 
 \textbf{Phase 4: User Acceptance Testing.}\label{cr:uat} After the features added for
-the final defense were completed, a user acceptance test (UAT) of the
-whole system is conducted in the week of 16~November~2026 by a BS
-Information Systems student, who facilitates the sessions. Each
-respondent works through the test cases of the UAT script
-(Appendix~\ref{app:uat}) that apply to their role --- students on the
-mobile application and the queue-zone camera, cashier staff on the staff
-dashboard --- marks each case \emph{Passed} or \emph{Failed} against its
-stated expected result, and notes any problem. The respondent then rates
-the six acceptance statements at the end of the script on the five-point
-scale of Table~\ref{tab:likert}. The facilitator records the system's
-own log for the session alongside the script. The results are tallied
-and evaluated by a statistician, whose report accompanies the results
-chapter.
+the final defense were completed, a user acceptance test (UAT) was
+conducted with students on 16~November~2026 in a laboratory on the NCF
+campus, facilitated by a BS Information Systems student. The researchers
+presented the system with a diorama of the cashiering office and
+explained how it works; the students then tried the mobile application,
+signing in with Gbox, giving consent, registering their faces, and
+joining the queue with the payment-slip form, while others watched these
+steps being performed. Because the session time was limited, the
+queue-zone detector was not run and no queue number was issued; the
+steps that depend on it were shown only on the diorama. Every student
+then answered the UAT questionnaire (Appendix~\ref{app:uat}), a revision
+of the user-evaluation questionnaire whose statements name the steps of
+the system. The system's own log for the session --- accounts created,
+face signatures saved, and face sign-in attempts --- was examined
+alongside the answers. Cashier staff did not take part in the UAT. The
+results are evaluated by a statistician, whose report accompanies the
+results chapter.
 
 \textbf{Shortened evaluation protocol.} The original design allowed at
 least two weeks of regular operation before the user evaluation, a
@@ -1604,31 +1625,39 @@ system's live output, and no result is reported per prediction horizon.
 \section{Research Instrument}
 \label{sec:instrument}
 
-Four instruments provide the evidence for the study: the \sysname{}
+Five instruments provide the evidence for the study: the \sysname{}
 operational log, the manual observation record of cashier transactions,
-a researcher-made baseline questionnaire, and a researcher-made Likert
-questionnaire for the user evaluation. The operational log and
+a researcher-made baseline questionnaire, a researcher-made Likert
+questionnaire for the user evaluation, and its revision for the user
+acceptance test. The operational log and
 observation record are described with the system performance results in
 Section~\ref{sec:sop2-results}.
 
 \textbf{Baseline questionnaire.} A separate researcher-made
-questionnaire addresses Statement of the Problem No.~1 and is
-administered before deployment. It exists in two forms against a shared
-five-point scale, because the two groups experience the queue from
-opposite sides: the staff form asks about running the queue, and the
-student form about waiting in it. Each form contains fourteen items in
-two sections --- seven on perceived problems with wait-time and seven
-on perceived problems with user experience --- followed by one
-open-ended question asking, in the respondent's own words, what the
-biggest problem is. Every item is worded as a problem, so agreement
-indicates that the problem is present; only the agreement half of
-Table~\ref{tab:likert} is therefore applied to this instrument, since
-its quality half inverts the meaning of a problem statement. Its
+questionnaire addresses Statement of the Problem No.~1 and describes
+the current process. It exists in two forms against a shared five-point
+scale, because the two groups experience the queue from opposite sides:
+the staff form asks about running the queue, and the student form about
+waiting in it. Each form contains fourteen problem statements in two
+sections --- seven on perceived problems with wait-time and seven on
+perceived problems with user experience. Every problem statement is
+worded as a problem, so agreement indicates that the problem is present;
+only the agreement half of Table~\ref{tab:likert} is applied to them,
+since its quality half inverts the meaning of a problem statement. The
+staff form ends with an open-ended question on the biggest problem. The
+revised student form adds a screening question, questions on how the
+student currently gets a number and learns of their turn, how long they
+wait, and what the current system shows; four favourably worded
+statements on the current display and announcements, interpreted with
+the quality half of Table~\ref{tab:likert}; and choice questions on the
+most frustrating part of the process, the features they would like, and
+face registration. Its
 internal consistency is tested with Cronbach's alpha computed on all
 respondents as one group, students and staff together, for each section
 and for the whole questionnaire, and the coefficients are reported with
 the results in Chapter~3. The staff form also records tenure and how often the respondent handles the
-queue; the student form records year level and frequency of use. The
+queue; the student form records year level, frequency of use, and
+familiarity with mobile applications and kiosks. The
 full instrument appears in Appendix~\ref{app:sop1-questionnaire}.
 
 \textbf{Likert-scale questionnaire.} A second questionnaire is
@@ -1689,15 +1718,21 @@ coefficient and interpreted item by item rather than as a composite. The
 coefficients are reported with the results, in
 Tables~\ref{tab:sop1-reliability} and~\ref{tab:sop4-reliability}.
 
-\textbf{User acceptance test script.} The third instrument is the UAT
-script in Appendix~\ref{app:uat}. It lists one test case for each
-function a student or a cashier uses, each with the steps to take and
-the result the system must produce, and a column to mark the case
-\emph{Passed} or \emph{Failed} with remarks. It ends with six acceptance
-statements, the six items worded identically for students and staff in
-the user-evaluation questionnaire (U1--U2, R1--R2, C1--C2), rated on the
-five-point scale of Table~\ref{tab:likert}, so that all respondents can
-be analysed as one group.
+\textbf{User acceptance test questionnaire.} The UAT uses a revision of
+the student form of the user-evaluation questionnaire, listed in
+Appendix~\ref{app:uat}. It keeps the three dimensions, five statements
+each, and the five-point scale of Table~\ref{tab:likert}, but every
+statement now names a step of the completed system --- registering the
+face, joining the queue, signing in with Gbox, the \emph{Ahead of you}
+count, the estimated against the actual wait, and deleting one's data
+--- so that a student judges the step just performed rather than the
+system in general. It also asks how the student received the queue
+number, whether the system ever failed to recognise a student who had
+joined, whether it ever gave a number to the wrong person, and how
+comfortable the student is with being identified by face, and it ends
+with two open-ended questions. Because its statements differ from those
+of the September questionnaire, its results are reported separately and
+are not pooled with those of Statement of the Problem No.~4.
 
 \section{Ethical Considerations}
 \label{sec:ethics}
@@ -1998,19 +2033,16 @@ five-point scale for each item:
   \label{eq:percentage}
 \end{equation}
 
-\textbf{UAT Pass Rate.} For the user acceptance test, the pass rate of a
-test case is the share of its runs that passed, and the overall pass
-rate is the share of all runs that passed:
-\begin{equation}
-  \text{Pass rate} = \frac{\text{runs marked Passed}}{\text{runs
-  attempted}} \times 100
-  \label{eq:uat-pass}
-\end{equation}
-The ratings of the six acceptance statements are summarised with the
-weighted mean and interpreted with Table~\ref{tab:likert}. Their
-internal consistency is measured with Cronbach's alpha computed on all
-respondents together as a single group, students and staff pooled,
-since every respondent rates the same six statements.
+\textbf{User Acceptance Test.} The UAT ratings are summarised with the
+weighted mean (Equation~\ref{eq:weighted_mean}) for each statement, each
+dimension, and overall, and interpreted with Table~\ref{tab:likert}.
+The answers on how the number was received, on recognition failures and
+wrong numbers, and on comfort with face identification are reported as
+frequencies and percentages (Equation~\ref{eq:percentage}), as are the
+counts from the system's log: face signatures saved and face sign-ins
+accepted. Internal consistency is measured with Cronbach's alpha
+computed on all UAT respondents as one group, for each dimension and for
+all fifteen statements.
 
 \textbf{Cronbach's Alpha.} Cronbach's alpha is used to assess the
 internal-consistency reliability of each researcher-made questionnaire.
@@ -2825,14 +2857,13 @@ separate two-week period of regular operation.
 who would use \sysname{} accept the completed system, including the
 features added after the pre-final defense: the consent step, the
 payment-slip form, calling by window, the turn and skipped notices, and
-the retention controls. The UAT script in Appendix~\ref{app:uat} turns
-each function into a test case with steps and an expected result, so a
-respondent can judge it without knowing how the system works inside.
-A test case is accepted when it passes for every respondent who ran it;
-a failed case is reported with its remarks and the fix, if one was made.
-The UAT is facilitated by a BS Information Systems student, and its
-results are evaluated by a statistician
-(Section~\ref{sec:datagathering}, Phase~4).
+the retention controls. In the UAT, students use the deployed system
+and then rate each step on the UAT questionnaire
+(Appendix~\ref{app:uat}), so that a step can be judged without knowing
+how the system works inside, and the system's own log of the session
+shows where a step failed. The UAT is facilitated by a
+BS Information Systems student, and its results are evaluated by a
+statistician (Section~\ref{sec:datagathering}, Phase~4).
 
 \textbf{Performance Testing: Queue Assignment Accuracy and
 Re-Identification Reliability.} The original design measured both
@@ -2898,30 +2929,43 @@ normal operational levels was not tested.
 This section addresses Statement of the Problem No.~1: \emph{What are
 the current problems with the manual queue management process during
 busy periods, regarding wait times and user-experience?} The findings
-are drawn from the pre-deployment baseline survey administered during
-Phase~1 of the data-gathering procedure described in
-Section~\ref{sec:datagathering}, using the instrument described in
-Section~\ref{sec:instrument}.
+are drawn from the baseline survey of Phase~1 of the data-gathering
+procedure described in Section~\ref{sec:datagathering}, using the
+instrument described in Section~\ref{sec:instrument}.
 
-Twenty-two respondents completed the survey: 15 students and 7 staff
-members of the service office. Among the staff, 6 handle queue
-transactions daily and 4 have done so for one to three years. Among the
-students, 10 are in their fourth year and 12 use the office
-occasionally or rarely rather than daily, which matters for
-interpretation: these are not people whose answers reflect a single bad
-day, but the ordinary experience of an occasional visitor.
+Ninety respondents are analysed: 83 students and 7 staff members of the
+service office. The staff answered the staff form from 16 to 23
+September 2026. The students answered the student form, revised to add
+questions on current queueing practice, the current display, and face
+registration, on 3 October and from 12 to 16 November 2026. Because
+\sysname{} was not deployed at the cashiering office, every respondent
+describes the current kiosk-and-display process. Of 155 student
+submissions, 72 were excluded before analysis: 50 identical submissions
+made one second apart on 11 November, which could not have been
+completed by separate respondents; 2 whose consent field did not record
+agreement; and 20 from 3 October that gave the same eighteen ratings in
+the same order and could not be confirmed as separate respondents.
 
-The two groups answered different statements against the same
+Among the staff, 6 handle queue transactions daily and 4 have done so
+for one to three years. Among the students, 45 ($54.2\%$) are in third
+year, 22 ($26.5\%$) in second, 12 ($14.5\%$) in fourth, and 4 ($4.8\%$)
+in first; 52 ($62.7\%$) queue for services daily or several times a
+week; and 75 ($90.4\%$) are very familiar with mobile applications or
+digital kiosks. These are regular users of the office, not first-time
+visitors.
+
+The two groups answered different problem statements against the same
 five-point scale --- staff about running the queue, students about
 waiting in it --- so the weighted means of each group are reported side
-by side. Every item is worded as a problem, so agreement means the
-problem is real. For this reason only the agreement half of
-Table~\ref{tab:likert} is used here; its quality half reads backwards on
-a problem statement, where agreeing is the unfavourable outcome.
+by side. Every problem statement is worded as a problem, so agreement
+means the problem is real, and only the agreement half of
+Table~\ref{tab:likert} is used for them; its quality half reads
+backwards on a problem statement, where agreeing is the unfavourable
+outcome.
 
 Because the questionnaire is researcher-made, its internal consistency
 was tested with Cronbach's alpha before the results were interpreted,
-with all twenty-two respondents treated as one group
+with all ninety respondents treated as one group
 (Table~\ref{tab:sop1-reliability}). Both forms have the same structure:
 seven statements on wait-time problems and seven on user-experience
 problems, answered on the same agreement scale. For each respondent, the
@@ -2929,23 +2973,23 @@ seven statements of their form in a section were taken as that section's
 seven items, so that students and staff contribute to the same two
 section scales and to the fourteen-item whole questionnaire. The answers
 were coded from 1 (Strongly Disagree) to 5 (Strongly Agree); the sample
-variance of each item was taken across the twenty-two respondents; each
+variance of each item was taken across the ninety respondents; each
 respondent's item scores were summed and the sample variance of those
 totals was taken; and the values were substituted into
 Equation~\ref{eq:cronbach_alpha}. For the whole questionnaire, the sum of
-the fourteen item variances was $16.471861$ and the variance of the total
-scores was $96.354978$, giving
-$\alpha = (14/13)(1 - 16.471861/96.354978) = 0.892823$, reported as
-$0.893$.
+the fourteen item variances was $7.728839$ and the variance of the total
+scores was $50.949313$, giving
+$\alpha = (14/13)(1 - 7.728839/50.949313) = 0.913557$, reported as
+$0.914$.
 
-The whole questionnaire ($\alpha = 0.893$) and the user-experience
-section ($\alpha = 0.877$) are reliable. The wait-time section falls
-just below the threshold ($\alpha = 0.695$): its statements did not move
-together as closely as the user-experience statements, so its weighted
-means are read item by item rather than as a composite. Because the
-statements at each position are worded for the respondent's role, these
-coefficients describe the consistency of the section scores across all
-respondents rather than of identical statements.
+All three scales are reliable: wait-time ($\alpha = 0.804$), user
+experience ($\alpha = 0.942$), and the whole questionnaire
+($\alpha = 0.914$). The four statements on the current display, which
+only the student form asks, give $\alpha = 0.901$ across the 83
+students. Because the statements at each position are worded for the
+respondent's role, these coefficients describe the consistency of the
+section scores across all respondents rather than of identical
+statements.
 
 \begin{table}[H]
 \centering
@@ -2956,11 +3000,12 @@ respondents as one group (Cronbach's alpha).}
 \hline
 Scale & Items ($k$) & Respondents ($n$) & $\alpha$ \\
 \hline
-Wait-time problems & $7$ & $22$ & $0.695$ \\
-User-experience problems & $7$ & $22$ & $0.877$ \\
-Whole questionnaire & $14$ & $22$ & $0.893$ \\
+Wait-time problems & $7$ & $90$ & $0.804$ \\
+User-experience problems & $7$ & $90$ & $0.942$ \\
+Whole questionnaire & $14$ & $90$ & $0.914$ \\
+Current display (student form only) & $4$ & $83$ & $0.901$ \\
 \hline
-\multicolumn{4}{l}{\footnotesize Fifteen students and seven staff.
+\multicolumn{4}{l}{\footnotesize 83 students and 7 staff.
 $\alpha \geq 0.70$ is taken as acceptable.} \\
 \end{tabular}
 \end{table}
@@ -2968,14 +3013,17 @@ $\alpha \geq 0.70$ is taken as acceptable.} \\
 \subsection{Problems Reported by Students}
 \label{subsec:sop1-students}
 
-Students returned an overall weighted mean of $4.25$ (\emph{Strongly
-Agree}), the strongest agreement recorded anywhere in this study.
-Table~\ref{tab:sop1-students} gives the item-level results.
+Students returned an overall weighted mean of $4.64$ (\emph{Strongly
+Agree}) on the fourteen problem statements, the strongest agreement
+recorded anywhere in this study: $4.78$ on wait-time and $4.49$ on user
+experience. Of their 1,162 ratings, 1,092 ($94.0\%$) were Agree or
+Strongly Agree. Table~\ref{tab:sop1-students} gives the item-level
+results.
 
 \begin{table}[H]
 \centering
 \caption{Problems with the current queue process as reported by
-students ($n = 15$).}
+students ($n = 83$).}
 \label{tab:sop1-students}
 \begin{tabular}{p{0.66\textwidth}cc}
 \hline
@@ -2983,61 +3031,81 @@ Item & WM & Interpretation \\
 \hline
 \multicolumn{3}{l}{\textbf{Perceived problems on wait-time}} \\
 The display shows only the number being served, not how long I still
-  need to wait & $4.60$ & Strongly Agree \\
-I have experienced long wait times during busy periods & $4.60$ & Strongly Agree \\
+  need to wait & $4.86$ & Strongly Agree \\
+I have experienced long wait times during busy periods & $4.76$ & Strongly Agree \\
 I have no way of knowing my estimated wait time after getting my ticket
-  & $4.13$ & Agree \\
+  & $4.75$ & Strongly Agree \\
 I need to keep watching the display to know when my number will be
-  called & $4.47$ & Strongly Agree \\
-I have missed my turn because I was not near the display & $3.47$ & Agree \\
-Waiting time feels unpredictable, especially during busy periods & $4.27$ & Strongly Agree \\
+  called & $4.80$ & Strongly Agree \\
+I have missed my turn because I was not near the display & $4.76$ & Strongly Agree \\
+Waiting time feels unpredictable, especially during busy periods & $4.78$ & Strongly Agree \\
 Long or unpredictable waits discourage me from availing services at
-  peak hours & $4.53$ & Strongly Agree \\
+  peak hours & $4.77$ & Strongly Agree \\
 \hline
-\multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.30$ \\
+\multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.78$ \\
 \hline
 \multicolumn{3}{l}{\textbf{Perceived problems on user experience}} \\
 It is inconvenient to have to watch the screen or ask staff to know my
-  status & $4.13$ & Agree \\
-I get confused whether a window is closed, on break, or not yet open & $4.07$ & Agree \\
-I feel frustrated when I do not know how many people are ahead of me & $4.40$ & Strongly Agree \\
-There is no notification to tell me when my turn is near & $4.00$ & Agree \\
-It is inconvenient to wait without knowing how much time is left & $4.47$ & Strongly Agree \\
-The lack of a wait-time estimate affects my overall experience & $4.40$ & Strongly Agree \\
-Overall, I am dissatisfied with the current queue process & $4.00$ & Agree \\
+  status & $4.53$ & Strongly Agree \\
+I get confused whether a window is closed, on break, or not yet open & $4.53$ & Strongly Agree \\
+I feel frustrated when I do not know how many people are ahead of me & $4.37$ & Strongly Agree \\
+There is no notification to tell me when my turn is near & $4.49$ & Strongly Agree \\
+It is inconvenient to wait without knowing how much time is left & $4.53$ & Strongly Agree \\
+The lack of a wait-time estimate affects my overall experience & $4.48$ & Strongly Agree \\
+Overall, I am dissatisfied with the current queue process & $4.52$ & Strongly Agree \\
 \hline
-\multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.21$ \\
+\multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.49$ \\
 \hline
-\multicolumn{2}{l}{\textbf{Overall weighted mean}} & $\mathbf{4.25}$ \\
+\multicolumn{2}{l}{\textbf{Overall weighted mean}} & $\mathbf{4.64}$ \\
 \hline
 \end{tabular}
 \end{table}
 
-\noindent Three items sit at or above $4.47$ and describe the same
-condition from different angles: the student cannot see how long the
-wait will be, cannot see how many people are ahead, and must therefore
-stay within sight of the display. The highest-scoring item on the
-user-experience side is not dissatisfaction in general ($4.00$) but the
-specific inconvenience of waiting without knowing how much time is left
-($4.47$). What the students object to is not the waiting; it is the
-\emph{blindness} of the waiting.
+\noindent Every wait-time statement is at or above $4.75$, and the
+highest describe one condition from different angles: the display shows
+only the number being served ($4.86$), so the student must keep watching
+it ($4.80$), the wait feels unpredictable ($4.78$), and turns are missed
+when the student steps away ($4.76$). The lowest user-experience
+statement, frustration at not knowing how many people are ahead
+($4.37$), is still in the Strongly Agree range. What the students object
+to is not the waiting alone; it is the \emph{blindness} of the waiting.
 
-The consequence appears in the item scoring $4.53$: long or
-unpredictable waits discourage students from availing services during
-peak hours. The current process does not merely inconvenience students;
-it changes when --- and whether --- they come at all.
+The questions on current practice show where that blindness comes from.
+Nearly all students (81, $97.6\%$) get their number from the kiosk and
+follow it on the queue display (81, $97.6\%$) or by voice announcement
+(65, $78.3\%$). Asked about the current system, 80 ($96.4\%$) said it
+gives no estimated wait, 63 ($75.9\%$) that it does not show how many
+people are ahead, and 74 ($89.2\%$) that they cannot check their status
+away from the display. Half (42, $50.6\%$) typically wait 10 to 20
+minutes, and a quarter (21, $25.3\%$) 20 to 40 minutes. The display
+itself is not the problem: on the four favourably worded statements
+about it, interpreted with the quality half of Table~\ref{tab:likert},
+students agreed that it is easy to read ($4.55$), that its information
+is clear ($4.48$), that their status can be read at a glance ($4.51$),
+and that voice announcements help ($4.46$), a section weighted mean of
+$4.50$. The display is clear about what it shows; it does not show the
+wait.
 
-The open-ended responses point the same way while adding two problems
-the Likert items did not ask about. One student wrote that there is
-``no way of telling if the queue is long if I'm not physically present
-in the office,'' which is the remote-visibility problem stated plainly.
-Two reported being cut in line, one of them ``whenever my turn is near
-and told to go back again the next office hours.'' One raised a
-physical constraint outside the scope of any software: ``the lack of
-waiting space or room for people waiting in line, often times I am
-stuck standing in a hallway.'' Another asked for ``guidance of where I
-should queue.'' These last three are recorded here because they were
-volunteered, but a queue-management system does not solve them.
+Asked to choose the most frustrating part of the current system, 44
+students ($53.0\%$) chose the long wait, 18 ($21.7\%$) having to stay
+near the display, and 8 ($9.6\%$) the missing wait estimate; a few named
+a crowded waiting area (6), people cutting the line (2), or missing a
+turn (2), problems a queue-management system does not solve on its own.
+The features they asked for match what \sysname{} provides: an estimated
+wait (72, $86.7\%$), a notification before their turn (62, $74.7\%$),
+checking their status on a phone (60, $72.3\%$), seeing how many people
+are ahead (56, $67.5\%$), and getting a number from a phone before
+arriving (52, $62.7\%$).
+
+On face registration, 56 students ($67.5\%$) said they would be
+comfortable or very comfortable, 15 ($18.1\%$) were neutral, and 12
+($14.5\%$) uncomfortable or very uncomfortable; 79 ($95.2\%$) would
+register if it were optional rather than take a printed ticket. Their
+concerns were how face data would be stored or used (74, $89.2\%$),
+being recognised by a camera (60, $72.3\%$), and being misrecognised or
+given someone else's number (57, $68.7\%$) --- the concerns that the
+consent notice, the retention policy, and the threshold-and-margin rule
+are designed to answer.
 
 \subsection{Problems Reported by Staff}
 \label{subsec:sop1-staff}
@@ -3094,7 +3162,7 @@ the system harms service quality at all ($2.71$).
 \subsection{The Gap Between the Two Groups}
 \label{subsec:sop1-gap}
 
-The difference between $4.25$ and $3.34$ is the central finding of this
+The difference between $4.64$ and $3.34$ is the central finding of this
 section, and it is not a weakness in the data. Staff and students were
 asked about the same process and gave different answers because the
 process costs them different things. The student bears the uncertainty:
@@ -4015,8 +4083,8 @@ transactions, is the deployed system's benchmark and fallback; the
 default estimate simulates the line window by window (Algorithm~4).
 That simulation has not yet been measured against real waits: every
 number issued now records its estimate and, when called, its real wait,
-so its live MAE and MAPE will come from the system's own log, beginning
-with the user acceptance test. The results also show that the analytical formula must be
+so its live MAE and MAPE will come from the system's own log once
+numbers are issued in regular use. The results also show that the analytical formula must be
 calibrated against observed waits before its output is shown to
 students. Three limitations qualify these findings: the evaluation covers three service
 days and 166 transactions; the number of people ahead was reconstructed
@@ -4391,6 +4459,281 @@ baseline survey, that there is no notification to tell them when their
 turn is near (Section~\ref{subsec:sop1-students}).
 
 % ----------------------------------------------------------------
+% 3.5  User acceptance test (16 November 2026, students only)
+% ----------------------------------------------------------------
+\section{User Acceptance Test}
+\label{sec:uat-results}
+
+This section reports the user acceptance test held on 16~November~2026
+(Section~\ref{sec:datagathering}, Phase~4). The researchers presented the
+system with a diorama of the cashiering office and explained how it
+works, and the students then tried the mobile application. Because the
+session time was limited, the queue-zone detector was not run, so the
+test covered the application's steps --- signing in, giving consent,
+registering a face, and joining the queue --- and no queue number was
+issued. Recognition at the queue area, the issuing of the number, being
+called to a window, and the accuracy of the estimated wait were shown
+only on the diorama, not tested. The
+questionnaire's statements differ from those of the September
+questionnaire in Section~\ref{sec:sop4-results}, so the two sets of
+results are reported separately and are not pooled. Only students took
+part.
+
+\subsection{Respondents and the System Log}
+\label{subsec:uat-log}
+
+Forty-two students answered the UAT questionnaire after the session:
+forty in second year, one in first year, and one in fourth year. All
+confirmed that they were 18 or older and gave their consent. Three other
+submissions were excluded: two made on the morning of the test during
+the researchers' own run-through, and one marked as cashier staff, since
+no staff took part.
+
+Not every respondent used the app. The system's log for the session
+(Table~\ref{tab:uat-log}) shows eighteen student accounts created during
+the session and four existing accounts signed in to, twenty-two accounts
+in all; the other students watched the steps being performed and
+answered from what they saw and from the presentation. The
+questionnaire did not ask which
+students used the app themselves, so the ratings of users and observers
+cannot be separated.
+
+\begin{table}[H]
+\centering
+\caption{System log of the UAT session, 16~November~2026.}
+\label{tab:uat-log}
+\begin{tabular}{p{0.62\textwidth}c}
+\hline
+Measure & Value \\
+\hline
+Student accounts created during the session & $18$ \\
+\quad with a face signature saved & $15$ ($83.3\%$) \\
+\quad without a face signature & $3$ ($16.7\%$) \\
+Existing accounts signed in to & $4$ \\
+Account creation to saved face signature, median (range)
+  & $83$~s ($28$~s--$20.5$~min) \\
+Attempts to sign in with the face & $39$ \\
+\quad accepted & $26$ ($66.7\%$) \\
+\quad refused & $13$ ($33.3\%$) \\
+Queue numbers issued & $0$ \\
+\hline
+\end{tabular}
+\end{table}
+
+Fifteen of the eighteen new accounts saved a face signature. Each of the
+other three was signed in to once, three seconds after it was created,
+and no face signature from it ever reached the database. Twelve of the
+fifteen registrations were completed within two and a half minutes of
+the account being created; the other three took 5, 13, and 20~minutes.
+The researchers observed that the laboratory's internet connection was
+poor throughout the session, and that some students met errors and long
+delays while signing in and registering their faces. Every one of these
+steps sends data to the cloud backend, so a slow connection delays them
+all, and the log is consistent with this: three face signatures never
+arrived, and three registrations took five minutes or more. One student
+reported an error that needed a restart, and another found face
+recognition ``extremely slow''.
+
+The thirteen refused face sign-ins are decisions of the recognition
+rule, not lost connections: a refusal is recorded only after the photo
+has reached the backend and been compared. Their mean similarity was
+$0.343$, above the $0.30$ threshold, but their mean margin over the
+second-best candidate was $0.077$, below the required $0.15$, so most
+were refused for being too close to another enrolled face to be
+accepted safely (Equation~\ref{eq:face-decision}).
+
+\subsection{Reliability of the UAT Questionnaire}
+\label{subsec:uat-reliability}
+
+Table~\ref{tab:uat-reliability} gives Cronbach's alpha computed on all
+forty-two students as one group. One student left R4-s blank, so the
+reliability dimension and the whole scale use the forty-one complete
+responses. For all fifteen statements, the sum of item variances was
+$10.441463$ and the variance of total scores was $80.175610$, giving
+$\alpha=(15/14)(1-10.441463/80.175610)=0.931894$, reported as $0.932$.
+Every dimension is above $0.70$. Nine students gave the same rating to
+all fifteen statements; their answers were kept, because they were
+submitted separately over the session and six of the nine also wrote an
+open-ended answer. Without them, the fifteen-statement coefficient is
+$0.871$.
+
+\begin{table}[H]
+\centering
+\caption{Internal consistency of the UAT questionnaire, all respondents
+as one group (Cronbach's alpha).}
+\label{tab:uat-reliability}
+\begin{tabular}{lccc}
+\hline
+Statements & Items ($k$) & Complete responses ($n$) & $\alpha$ \\
+\hline
+System's usability (U1-s--U5-s) & $5$ & $42$ & $0.803$ \\
+System's reliability (R1-s--R5-s) & $5$ & $41$ & $0.858$ \\
+System clarity (C1-s--C5-s) & $5$ & $42$ & $0.901$ \\
+All fifteen statements & $15$ & $41$ & $0.932$ \\
+Seven statements on steps performed & $7$ & $42$ & $0.857$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Acceptance Ratings}
+\label{subsec:uat-ratings}
+
+Table~\ref{tab:uat-ratings} gives the weighted mean of every statement.
+Because the detector was not run, eight statements concern steps that
+no student performed in the session: receiving the number (U3-s),
+completing the sequence through being called (U5-s), recognition at the
+queue area (R1-s), the number shown in the app (R2-s), the \emph{Ahead
+of you} count (R3-s), being called in order (R4-s), the display of the
+number and the people ahead (C2-s), and the estimated against the actual
+wait (C4-s). Students rated them nonetheless, $3.96$ on average, from
+the diorama presentation and the explanation, so these ratings describe
+what students understood of those steps, not acceptance of the steps
+themselves; they are marked in the table.
+
+The other seven statements concern steps the students performed or
+watched: signing in with Gbox, registering a face, joining the queue,
+the registration instructions, the estimated wait on the home screen,
+understanding what the system keeps, and the app running without
+crashing. Their weighted mean is $4.13$ (\emph{Agree}, Very
+Satisfactory), with $\alpha = 0.857$. Of their 294 ratings, 223
+($75.9\%$) were Agree or Strongly Agree, 68 ($23.1\%$) Neutral, and 3
+($1.0\%$) Disagree or Strongly Disagree. Signing in with Gbox and
+entering the student ID was rated highest ($4.38$, \emph{Strongly
+Agree}), and the app not crashing, freezing, or showing errors lowest
+($3.81$), in line with the errors observed on the poor connection. The
+overall weighted mean of all fifteen statements, $4.04$, is shown for
+completeness but mixes the two kinds.
+
+\begin{table}[!htbp]
+\centering
+\caption{Acceptance ratings of the UAT statements by students
+(\mbox{$n = 42$}).}
+\label{tab:uat-ratings}
+\begin{tabular}{p{0.66\textwidth}cc}
+\hline
+Statement & WM & Interpretation \\
+\hline
+\multicolumn{3}{l}{\textbf{A.\ System's usability}} \\
+U1-s. Registering my face in the mobile app was easy to do without
+  anyone's help & $4.12$ & Agree \\
+U2-s. Tapping \emph{Join the Queue} (and choosing what I was paying
+  for) was easy & $4.19$ & Agree \\
+U3-s. I received my queue number without having to see staff or press
+  anything else at the office$^{\dagger}$ & $3.93$ & Agree \\
+U4-s. Signing in with my Gbox account and entering my student ID was
+  easy & $4.38$ & Strongly Agree \\
+U5-s. I completed the whole session (register, join, wait, be called)
+  without difficulty$^{\dagger}$ & $3.90$ & Agree \\
+\hline
+\multicolumn{3}{l}{\textbf{B.\ System's reliability}} \\
+R1-s. The camera recognized me when I entered the queue area, without
+  needing me to try again and again$^{\dagger}$ & $3.67$ & Agree \\
+R2-s. The queue number shown in my app was the one issued to me, not to
+  someone else$^{\dagger}$ & $3.98$ & Agree \\
+R3-s. The \emph{Ahead of you} number in my app updated correctly as the
+  line moved$^{\dagger}$ & $4.00$ & Agree \\
+R4-s. I was called in the correct order of my queue
+  number$^{\dagger a}$ & $3.93$ & Agree \\
+R5-s. The app did not crash, freeze or show errors that stopped me from
+  continuing & $3.81$ & Agree \\
+\hline
+\multicolumn{3}{l}{\textbf{C.\ System clarity}} \\
+C1-s. The instructions during face registration were clear
+  & $4.14$ & Agree \\
+C2-s. The app clearly showed my queue number and how many people were
+  ahead of me$^{\dagger}$ & $4.19$ & Agree \\
+C3-s. The \emph{Est.\ wait} in the app was easy to understand
+  & $4.10$ & Agree \\
+C4-s. The estimated waiting time was close to the \emph{Total wait}
+  shown after I was served$^{\dagger}$ & $4.07$ & Agree \\
+C5-s. I understood what information the system keeps about me and how
+  to delete it & $4.14$ & Agree \\
+\hline
+\multicolumn{2}{l}{\textbf{Seven statements on steps performed}} & $4.13$ \\
+\multicolumn{2}{l}{Section weighted means: usability $4.10$,
+  reliability $3.88$, clarity $4.13$} & \\
+\multicolumn{2}{l}{Overall weighted mean, all fifteen statements} & $4.04$ \\
+\hline
+\multicolumn{3}{l}{\footnotesize $^{\dagger}$\,Step shown on the diorama
+  but not performed: the detector was not run and no number was
+  issued.} \\
+\multicolumn{3}{l}{\footnotesize $^{a}$\,$n = 41$; one student left
+  this statement blank.} \\
+\end{tabular}
+\end{table}
+
+\subsection{Number Issuance and Recognition as Reported}
+\label{subsec:uat-issuance}
+
+The answers to the three questions on the number and on recognition
+cannot be taken at face value. Thirty students ($71.4\%$) answered that
+their number was issued automatically after the camera recognised them,
+and one ($2.4\%$) that staff issued it, although the detector was not
+run and the log shows no number issued. Since the
+face sign-in in the app also recognises the student by camera, these
+students most likely took that recognition for the one at the queue
+area, or answered from the diorama presentation. The eleven ($26.2\%$)
+who answered that they received no number described the session
+accurately. Fifteen students ($35.7\%$) reported at least one
+recognition failure, in line with the thirteen refused face sign-ins in
+the log. The three ($7.1\%$) who answered that a number went to the
+wrong person cannot have meant a queue number, since none was issued;
+two of them also rated R2-s \emph{Strongly Agree}. These questions need
+to name the step they ask about.
+
+\subsection{Comfort with Face Identification and Open-Ended Responses}
+\label{subsec:uat-open}
+
+Asked how comfortable they were with the system using their face to
+identify them, four students ($9.5\%$) answered very comfortable, twelve
+($28.6\%$) comfortable, nineteen ($45.2\%$) neutral, and seven
+($16.7\%$) uncomfortable. This is less favourable than in the September
+trial, in which fourteen of the twenty students ($70.0\%$) were
+comfortable or very comfortable and one was uncomfortable.
+
+Asked what they liked most, students most often named joining and
+following the queue from the phone instead of lining up at the cashier
+--- one wrote, ``Tracking my queue number even when I'm not at the
+Cashier Line'' --- followed by ease of use and the interface, and
+signing in by face. Asked what they would change, five students named
+face recognition: it was slow, did not always work, or they would
+prefer an ID, a PIN, or a fingerprint. One wrote that it ``is extremely
+slow. Even after following the instructions and doing everything
+required, it still takes too long to process and sometimes does not
+work at all.'' Six asked for changes to the mobile app's interface: the
+tab-switching animation, the placement of \emph{Get a Queue Number} and
+\emph{Sign out}, clearer colours, and a dark mode. One reported a button
+that did not respond, and one an error that needed a restart. Single
+students asked for a notification before their turn, payment within the
+app, and an automatic registrar slip. One student questioned the
+benefit itself: ``you still have to log in and wait for your turn, just
+like at the registrar \ldots{} If the goal is to save students time,
+then the system should actually make the process faster, not just show
+them how long they have to wait.''
+
+One student named as a strength that the system ``does not store your
+sensitive information such as facial recognition on the database''.
+\sysname{} does store a face embedding for every registered student
+(Section~\ref{sec:ethics}). The consent screen says that the photos are
+discarded but that a ``face signature'' computed from them is kept; this
+student appears to have taken in only the first half, even though C5-s,
+on understanding what the system keeps, was rated $4.14$.
+
+Taken together, the UAT shows that students accept the mobile
+application's steps of the completed system --- signing in, registering
+a face, and joining the queue --- and that these steps depend on the
+internet connection: on a poor connection, three of the eighteen face
+registrations were lost and three more took five minutes or longer. It
+does not show whether students accept the camera step, the number, or
+being called, because those steps were shown on the diorama but not
+run; students last used them
+in the September trial (Section~\ref{sec:sop4-results}), before the
+changes for the final defense. This supports two recommendations
+(Section~\ref{sec:recommendations}): offline-capable operation, which
+the staff's chief concern in the baseline survey already called for, and
+repeating the UAT with the queue-zone camera running.
+
+% ----------------------------------------------------------------
 % 3.5  Summary of Findings
 % ----------------------------------------------------------------
 % =====================================================================
@@ -4410,14 +4753,15 @@ the evaluation, and presents the recommendations that follow.
 
 \begin{enumerate}
   \item \textbf{Current problems with the manual queue process
-        (Statement of the Problem No.~1).} The baseline survey of 22
-        respondents, 15 students and 7 staff, found that students
+        (Statement of the Problem No.~1).} The baseline survey of 90
+        respondents, 83 students and 7 staff, found that students
         strongly agreed that the current process leaves them without
-        information, with an overall weighted mean of $4.25$ (Strongly
+        information, with an overall weighted mean of $4.64$ (Strongly
         Agree). Their highest-rated problems were that the display shows
-        only the number being served ($4.60$), that waits are long during
-        busy periods ($4.60$), and that long or unpredictable waits
-        discourage them from availing services at peak hours ($4.53$).
+        only the number being served ($4.86$), that they must keep
+        watching it to know when their number is called ($4.80$), and
+        that waiting feels unpredictable ($4.78$); $96.4\%$ said the
+        current system gives no estimated wait.
         Staff returned an overall weighted mean of $3.34$ (Neutral): they
         agreed that the display does not show the wait ($4.14$) and that
         waits increase at peak periods ($4.29$), but did not find the
@@ -4475,6 +4819,18 @@ the evaluation, and presents the recommendations that follow.
         not encounter errors that stopped them ($3.00$), and one reported
         the system going offline during brownouts. Students rated five of
         the six common items higher than the staff did.
+
+  \item \textbf{User acceptance test.} On 16~November~2026, after a
+        diorama presentation, forty-two students used or watched the
+        mobile application on a poor laboratory connection; the
+        queue-zone detector was not run, so no number was issued. They
+        rated the steps they performed or watched --- signing in,
+        registering a face, and joining the queue --- \emph{Agree} (Very
+        Satisfactory), with a weighted mean of $4.13$ ($\alpha = 0.857$);
+        signing in with Gbox was rated highest ($4.38$). The system's log
+        shows fifteen of eighteen face registrations saved and 26 of 39
+        face sign-ins accepted. Seven students were uncomfortable with
+        being identified by face, and nineteen were neutral.
 \end{enumerate}
 
 \section{Conclusions}
@@ -4525,6 +4881,16 @@ lowest. Whether this satisfaction holds after
 sustained daily use at the cashiering office cannot be concluded from
 the present data.
 
+\textbf{User acceptance test.} Students accept the mobile application's
+steps of the completed system: signing in, registering a face, and
+joining the queue. These steps depend on the internet connection; on a
+poor connection, three of eighteen face registrations were lost and
+three more took five minutes or longer. Whether students accept the
+camera step and the steps that follow it after the final-defense changes
+cannot be concluded, because the detector was not run during the test.
+Identification by face is also accepted less readily than the rest of
+the system.
+
 \subsection{Limitations}
 \label{subsec:limitations}
 
@@ -4550,9 +4916,11 @@ the present data.
         days, the number of people ahead was reconstructed from ticket
         numbers rather than counted, and no result is reported per
         prediction horizon.
-  \item The baseline survey had 22 self-selected respondents, and with
-        all of them analysed as one group its wait-time section fell
-        just below acceptable internal consistency ($\alpha = 0.695$).
+  \item The baseline is a self-selected sample: 83 students, after
+        excluding 72 invalid or unconfirmed submissions, and only 7 staff.
+        The students answered in October and November 2026, after the
+        supervised trial, although none of them had used \sysname{} at
+        the office.
   \item \sysname{} was not deployed at the cashiering office. The live
         results and the user evaluation come from a test installation on the
         NCF campus
@@ -4570,6 +4938,16 @@ the present data.
         mean by as much as half a point. The questionnaire was not
         content-validated by expert raters, so no Content Validity Index
         supports its items.
+  \item The user acceptance test is one session with forty-two
+        students, forty of them in second year, and no cashier staff, in
+        a campus laboratory rather than at the cashiering office, on an
+        internet connection that the researchers observed to be poor.
+        The queue-zone detector was not run, so no number was issued and
+        the camera step was shown only on a diorama; some respondents
+        only watched the app being used, and the questionnaire cannot
+        separate them from those who used it. Its questionnaire differs
+        from the September one and, like it, was not content-validated,
+        and nine students gave the same rating to every statement.
 \end{itemize}
 
 \section{Recommendations}
@@ -4583,7 +4961,9 @@ the present data.
         six of the seven staff named, together with a backup power supply
         for the detector machine and network equipment, since a staff
         member in the evaluation reported the system going offline during
-        brownouts.
+        brownouts, and a poor connection during the user acceptance test
+        caused errors and delays while students signed in and registered
+        their faces.
   \item \textbf{Evaluate recognition in regular operation} against an
         independent observer's log, reporting queue-assignment accuracy,
         re-identification reliability, the ticket and token validation
@@ -4635,7 +5015,24 @@ the present data.
         app that a student may sign in with Gbox and take a printed kiosk
         ticket instead, since five of the twenty students were neutral
         about being identified by face, one was uncomfortable, and one
-        asked for it to change.
+        asked for it to change; in the user acceptance test, seven of
+        forty-two were uncomfortable, nineteen neutral, and five asked for
+        it to change.
+  \item \textbf{Revise the mobile app's navigation} as the UAT students
+        asked: open the app on \emph{Get a Queue Number}, move
+        \emph{Sign out} off the home screen, replace the tab-switching
+        animation, and add a dark mode.
+  \item \textbf{Make the stored face signature stand out on the consent
+        screen}, ahead of the statement that photos are discarded, since
+        one UAT student believed the system stores no face data.
+  \item \textbf{Repeat the user acceptance test with the queue-zone
+        detector running}, cashier staff at the dashboard, and a reliable
+        connection, so that recognition at the queue area, the issuing of
+        the number, calling by window, and the estimated against the
+        actual wait are tested by the people who use them; record which
+        respondents used the app themselves, and word the recognition
+        questions so that they name the step, since students took the
+        face sign-in for recognition at the queue area.
   \item \textbf{Strengthen the notification before a student's turn},
         which two cashier staff asked for and which students rated as a
         problem of the current process in the baseline survey.
@@ -5027,111 +5424,117 @@ do not enter any weighted mean.
 \input{section_3_2_design_and_system_plans}
 
 % ============================================================
-% APPENDIX: USER ACCEPTANCE TEST SCRIPT
+% APPENDIX: USER ACCEPTANCE TEST QUESTIONNAIRE
 % ============================================================
-\chapter{User Acceptance Test Script}
+\chapter{User Acceptance Test Questionnaire}
 \label{app:uat}
 
-This script is used in Phase~4 of the data-gathering procedure. The
-facilitator explains each test case, the respondent performs it on the
-deployed system, and the respondent marks whether the system did what
-the \emph{Expected result} column says. Students run the cases marked
-\textbf{S}; cashier staff run the cases marked \textbf{C}. No names are
-written on the script.
+This questionnaire was used in Phase~4 of the data-gathering procedure
+(Section~\ref{sec:datagathering}). It was answered as a Google Form at
+the end of the session.
+The form opens with the same age pre-screening as
+Appendix~\ref{app:queueflow-questionnaire} and a consent statement the
+respondent must accept: ``I have read and understood the above, and I
+agree to take part.'' It also contains a cashier-staff section, which
+was not used because no staff took part in the UAT; only the student
+section is reproduced here.
 
-\medskip
-\noindent Role: \quad $\square$ Student \quad $\square$ Cashier staff
-\qquad Date: \rule{3.5cm}{0.4pt}
+\section*{Section I: Respondent Profile}
 
-{\small
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.25}
-\begin{longtable}{|p{1.15cm}|p{0.55cm}|p{4.5cm}|p{5.1cm}|p{1.1cm}|p{1.55cm}|}
-\hline
-\textbf{ID} & \textbf{By} & \textbf{Steps} & \textbf{Expected result} &
-\textbf{Pass / Fail} & \textbf{Remarks} \\ \hline
-\endfirsthead
-\hline
-\textbf{ID} & \textbf{By} & \textbf{Steps} & \textbf{Expected result} &
-\textbf{Pass / Fail} & \textbf{Remarks} \\ \hline
-\endhead
-UAT-01 & S & Open the \sysname{} app. & The \sysname{} loading screen
-appears, then the sign-in screen. & & \\ \hline
-UAT-02 & S & Tap \emph{Sign in with Gbox} with an NCF Gbox account not
-used before; on the privacy notice, tap \emph{Not now}. & The privacy
-notice appears before anything else is asked; after \emph{Not now}, no
-account is created and the kiosk ticket is mentioned. & & \\ \hline
-UAT-03 & S & Sign in again, tap \emph{I agree}, and enter the student
-ID. & The account is created and the app asks the student to register
-a face. & & \\ \hline
-UAT-04 & S & Register the face, following the on-screen guidance. & The
-app confirms the face is registered. & & \\ \hline
-UAT-05 & S & Sign out, then tap \emph{Sign in with Face}. & The student
-is signed in to their own account. & & \\ \hline
-UAT-06 & S & Tap \emph{Get a Queue Number}; choose two lines of the
-payment slip, enter an amount for each, and tap \emph{Request Number}. &
-The TOTAL equals the sum of the amounts; the request is accepted and the
-app says to go to the camera for the face check. & & \\ \hline
-UAT-07 & S & Stand in the queue zone facing the camera. & Within a few
-seconds the app shows a queue number, the people ahead, the estimated
-wait, and the numbers being served. & & \\ \hline
-UAT-08 & S & Without requesting a number, walk into the queue zone. & No
-number is issued; the app says the camera saw the student but no number
-was requested. & & \\ \hline
-UAT-09 & S & Wait until the number is called. & The app shows \emph{It's
-your turn} with the window number and the amount to prepare; the display
-board shows and announces the number. & & \\ \hline
-UAT-10 & S & After being served, look at the app. & The app says the
-transaction is complete and asks the student to leave the window. & &
-\\ \hline
-UAT-11 & S & Request another number but do not go to the window when
-called (staff mark it a no-show). & The app says the number was skipped
-and explains how to get a new one. & & \\ \hline
-UAT-12 & S & On the Profile screen, tap \emph{Delete my account}. & The
-account is removed; signing in again shows the privacy notice. & & \\
-\hline
-UAT-13 & C & Open the dashboard address without signing in. & The sign-in
-page appears; no queue data or camera view is shown. & & \\ \hline
-UAT-14 & C & Sign in and choose a window; on a second account, try the
-same window. & The first account holds the window; the second is told
-it is taken. & & \\ \hline
-UAT-15 & C & Press \emph{Call next}. & The first waiting number is
-assigned to this window, with the student's payment slip lines and
-TOTAL. & & \\ \hline
-UAT-16 & C & Press \emph{Done} for the student at the window; call the
-next number and press \emph{No-show}. & Each entry leaves the queue, and
-the student's app updates. & & \\ \hline
-UAT-17 & C & Switch calling to automatic and confirm. & Free windows
-receive the next numbers without pressing \emph{Call next}. & & \\ \hline
-UAT-18 & C & Let a person who is not registered stand in the queue zone
-for about a minute. & The dashboard alerts that a person in
-line is not identified, and staff can give a number. & & \\ \hline
-UAT-19 & C & Open the prediction-accuracy panel and download the
-service records. & The panel compares estimated and real waits; the CSV
-file downloads. & & \\ \hline
-UAT-20 & C & On the Data Retention page, archive a test student. & The
-account is deactivated and its face data erased. & & \\ \hline
-UAT-21 & C & Open the public display board. & It shows numbers and
-windows only, with no names. & & \\ \hline
-\end{longtable}
-}
+\begin{enumerate}
+  \setlength{\itemsep}{1pt}
+  \item Respondent group:
+        $\square$ Student \quad
+        $\square$ Cashier Staff
+  \item Year level:
+        $\square$ 1st \quad
+        $\square$ 2nd \quad
+        $\square$ 3rd \quad
+        $\square$ 4th \quad
+        $\square$ 5th or above
+  \item How did you receive your queue number during the session?\\
+        $\square$ Automatically, after the camera recognised me\\
+        $\square$ From staff, because the system could not recognise me\\
+        $\square$ I did not receive a queue number
+\end{enumerate}
 
-\section*{Acceptance Statements}
+\clearpage
+\section*{Section II: Acceptance Statements}
 
-\noindent After the test cases, rate each statement: 5 = Strongly Agree,
-4 = Agree, 3 = Neutral, 2 = Disagree, 1 = Strongly Disagree.
+\noindent\textbf{Rating scale:} 5 = Strongly Agree \quad 4 = Agree \quad
+3 = Neutral \quad 2 = Disagree \quad 1 = Strongly Disagree
 
-\begin{longtable}{|p{0.9cm}|p{9.2cm}|p{0.5cm}|p{0.5cm}|p{0.5cm}|p{0.5cm}|p{0.5cm}|}
-\hline
-\textbf{No.} & \textbf{Statement} & \textbf{5} & \textbf{4} & \textbf{3} &
-\textbf{2} & \textbf{1} \\ \hline
-U1 & The system was easy to use without needing someone to guide me. & & & & & \\ \hline
-U2 & I was able to complete what I needed to do without difficulty. & & & & & \\ \hline
-R1 & The system worked consistently throughout the session. & & & & & \\ \hline
-R2 & I did not encounter errors that stopped me from continuing. & & & & & \\ \hline
-C1 & The information shown on screen was easy to understand. & & & & & \\ \hline
-C2 & I always knew what the system was doing or waiting for. & & & & & \\ \hline
-\end{longtable}
+\begin{table}[H]
+\small
+\caption{UAT student statements (15 items).}
+\label{tab:appe-student}
+\centering
+\renewcommand{\arraystretch}{1.12}
+\begin{tabular}{p{0.9cm} p{9.3cm} c c c c c}
+\toprule
+\textbf{Code} & \textbf{Statement} &
+\textbf{5} & \textbf{4} & \textbf{3} & \textbf{2} & \textbf{1} \\
+\midrule
+\multicolumn{7}{l}{\textit{A.\ System's usability}} \\
+U1-s & Registering my face (\emph{Register My Face}) in the mobile app
+  was easy to do without anyone's help. & \rb \\
+U2-s & Tapping \emph{Join the Queue} (and choosing what I was paying for,
+  if asked) was easy. & \rb \\
+U3-s & I received my queue number without having to see staff or press
+  anything else at the office. & \rb \\
+U4-s & Signing in with my Gbox account and entering my student ID was
+  easy. & \rb \\
+U5-s & I completed the whole session (register, join, wait, be called)
+  without difficulty. & \rb \\
+\midrule
+\multicolumn{7}{l}{\textit{B.\ System's reliability}} \\
+R1-s & The camera recognized me when I entered the queue area, without
+  needing me to try again and again. & \rb \\
+R2-s & The queue number shown in my app was the one issued to me, not to
+  someone else. & \rb \\
+R3-s & The \emph{Ahead of you} number in my app updated correctly as the
+  line moved. & \rb \\
+R4-s & I was called in the correct order of my queue number. & \rb \\
+R5-s & The app did not crash, freeze or show errors that stopped me from
+  continuing. & \rb \\
+\midrule
+\multicolumn{7}{l}{\textit{C.\ System clarity}} \\
+C1-s & The instructions during face registration were clear. & \rb \\
+C2-s & The app clearly showed my queue number and how many people were
+  ahead of me. & \rb \\
+C3-s & The \emph{Est.\ wait} (estimated waiting time) in the app was easy
+  to understand. & \rb \\
+C4-s & The estimated waiting time was close to the \emph{Total wait}
+  shown after I was served. & \rb \\
+C5-s & I understood what information the system keeps about me and how
+  to delete it. & \rb \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{Section III: Additional Questions (not scored)}
+
+\begin{enumerate}
+  \item Did the system ever fail to recognize a student who had joined
+        the queue?\\
+        $\square$ No \quad $\square$ Yes, once \quad
+        $\square$ Yes, more than once
+  \item Did the system ever give a queue number to the wrong person?\\
+        $\square$ No \quad $\square$ Yes, once \quad
+        $\square$ Yes, more than once
+  \item If yes, what happened?\\[0.3em]
+        \rule{\linewidth}{0.4pt}
+  \item How comfortable are you with the system using your face to
+        identify you in the queue?\\
+        $\square$ Very comfortable \quad $\square$ Comfortable \quad
+        $\square$ Neutral \quad $\square$ Uncomfortable \quad
+        $\square$ Very uncomfortable
+  \item What did you like most about \sysname{}?\\[0.3em]
+        \rule{\linewidth}{0.4pt}
+  \item If you could change one thing about \sysname{}, what would it
+        be?\\[0.3em]
+        \rule{\linewidth}{0.4pt}
+\end{enumerate}
 
 
 % ============================================================
