@@ -144,17 +144,16 @@ is reproduced from its content.
 \textbf{System Evaluation:}\newline
 Provide a statistician's report on the system-evaluation metrics.
 &
-A user acceptance test was conducted with 42 students on
-16~November~2026, facilitated by a BS Information Systems student, using
-the questionnaire added as an appendix. After a diorama presentation,
-students tried the mobile application; because time was limited, the
-queue-zone detector was not run and no number was issued. Students
-rated the app's steps Agree (4.13, Cronbach's alpha 0.857), and the
-system's log shows 15 of 18 face registrations saved on a poor
-connection. The results, with these limits, are reported in a new
-results section. \textbf{Still pending:} a UAT of the camera step and
-the staff dashboard, and the statistician's report, which will be
-attached to the manuscript.
+A user acceptance test was conducted with 79 students in two sessions,
+on 16 and 17~November~2026, conducted by the BS Computer Science
+researchers together with a BS Information Systems student, using the
+questionnaire added as an appendix. Students rated the
+completed system Strongly Agree (4.25, Cronbach's alpha 0.941). In the
+second session, with the camera running, all 19 face registrations were
+saved and the camera issued 10 numbers, a median of 2.2~s after it
+could. The results are reported in a new results section. \textbf{Still
+pending:} a UAT with cashier staff at the dashboard, and the
+statistician's report, which will be attached to the manuscript.
 &
 \pg{\pageref{cr:uat}, \pageref{sec:uat-results}, \pageref{app:uat}} \\ \hline
 
@@ -349,13 +348,15 @@ sign-in, and the camera stream and the full queue list are staff-only.
 &
 \pg{\pageref{cr:presentation}} \\ \hline
 
-Fixes after the user acceptance test
+Fixes between the UAT sessions
 &
 Face photos are processed off the server's request loop, so many
 students registering at once no longer stall everyone else; face
 sign-in opens only the account last used on that phone, after a student
-saw a classmate's name; the app's errors say what to do; and a
-five-minute heads-up before the turn, suggested by a student, was added.
+saw a classmate's name; the app's errors say what to do; the camera
+tracks at full speed with several people in view; and a five-minute
+heads-up before the turn, suggested by a student, was added. The second
+session lost no registration and had no wrong sign-in.
 &
 \pg{\pageref{subsec:uat-fixes}} \\ \hline
 

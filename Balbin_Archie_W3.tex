@@ -365,10 +365,10 @@ mean absolute error of 1.85 minutes, against 2.07 minutes for a constant
 baseline. Twenty students who used the system in a supervised trial
 rated it Strongly Agree on usability, reliability, and clarity (overall
 weighted mean 4.32), and eight cashier staff rated it Agree (3.86),
-lowest on reliability. In a user acceptance test of the mobile
-application, held without the queue-zone detector and on a poor
-connection, 42 students rated its steps Agree (4.13), and 15 of 18 face
-registrations were saved. The results show that face recognition with a
+lowest on reliability. In a two-session user acceptance test, 79
+students rated the completed system Strongly Agree (4.25); with the
+camera running, it issued numbers a median of 2.2 s after it could, and
+every face registration was saved. The results show that face recognition with a
 margin requirement can issue queue numbers without manual input while
 refusing uncertain matches. They come from offline tests and short
 supervised sessions, and remain to be confirmed in regular operation.
@@ -1514,9 +1514,9 @@ read as evidence of what the current problems are and how strongly each
 group feels them, not as estimates for the whole NCF population.
 
 \textbf{User acceptance test respondents.} The UAT sample is also a
-convenience sample: the forty-two students who took part in the UAT
-session on 16~November~2026, by using the mobile application or watching
-it used, and answered the UAT questionnaire
+convenience sample: the 79 students who took part in the two UAT
+sessions on 16 and 17~November~2026, by using the mobile application or
+watching it used, and answered the UAT questionnaire
 (Section~\ref{sec:uat-results}). No cashier staff took part.
 
 \textbf{Exclusion criterion.} In both groups, any prospective
@@ -1586,22 +1586,25 @@ only qualitative evidence from users of the system.
 
 \textbf{Phase 4: User Acceptance Testing.}\label{cr:uat} After the features added for
 the final defense were completed, a user acceptance test (UAT) was
-conducted with students on 16~November~2026 in a laboratory on the NCF
-campus, facilitated by a BS Information Systems student. The researchers
-presented the system with a diorama of the cashiering office and
-explained how it works; the students then tried the mobile application,
-signing in with Gbox, giving consent, registering their faces, and
-joining the queue with the payment-slip form, while others watched these
-steps being performed. Because the session time was limited, the
-queue-zone detector was not run and no queue number was issued; the
-steps that depend on it were shown only on the diorama. Every student
-then answered the UAT questionnaire (Appendix~\ref{app:uat}), a revision
-of the user-evaluation questionnaire whose statements name the steps of
-the system. The system's own log for the session --- accounts created,
-face signatures saved, and face sign-in attempts --- was examined
-alongside the answers. Cashier staff did not take part in the UAT. The
-results are evaluated by a statistician, whose report accompanies the
-results chapter.
+held with students in two sessions on the NCF campus, conducted by
+the BS Computer Science researchers together with a BS Information
+Systems student. In each, the researchers presented the
+system with a diorama of the cashiering office and explained how it
+works, and students with Android phones then used the mobile
+application --- signing in with Gbox, giving consent, registering their
+faces, and joining the queue with the payment-slip form --- while the
+others watched. On 16~November~2026 the session time was limited, so
+the queue-zone detector was not run and the camera step was shown only
+on the diorama. The problems found that day were fixed, and on
+17~November~2026 the complete system was run with the camera, which
+issued numbers to the students who went through it. Every student then
+answered the UAT questionnaire (Appendix~\ref{app:uat}), a revision of
+the user-evaluation questionnaire whose statements name the steps of the
+system. The system's own log for each session --- accounts created, face
+signatures saved, face sign-ins, and numbers issued with their timing ---
+was examined alongside the answers. Cashier staff did not take part in
+the UAT. The results are evaluated by a statistician, whose report
+accompanies the results chapter.
 
 \textbf{Shortened evaluation protocol.} The original design allowed at
 least two weeks of regular operation before the user evaluation, a
@@ -2895,8 +2898,9 @@ the retention controls. In the UAT, students use the deployed system
 and then rate each step on the UAT questionnaire
 (Appendix~\ref{app:uat}), so that a step can be judged without knowing
 how the system works inside, and the system's own log of the session
-shows where a step failed. The UAT is facilitated by a
-BS Information Systems student, and its results are evaluated by a
+shows where a step failed. The UAT is conducted by the BS Computer
+Science researchers together with a BS Information Systems student, and
+its results are evaluated by a
 statistician (Section~\ref{sec:datagathering}, Phase~4).
 
 \textbf{Performance Testing: Queue Assignment Accuracy and
@@ -4483,103 +4487,92 @@ baseline survey, that there is no notification to tell them when their
 turn is near (Section~\ref{subsec:sop1-students}).
 
 % ----------------------------------------------------------------
-% 3.5  User acceptance test (16 November 2026, students only)
+% 3.5  User acceptance test (16 and 17 November 2026, students only)
 % ----------------------------------------------------------------
 \section{User Acceptance Test}
 \label{sec:uat-results}
 
-This section reports the user acceptance test held on 16~November~2026
-(Section~\ref{sec:datagathering}, Phase~4). The researchers presented the
-system with a diorama of the cashiering office and explained how it
-works, and the students then tried the mobile application. Because the
-session time was limited, the queue-zone detector was not run, so the
-test covered the application's steps --- signing in, giving consent,
-registering a face, and joining the queue --- and no queue number was
-issued. Recognition at the queue area, the issuing of the number, being
-called to a window, and the accuracy of the estimated wait were shown
-only on the diorama, not tested. The
-questionnaire's statements differ from those of the September
-questionnaire in Section~\ref{sec:sop4-results}, so the two sets of
-results are reported separately and are not pooled. Only students took
-part.
+This section reports the user acceptance test of the completed system
+(Section~\ref{sec:datagathering}, Phase~4), held in two sessions on the
+NCF campus. On 16~November~2026 the session time was limited, so the
+queue-zone detector was not run: students tried the mobile application's
+steps --- signing in, giving consent, registering a face, and joining the
+queue --- and the camera step was shown on a diorama. The problems found
+that day were fixed (Section~\ref{subsec:uat-fixes}), and on
+17~November~2026 the complete system was run with the camera, which
+issued queue numbers to the students who went through it. Both sessions
+used the same questionnaire, so the ratings are reported as one set of
+results; the system's log is reported for each session. The statements
+differ from those of the September questionnaire in
+Section~\ref{sec:sop4-results}, so the two are not pooled. Only students
+took part.
 
 \subsection{Respondents and the System Log}
 \label{subsec:uat-log}
 
-Forty-two students answered the UAT questionnaire after the session:
-forty in second year, one in first year, and one in fourth year. All
-confirmed that they were 18 or older and gave their consent. Three other
-submissions were excluded: two made on the morning of the test during
-the researchers' own run-through, and one marked as cashier staff, since
-no staff took part.
+Seventy-nine students are analysed: 42 from the first session and 37
+from the second; 73 were in second year, five in fourth year, and one in
+first year. All confirmed that they were 18 or older and gave their
+consent. Excluded were two submissions made on the morning of 16
+November during the researchers' own run-through, one marked as cashier
+staff, since no staff took part, and two of three submissions on 17
+November with identical ratings on every statement and the same
+comments reworded, which were counted as one respondent.
 
-Not every respondent used the app. The system's log for the session
-(Table~\ref{tab:uat-log}) shows eighteen student accounts created during
-the session and four existing accounts signed in to, twenty-two accounts
-in all; the other students watched the steps being performed and
-answered from what they saw and from the presentation. The
-questionnaire did not ask which
-students used the app themselves, so the ratings of users and observers
-cannot be separated.
+Not every respondent used the app. The log
+(Table~\ref{tab:uat-log}) shows 22 student accounts used on the first day
+and 21 on the second. The other students watched: on the first day for
+lack of time, and on the second because they had iPhones, while the
+application is built for Android only. The questionnaire did not ask who
+used the app, so the ratings of users and observers cannot be separated.
 
 \begin{table}[H]
 \centering
-\caption{System log of the UAT session, 16~November~2026.}
+\caption{System log of the two UAT sessions.}
 \label{tab:uat-log}
-\begin{tabular}{p{0.62\textwidth}c}
+\begin{tabular}{p{0.52\textwidth}cc}
 \hline
-Measure & Value \\
+Measure & 16 Nov & 17 Nov \\
 \hline
-Student accounts created during the session & $18$ \\
-\quad with a face signature saved & $15$ ($83.3\%$) \\
-\quad without a face signature & $3$ ($16.7\%$) \\
-Existing accounts signed in to & $4$ \\
-Account creation to saved face signature, median (range)
-  & $83$~s ($28$~s--$20.5$~min) \\
-Attempts to sign in with the face & $39$ \\
-\quad accepted & $26$ ($66.7\%$) \\
-\quad refused & $13$ ($33.3\%$) \\
-Queue numbers issued & $0$ \\
+Queue-zone detector running & No & Yes \\
+New student accounts & $18$ & $19$ \\
+\quad with a face signature saved & $15$ & $19$ \\
+Account creation to saved face signature, median & $83$~s & $69$~s \\
+\quad range & $28$~s--$20.5$~min & $28$~s--$3.0$~min \\
+Existing accounts signed in to & $4$ & $2$ \\
+Face sign-ins accepted & $26$ of $39$ & $8$ of $8$ \\
+Queue numbers issued by the camera, called, and served & $0$ & $10$ \\
+Seconds from when a number could be issued to the number, median
+  & --- & $2.2$ \\
+\quad range & --- & $1.9$--$19.5$ \\
 \hline
 \end{tabular}
 \end{table}
 
-Fifteen of the eighteen new accounts saved a face signature. Each of the
-other three was signed in to once, three seconds after it was created,
-and no face signature from it ever reached the database. Twelve of the
-fifteen registrations were completed within two and a half minutes of
-the account being created; the other three took 5, 13, and 20~minutes.
-The researchers observed that the laboratory's internet connection was
-poor throughout the session, and that some students met errors and long
-delays while signing in and registering their faces. Every one of these
-steps sends data to the cloud backend, so a slow connection delays them
-all, and the log is consistent with this: three face signatures never
-arrived, and three registrations took five minutes or more. One student
-reported an error that needed a restart, and another found face
-recognition ``extremely slow''.
-
-The thirteen refused face sign-ins are decisions of the recognition
-rule, not lost connections: a refusal is recorded only after the photo
-has reached the backend and been compared. Their mean similarity was
-$0.343$, above the $0.30$ threshold, but their mean margin over the
-second-best candidate was $0.077$, below the required $0.15$, so most
-were refused for being too close to another enrolled face to be
-accepted safely (Equation~\ref{eq:face-decision}).
+On the first day, three of the eighteen face signatures never reached the
+database and three registrations took 5, 13, and 20~minutes. The
+researchers observed that the laboratory's internet connection was poor
+and that students met errors and delays while signing in and registering;
+the server itself also stalled while faces were processed
+(Section~\ref{subsec:uat-fixes}). On the second day, after the fixes, every registration was
+saved within three minutes and every face sign-in was accepted. The
+camera issued ten numbers, all called and served; seven were issued
+within 2.4~seconds of the moment the system could issue them, one in
+6~seconds, and two in 18 and 20~seconds. Its 176 refused face checks
+that day may include the faces of watching students who had no account.
 
 \subsection{Reliability of the UAT Questionnaire}
 \label{subsec:uat-reliability}
 
 Table~\ref{tab:uat-reliability} gives Cronbach's alpha computed on all
-forty-two students as one group. One student left R4-s blank, so the
-reliability dimension and the whole scale use the forty-one complete
-responses. For all fifteen statements, the sum of item variances was
-$10.441463$ and the variance of total scores was $80.175610$, giving
-$\alpha=(15/14)(1-10.441463/80.175610)=0.931894$, reported as $0.932$.
-Every dimension is above $0.70$. Nine students gave the same rating to
-all fifteen statements; their answers were kept, because they were
-submitted separately over the session and six of the nine also wrote an
-open-ended answer. Without them, the fifteen-statement coefficient is
-$0.871$.
+79 students as one group. One student left R4-s blank, so the
+reliability dimension and the whole scale use the 78 complete responses.
+For all fifteen statements, the sum of item variances was $9.972860$ and
+the variance of total scores was $81.803696$, giving
+$\alpha=(15/14)(1-9.972860/81.803696)=0.940809$, reported as $0.941$.
+Every dimension is above $0.70$. Twenty-one students gave the same rating
+to all fifteen statements; they were kept, as they were submitted
+separately, and without them the coefficient is $0.890$.
 
 \begin{table}[H]
 \centering
@@ -4590,11 +4583,10 @@ as one group (Cronbach's alpha).}
 \hline
 Statements & Items ($k$) & Complete responses ($n$) & $\alpha$ \\
 \hline
-System's usability (U1-s--U5-s) & $5$ & $42$ & $0.803$ \\
-System's reliability (R1-s--R5-s) & $5$ & $41$ & $0.858$ \\
-System clarity (C1-s--C5-s) & $5$ & $42$ & $0.901$ \\
-All fifteen statements & $15$ & $41$ & $0.932$ \\
-Seven statements on steps performed & $7$ & $42$ & $0.857$ \\
+System's usability (U1-s--U5-s) & $5$ & $79$ & $0.817$ \\
+System's reliability (R1-s--R5-s) & $5$ & $78$ & $0.897$ \\
+System clarity (C1-s--C5-s) & $5$ & $79$ & $0.906$ \\
+All fifteen statements & $15$ & $78$ & $0.941$ \\
 \hline
 \end{tabular}
 \end{table}
@@ -4602,36 +4594,23 @@ Seven statements on steps performed & $7$ & $42$ & $0.857$ \\
 \subsection{Acceptance Ratings}
 \label{subsec:uat-ratings}
 
-Table~\ref{tab:uat-ratings} gives the weighted mean of every statement.
-Because the detector was not run, eight statements concern steps that
-no student performed in the session: receiving the number (U3-s),
-completing the sequence through being called (U5-s), recognition at the
-queue area (R1-s), the number shown in the app (R2-s), the \emph{Ahead
-of you} count (R3-s), being called in order (R4-s), the display of the
-number and the people ahead (C2-s), and the estimated against the actual
-wait (C4-s). Students rated them nonetheless, $3.96$ on average, from
-the diorama presentation and the explanation, so these ratings describe
-what students understood of those steps, not acceptance of the steps
-themselves; they are marked in the table.
-
-The other seven statements concern steps the students performed or
-watched: signing in with Gbox, registering a face, joining the queue,
-the registration instructions, the estimated wait on the home screen,
-understanding what the system keeps, and the app running without
-crashing. Their weighted mean is $4.13$ (\emph{Agree}, Very
-Satisfactory), with $\alpha = 0.857$. Of their 294 ratings, 223
-($75.9\%$) were Agree or Strongly Agree, 68 ($23.1\%$) Neutral, and 3
-($1.0\%$) Disagree or Strongly Disagree. Signing in with Gbox and
-entering the student ID was rated highest ($4.38$, \emph{Strongly
-Agree}), and the app not crashing, freezing, or showing errors lowest
-($3.81$), in line with the errors observed on the poor connection. The
-overall weighted mean of all fifteen statements, $4.04$, is shown for
-completeness but mixes the two kinds.
+The students rated the completed system \emph{Strongly Agree}
+(Excellent), with an overall weighted mean of $4.25$: usability $4.32$
+and clarity $4.27$ (\emph{Strongly Agree}), and reliability $4.17$
+(\emph{Agree}) (Table~\ref{tab:uat-ratings}). Of the 1,184 ratings given,
+965 ($81.5\%$) were Agree or Strongly Agree, 191 ($16.1\%$) Neutral, and
+28 ($2.4\%$) Disagree or Strongly Disagree. Signing in with Gbox was
+rated highest ($4.49$) and recognition at the queue area without repeated
+attempts lowest ($4.03$). The two sessions differ: the 42 students of the
+first day gave $4.04$, the 37 of the second, who saw the camera issue
+numbers, $4.50$, and recognition at the queue area rose from $3.67$ to
+$4.43$. The eight statements marked in the table concern steps run only
+on the second day; on the first, students rated them from the diorama.
 
 \begin{table}[!htbp]
 \centering
-\caption{Acceptance ratings of the UAT statements by students
-(\mbox{$n = 42$}).}
+\caption{Acceptance ratings of the completed system by students
+(\mbox{$n = 79$}).}
 \label{tab:uat-ratings}
 \begin{tabular}{p{0.66\textwidth}cc}
 \hline
@@ -4639,175 +4618,151 @@ Statement & WM & Interpretation \\
 \hline
 \multicolumn{3}{l}{\textbf{A.\ System's usability}} \\
 U1-s. Registering my face in the mobile app was easy to do without
-  anyone's help & $4.12$ & Agree \\
+  anyone's help & $4.32$ & Strongly Agree \\
 U2-s. Tapping \emph{Join the Queue} (and choosing what I was paying
-  for) was easy & $4.19$ & Agree \\
+  for) was easy & $4.37$ & Strongly Agree \\
 U3-s. I received my queue number without having to see staff or press
-  anything else at the office$^{\dagger}$ & $3.93$ & Agree \\
+  anything else at the office$^{\dagger}$ & $4.19$ & Agree \\
 U4-s. Signing in with my Gbox account and entering my student ID was
-  easy & $4.38$ & Strongly Agree \\
+  easy & $4.49$ & Strongly Agree \\
 U5-s. I completed the whole session (register, join, wait, be called)
-  without difficulty$^{\dagger}$ & $3.90$ & Agree \\
+  without difficulty$^{\dagger}$ & $4.23$ & Strongly Agree \\
+\hline
+\multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.32$ \\
 \hline
 \multicolumn{3}{l}{\textbf{B.\ System's reliability}} \\
 R1-s. The camera recognized me when I entered the queue area, without
-  needing me to try again and again$^{\dagger}$ & $3.67$ & Agree \\
+  needing me to try again and again$^{\dagger}$ & $4.03$ & Agree \\
 R2-s. The queue number shown in my app was the one issued to me, not to
-  someone else$^{\dagger}$ & $3.98$ & Agree \\
+  someone else$^{\dagger}$ & $4.23$ & Strongly Agree \\
 R3-s. The \emph{Ahead of you} number in my app updated correctly as the
-  line moved$^{\dagger}$ & $4.00$ & Agree \\
+  line moved$^{\dagger}$ & $4.22$ & Strongly Agree \\
 R4-s. I was called in the correct order of my queue
-  number$^{\dagger a}$ & $3.93$ & Agree \\
+  number$^{\dagger a}$ & $4.23$ & Strongly Agree \\
 R5-s. The app did not crash, freeze or show errors that stopped me from
-  continuing & $3.81$ & Agree \\
+  continuing & $4.16$ & Agree \\
+\hline
+\multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.17$ \\
 \hline
 \multicolumn{3}{l}{\textbf{C.\ System clarity}} \\
 C1-s. The instructions during face registration were clear
-  & $4.14$ & Agree \\
+  & $4.16$ & Agree \\
 C2-s. The app clearly showed my queue number and how many people were
-  ahead of me$^{\dagger}$ & $4.19$ & Agree \\
+  ahead of me$^{\dagger}$ & $4.28$ & Strongly Agree \\
 C3-s. The \emph{Est.\ wait} in the app was easy to understand
-  & $4.10$ & Agree \\
+  & $4.29$ & Strongly Agree \\
 C4-s. The estimated waiting time was close to the \emph{Total wait}
-  shown after I was served$^{\dagger}$ & $4.07$ & Agree \\
+  shown after I was served$^{\dagger}$ & $4.27$ & Strongly Agree \\
 C5-s. I understood what information the system keeps about me and how
-  to delete it & $4.14$ & Agree \\
+  to delete it & $4.34$ & Strongly Agree \\
 \hline
-\multicolumn{2}{l}{\textbf{Seven statements on steps performed}} & $4.13$ \\
-\multicolumn{2}{l}{Section weighted means: usability $4.10$,
-  reliability $3.88$, clarity $4.13$} & \\
-\multicolumn{2}{l}{Overall weighted mean, all fifteen statements} & $4.04$ \\
+\multicolumn{2}{l}{\textbf{Section weighted mean}} & $4.27$ \\
 \hline
-\multicolumn{3}{l}{\footnotesize $^{\dagger}$\,Step shown on the diorama
-  but not performed: the detector was not run and no number was
-  issued.} \\
-\multicolumn{3}{l}{\footnotesize $^{a}$\,$n = 41$; one student left
-  this statement blank.} \\
+\multicolumn{2}{l}{\textbf{Overall weighted mean}} & $4.25$ \\
+\hline
+\multicolumn{3}{l}{\footnotesize $^{\dagger}$\,Step run only in the 17
+  November session; shown on a diorama on 16 November.} \\
+\multicolumn{3}{l}{\footnotesize $^{a}$\,$n = 78$; one student left this
+  statement blank.} \\
 \end{tabular}
 \end{table}
 
-\subsection{Number Issuance and Recognition as Reported}
+\subsection{Number Issuance, Recognition, and Comfort as Reported}
 \label{subsec:uat-issuance}
 
-The answers to the three questions on the number and on recognition
-cannot be taken at face value. Thirty students ($71.4\%$) answered that
-their number was issued automatically after the camera recognised them,
-and one ($2.4\%$) that staff issued it, although the detector was not
-run and the log shows no number issued. Since the
-face sign-in in the app also recognises the student by camera, these
-students most likely took that recognition for the one at the queue
-area, or answered from the diorama presentation. The eleven ($26.2\%$)
-who answered that they received no number described the session
-accurately. Fifteen students ($35.7\%$) reported at least one
-recognition failure, in line with the thirteen refused face sign-ins in
-the log. The three ($7.1\%$) who answered that a number went to the
-wrong person cannot have meant a queue number, since none was issued;
-two of them also rated R2-s \emph{Strongly Agree}. These questions need
+Asked how they received their number, 63 students ($79.7\%$) answered
+automatically after the camera recognised them, three ($3.8\%$) from
+staff, and thirteen ($16.5\%$) that they received none. The log shows ten
+numbers, all on the second day and all issued by the camera, so most of
+these answers describe what students saw in the demonstration or took the
+face sign-in for recognition at the queue area, not a number they were
+issued. Likewise, 24 students ($30.4\%$) reported a recognition failure,
+and four ($5.1\%$) a number given to the wrong person, which the log does
+not show: no number was issued on the first day, and on the second no
+face sign-in was refused or opened another account. These questions need
 to name the step they ask about.
 
-\subsection{Comfort with Face Identification and Open-Ended Responses}
-\label{subsec:uat-open}
+Asked how comfortable they were with being identified by face, fourteen
+students ($17.7\%$) answered very comfortable, 29 ($36.7\%$)
+comfortable, 28 ($35.4\%$) neutral, and eight ($10.1\%$) uncomfortable.
+On the second day, 27 of the 37 ($73.0\%$) were comfortable or very
+comfortable, close to the $70.0\%$ of the September trial.
 
-Asked how comfortable they were with the system using their face to
-identify them, four students ($9.5\%$) answered very comfortable, twelve
-($28.6\%$) comfortable, nineteen ($45.2\%$) neutral, and seven
-($16.7\%$) uncomfortable. This is less favourable than in the September
-trial, in which fourteen of the twenty students ($70.0\%$) were
-comfortable or very comfortable and one was uncomfortable.
-
-Asked what they liked most, students most often named joining and
-following the queue from the phone instead of lining up at the cashier
---- one wrote, ``Tracking my queue number even when I'm not at the
-Cashier Line'' --- followed by ease of use and the interface, and
-signing in by face. Asked what they would change, five students named
-face recognition: it was slow, did not always work, or they would
-prefer an ID, a PIN, or a fingerprint. One wrote that it ``is extremely
-slow. Even after following the instructions and doing everything
-required, it still takes too long to process and sometimes does not
-work at all.'' Six asked for changes to the mobile app's interface: the
+Students most often liked joining and following the queue from the phone
+instead of lining up at the cashier --- ``Instead of just waiting, now you
+know when will you be called even [if] you['re] not in the cashier'' ---
+along with ease of use and face sign-in. On the first day, five students
+asked for face recognition to change (slow, unreliable, or replaced by an
+ID, PIN, or fingerprint) and six for interface changes: the
 tab-switching animation, the placement of \emph{Get a Queue Number} and
-\emph{Sign out}, clearer colours, and a dark mode. One reported a button
-that did not respond, and one an error that needed a restart. Single
-students asked for a notification before their turn, payment within the
-app, and an automatic registrar slip. One student questioned the
-benefit itself: ``you still have to log in and wait for your turn, just
-like at the registrar \ldots{} If the goal is to save students time,
-then the system should actually make the process faster, not just show
-them how long they have to wait.''
+\emph{Sign out}, clearer colours, and a dark mode. On the second day,
+five asked for larger, clearer face-scan instructions placed above the
+circle, with a sign of progress while the face is checked, and three for
+a version that works offline or without mobile data. One student
+questioned the benefit itself: ``you still have to log in and wait for
+your turn, just like at the registrar.'' One believed that the system
+stores no face data; the consent screen says that a ``face signature'' is
+kept although the photos are discarded (Section~\ref{sec:ethics}).
 
-One student named as a strength that the system ``does not store your
-sensitive information such as facial recognition on the database''.
-\sysname{} does store a face embedding for every registered student
-(Section~\ref{sec:ethics}). The consent screen says that the photos are
-discarded but that a ``face signature'' computed from them is kept; this
-student appears to have taken in only the first half, even though C5-s,
-on understanding what the system keeps, was rated $4.14$.
-
-\subsection{Problems Found and Fixed After the Test}
+\subsection{Problems Found and Fixed Between the Sessions}
 \label{subsec:uat-fixes}
 
-The researchers' observations, the students' remarks, and the system's
-log point to three problems in the system itself, apart from the
-connection, and the students made one suggestion. Each was addressed
-after the session. The changes pass the system's automated tests but have
-not yet been used by students.
+The first session, the students' remarks, and the system's log pointed to
+three problems in the system itself, apart from the connection, and the
+researchers' own testing to a fourth. Each was fixed before the second
+session, and the second session's log shows the effect.
 
-\textbf{The server stalled while faces were processed.} Several students
-were stuck at face registration, and some were told that the app could
-not connect to the server. The backend runs as a single process, and
-turning a photo into a face signature, which keeps the CPU busy for a
-second or more, ran inside that process's request loop. While one photo
-was processed, every other request --- other registrations, sign-ins, and
-every app's status checks --- waited, and with many students registering
-at once, requests queued until phones gave up. The registrations that
-took 5 to 20 minutes and the three that never saved
-(Table~\ref{tab:uat-log}) are consistent with this as well as with the
-poor connection. The photo work now runs in a worker thread, one photo at
-a time, so the server keeps answering everyone else.
+\textbf{The server stalled while faces were processed.} The backend runs
+as a single process, and turning a photo into a face signature, which
+keeps the CPU busy for a second or more, ran inside that process's
+request loop, so every other request waited; with many students
+registering at once, phones gave up. The work now runs in a worker
+thread. On the second day every registration was saved.
 
 \textbf{A face could open another student's account.} One student signed
-in and saw another student's name. Face sign-in compared the face with
-every enrolled student and opened the account of the clear best match, so
-a student whose own face was not registered could be matched to a
-classmate who looked similar, if the score and margin cleared the rule.
-The log is consistent with this: one account was signed in to three
-times with scores of $0.45$ to $0.47$ and margins of $0.16$ to $0.18$,
-just above the $0.15$ required, while students signing in shortly after
-registering scored $0.77$ to $0.92$. Face sign-in now opens only the
-account last used on that phone; the same rule is applied, and sign-in
-succeeds only if its clear best match is that account. This narrows where
-the rule is used, without changing its thresholds.
+in and saw another student's name. Face sign-in opened the account of
+the clear best match among all enrolled students, so a student whose own
+face was not registered could land in a similar-looking classmate's
+account; one account was signed in to three times with margins of $0.16$
+to $0.18$, just above the $0.15$ required, while students signing in
+shortly after registering scored $0.77$ to $0.92$. Face sign-in now
+opens only the account last used on that phone, with the same rule and
+thresholds. No such case occurred on the second day.
 
-\textbf{Error messages did not say what to do.} A student who had not
-registered a face tried to sign in with it, waited, and was told only
-that the app could not connect to the backend. The application now says
-that the face is not registered before any photo is taken, and tells a
-slow or busy server apart from a lost connection, without showing the
-server's address.
+\textbf{Error messages did not say what to do.} A student without a
+registered face who tried face sign-in was told only that the app could
+not connect; the app now says the face is not registered, and tells a
+slow server from a lost connection.
 
-\textbf{A heads-up before the turn.} A student suggested a warning about
-five minutes before being called, which answers a problem students rated
-highly in the baseline survey ($4.49$). The application now gives a phone
-notification, a vibration, and a message on screen when the estimated
-wait falls to five minutes or less, and notifies again when the student
-is first in line. These reach the student while the application is
-running, but not once it has been closed, which would need notifications
-sent from the server.
+\textbf{The camera was slow with several people in view.} The detector
+computed a face signature for every person on every frame before
+tracking the next frame, so tracking slowed as people were added and a
+person who crossed behind another could return as a new person; it also
+discarded the weaker detections the tracker uses to follow a partly hidden
+person. Face signatures now come from a separate worker, newcomers first,
+and the tracker keeps weaker detections for people it already follows.
 
-Taken together, the UAT shows that students accept the mobile
-application's steps of the completed system --- signing in, registering
-a face, and joining the queue --- and that these steps depend on the
-internet connection and on the server keeping up with many students at
-once: three of the eighteen face registrations were lost and three more
-took five minutes or longer. It does not show whether students accept the
-camera step, the number, or being called, because those steps were shown
-on the diorama but not run; students last used them
-in the September trial (Section~\ref{sec:sop4-results}), before the
-changes for the final defense. This supports two recommendations
-(Section~\ref{sec:recommendations}): offline-capable operation, which
-the staff's chief concern in the baseline survey already called for, and
-repeating the UAT with the queue-zone camera running and the changes
-above in place.
+\textbf{A heads-up before the turn.} At a student's suggestion, the
+application now notifies the phone, vibrates, and shows a message when
+the estimated wait falls to five minutes or less, and again at first in
+line.
+
+One problem remains. During the second session the dashboard had three
+windows set open while only Window~1 served, so the line simulation gave
+every number an estimated wait of zero, while the real waits reached
+139~seconds. The estimate is only as good as the count of open windows,
+and C4-s cannot be read as a measure of its accuracy.
+
+Taken together, students accept the completed system, and they rated it
+higher once they saw the camera issue numbers. After the fixes, the
+second session's log shows no lost registrations, no refused or wrong
+face sign-ins, and numbers issued within about two seconds for most
+students. The evidence is still limited: ten students received numbers,
+on campus and without cashier staff, and the wait estimate was not
+tested against real waits. This supports the recommendations to take the
+open windows from the windows staff have taken, to repeat the test with
+cashier staff at the office, and to make the system work offline
+(Section~\ref{sec:recommendations}).
 
 % ----------------------------------------------------------------
 % 3.5  Summary of Findings
@@ -4896,22 +4851,20 @@ the evaluation, and presents the recommendations that follow.
         the system going offline during brownouts. Students rated five of
         the six common items higher than the staff did.
 
-  \item \textbf{User acceptance test.} On 16~November~2026, after a
-        diorama presentation, forty-two students used or watched the
-        mobile application on a poor laboratory connection; the
-        queue-zone detector was not run, so no number was issued. They
-        rated the steps they performed or watched --- signing in,
-        registering a face, and joining the queue --- \emph{Agree} (Very
-        Satisfactory), with a weighted mean of $4.13$ ($\alpha = 0.857$);
-        signing in with Gbox was rated highest ($4.38$). The system's log
-        shows fifteen of eighteen face registrations saved and 26 of 39
-        face sign-ins accepted. Seven students were uncomfortable with
-        being identified by face, and nineteen were neutral. Three
-        problems found in the session --- the server stalling while
-        photos were processed, a face sign-in that could open another
-        student's account, and error messages that did not say what to
-        do --- were fixed afterwards, and a five-minute heads-up before
-        the turn, suggested by a student, was added.
+  \item \textbf{User acceptance test.} Seventy-nine students in two
+        sessions rated the completed system \emph{Strongly Agree}
+        (Excellent), with an overall weighted mean of $4.25$: usability
+        $4.32$, clarity $4.27$, and reliability $4.17$ ($\alpha = 0.941$).
+        On 16~November the detector was not run and the connection was
+        poor; three of eighteen face registrations were lost, and three
+        problems --- the server stalling while photos were processed, a
+        face sign-in that could open another student's account, and
+        unclear error messages --- were fixed, with a slow camera found
+        in testing and a five-minute heads-up added. On 17~November,
+        with the camera running, all nineteen registrations were saved,
+        every face sign-in was accepted, and the camera issued ten
+        numbers, a median of $2.2$~s after it could; students rated that
+        session $4.50$ against $4.04$ for the first.
 \end{enumerate}
 
 \section{Conclusions}
@@ -4962,19 +4915,18 @@ lowest. Whether this satisfaction holds after
 sustained daily use at the cashiering office cannot be concluded from
 the present data.
 
-\textbf{User acceptance test.} Students accept the mobile application's
-steps of the completed system: signing in, registering a face, and
-joining the queue. These steps depend on the internet connection and on
-the server keeping up with many students at once: three of eighteen face
-registrations were lost and three more took five minutes or longer. The
-test also showed that face sign-in, as first built, could open a
-classmate's account: even a rule that refuses uncertain matches should be
-used only where a wrong match cannot give one student another student's
-account. Whether students accept the
-camera step and the steps that follow it after the final-defense changes
-cannot be concluded, because the detector was not run during the test.
-Identification by face is also accepted less readily than the rest of
-the system.
+\textbf{User acceptance test.} Students accept the completed system, and
+more so once they see the camera issue numbers. The first session showed
+that the system depends on the internet connection and on the server
+keeping up with many students at once, and that face sign-in, as first
+built, could open a classmate's account: even a rule that refuses
+uncertain matches should be used only where a wrong match cannot give one
+student another's account. With those problems fixed, the second session
+ran without a lost registration or a wrong sign-in, and the camera issued
+most numbers within about two seconds. These results come from ten
+numbers issued on campus without cashier staff, and they do not test the
+wait estimate. Identification by face is accepted less readily than the
+rest of the system.
 
 \subsection{Limitations}
 \label{subsec:limitations}
@@ -5023,18 +4975,17 @@ the system.
         mean by as much as half a point. The questionnaire was not
         content-validated by expert raters, so no Content Validity Index
         supports its items.
-  \item The user acceptance test is one session with forty-two
-        students, forty of them in second year, and no cashier staff, in
-        a campus laboratory rather than at the cashiering office, on an
-        internet connection that the researchers observed to be poor.
-        The queue-zone detector was not run, so no number was issued and
-        the camera step was shown only on a diorama; some respondents
-        only watched the app being used, and the questionnaire cannot
-        separate them from those who used it. Its questionnaire differs
-        from the September one and, like it, was not content-validated,
-        and nine students gave the same rating to every statement. The
-        changes made after the test are verified by automated tests
-        only, not yet by students.
+  \item The user acceptance test covers two sessions with 79 students,
+        73 of them in second year, and no cashier staff, on the NCF
+        campus rather than at the cashiering office. The camera ran only
+        in the second session and issued ten numbers; students with
+        iPhones could only watch, since the application is built for
+        Android, and the questionnaire cannot separate those who used the
+        app from those who watched. Three windows were set open while one
+        served, so the wait estimate was not tested. The questionnaire
+        differs from the September one and, like it, was not
+        content-validated, and 21 students gave the same rating to every
+        statement.
 \end{itemize}
 
 \section{Recommendations}
@@ -5102,25 +5053,30 @@ the system.
         app that a student may sign in with Gbox and take a printed kiosk
         ticket instead, since five of the twenty students were neutral
         about being identified by face, one was uncomfortable, and one
-        asked for it to change; in the user acceptance test, seven of
-        forty-two were uncomfortable, nineteen neutral, and five asked for
-        it to change.
-  \item \textbf{Revise the mobile app's navigation} as the UAT students
-        asked: open the app on \emph{Get a Queue Number}, move
-        \emph{Sign out} off the home screen, replace the tab-switching
-        animation, and add a dark mode.
+        asked for it to change; in the user acceptance test, eight of 79
+        were uncomfortable and 28 neutral.
+  \item \textbf{Revise the mobile app} as the UAT students asked: open it
+        on \emph{Get a Queue Number}, move \emph{Sign out} off the home
+        screen, replace the tab-switching animation, add a dark mode, and
+        show the face-scan instructions larger, above the circle, with a
+        sign of progress while the face is checked.
+  \item \textbf{Take the open windows from the windows staff have taken},
+        so the wait estimate counts only windows that are serving; in the
+        UAT three were set open while one served, and every estimate was
+        zero.
+  \item \textbf{Build an iOS version}, since students with iPhones could
+        only watch the test.
   \item \textbf{Make the stored face signature stand out on the consent
         screen}, ahead of the statement that photos are discarded, since
         one UAT student believed the system stores no face data.
-  \item \textbf{Repeat the user acceptance test with the queue-zone
-        detector running}, cashier staff at the dashboard, and a reliable
-        connection, so that recognition at the queue area, the issuing of
-        the number, calling by window, and the estimated against the
-        actual wait are tested by the people who use them, together with
-        the changes made after the first test; record which
-        respondents used the app themselves, and word the recognition
-        questions so that they name the step, since students took the
-        face sign-in for recognition at the queue area.
+  \item \textbf{Repeat the user acceptance test at the cashiering office
+        with cashier staff at the dashboard}, more students receiving
+        numbers, and the open windows set correctly, so that calling by
+        window and the estimated against the actual wait are tested by
+        the people who use them; record which respondents used the app
+        themselves, and word the recognition questions so that they name
+        the step, since students took the face sign-in for recognition at
+        the queue area.
   \item \textbf{Send the turn notifications from the server}, so that
         the five-minute heads-up added after the user acceptance test
         also reaches a student whose app has been closed; two cashier
@@ -5520,7 +5476,7 @@ do not enter any weighted mean.
 
 This questionnaire was used in Phase~4 of the data-gathering procedure
 (Section~\ref{sec:datagathering}). It was answered as a Google Form at
-the end of the session.
+the end of each session.
 The form opens with the same age pre-screening as
 Appendix~\ref{app:queueflow-questionnaire} and a consent statement the
 respondent must accept: ``I have read and understood the above, and I
