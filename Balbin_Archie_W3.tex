@@ -481,7 +481,7 @@ the staff need to see the line. A queue system serves both only when
 what it shows reflects the people who have actually arrived and the
 service actually being given at the windows.
 
-Queue management inefficiency is a recognized challenge in service delivery organizations worldwide. Research from banking, healthcare, government service desks, and academic institutions consistently documents that manual queue processes cannot provide real-time status visibility, accurate wait-time estimates, or adaptive counter management when demand increases rapidly~\cite{nair2025survey,batcharo2025smart,yifter2023modeling}. As organizations in various sectors have introduced automated queue systems—which combine digital ticketing, camera-based monitoring, and predictive analytics—the operational gap between manual and automated queue management has widened~\cite{rashid2023smartqueue,zou2026customer}. In these settings, the absence of automated observation and prediction leaves both service staff and clients without the information needed to manage or navigate the service flow efficiently.
+Queue management inefficiency is a recognized challenge in service delivery organizations worldwide. Research from banking, healthcare, government service desks, and academic institutions consistently documents that manual queue processes cannot provide real-time status visibility, accurate wait-time estimates, or adaptive counter management when demand increases rapidly~\cite{nair2025survey,batcharo2025smart,yifter2023modeling}. As organizations in various sectors have introduced automated queue systems, which combine digital ticketing, camera-based monitoring, and predictive analytics, the operational gap between manual and automated queue management has widened~\cite{rashid2023smartqueue,zou2026customer}. In these settings, the absence of automated observation and prediction leaves both service staff and clients without the information needed to manage or navigate the service flow efficiently.
 
 In the Philippines, this gap is visible across higher education institutions (HEIs). Enrollment, payment, and clearance cycles bring concentrated student arrivals to service windows within compressed periods, creating queue conditions that manual staff management cannot easily absorb. Philippine studies document the persistence of long enrollment queues and the operational pressure that rising student volumes place on service windows~\cite{concepcion2026smart,mallari2022clique,rrlcomp023automatedenrollmentqueueing,rrlcomp025lineuclmenhancing}. Existing Philippine HEI queue solutions primarily address web-based ticketing and appointment-booking rather than real-time passive observation of student arrivals at service areas.
 
@@ -937,9 +937,9 @@ than camera-based operation, and face-recognition deployments in schools
 such as the CCTV attendance system of
 Patel et~al.~\cite{patel2025classroomcctv} identify students without
 managing a queue. \sysname{} connects the four functions in one
-prototype --- confirming who is present, identifying enrolled students
+prototype: confirming who is present, identifying enrolled students
 and issuing their numbers without manual input, showing each student
-their position and wait, and giving staff wait estimates --- and is
+their position and wait, and giving staff wait estimates. It is
 evaluated on recognition accuracy, prediction accuracy, and user
 satisfaction.
 
@@ -974,7 +974,7 @@ next-best candidate by a stated margin, so that an ambiguous face is
 referred to staff rather than resolved by the higher of two close scores;
 (4)~employs a multi-horizon wait-time prediction module whose accuracy is
 evaluated using MAE and MAPE; and (5)~assesses user satisfaction across
-system usability, reliability, and clarity dimensions---directly
+system usability, reliability, and clarity dimensions, directly
 responding to each of the study's specific objectives.
 
 \section{Theoretical Paradigm}
@@ -986,7 +986,7 @@ see how long they will wait or how many people are ahead of them, and
 staff see the line only by looking at it. \sysname{} rests on one main
 theory, which explains the waiting line itself, and three supporting
 theories, each of which explains one capability the system adds to that
-line --- observing it, knowing who is in it, and anticipating how it will
+line: observing it, knowing who is in it, and anticipating how it will
 change. Figure~\ref{fig:theoretical-framework} shows how the four
 converge on the system.
 
@@ -1012,7 +1012,7 @@ converge on the system.
     Explains how arrivals, service capacity, and waiting lines behave.
     The M/M/c model and Little's Law relate the arrival rate, the
     service rate, and the number of open windows to queue length,
-    utilisation, and expected waiting time --- the quantities a student
+    utilisation, and expected waiting time, the quantities a student
     in line cannot currently see.
   };
   \node[tag, anchor=south] at ([yshift=4pt]qt.north) {MAIN THEORY};
@@ -1666,8 +1666,8 @@ the BS Computer Science researchers together with a BS Information
 Systems student. In each, the researchers presented the
 system with a diorama of the cashiering office and explained how it
 works, and students with Android phones then used the mobile
-application --- signing in with Gbox, giving consent, registering their
-faces, and joining the queue with the payment-slip form --- while the
+application (signing in with Gbox, giving consent, registering their
+faces, and joining the queue with the payment-slip form) while the
 others watched. On 16~November~2026 the session time was limited, so
 the queue-zone detector was not run and the camera step was shown only
 on the diorama. The problems found that day were fixed, and on
@@ -1675,8 +1675,8 @@ on the diorama. The problems found that day were fixed, and on
 issued numbers to the students who went through it. Every student then
 answered the UAT questionnaire (Appendix~\ref{app:uat}), a revision of
 the user-evaluation questionnaire whose statements name the steps of the
-system. The system's own log for each session --- accounts created, face
-signatures saved, face sign-ins, and numbers issued with their timing ---
+system. The system's own log for each session (accounts created, face
+signatures saved, face sign-ins, and numbers issued with their timing)
 was examined alongside the answers. Cashier staff did not take part in
 the UAT. The results are evaluated by a statistician, whose report
 accompanies the results chapter.
@@ -1747,7 +1747,7 @@ the current process. It exists in two forms against a shared five-point
 scale, because the two groups experience the queue from opposite sides:
 the staff form asks about running the queue, and the student form about
 waiting in it. Each form contains fourteen problem statements in two
-sections --- seven on perceived problems with wait-time and seven on
+sections: seven on perceived problems with wait-time and seven on
 perceived problems with user experience. Every problem statement is
 worded as a problem, so agreement indicates that the problem is present;
 only the agreement half of Table~\ref{tab:likert} is applied to them,
@@ -1830,10 +1830,10 @@ Tables~\ref{tab:sop1-reliability} and~\ref{tab:sop4-reliability}.
 the student form of the user-evaluation questionnaire, listed in
 Appendix~\ref{app:uat}. It keeps the three dimensions, five statements
 each, and the five-point scale of Table~\ref{tab:likert}, but every
-statement now names a step of the completed system --- registering the
+statement now names a step of the completed system (registering the
 face, joining the queue, signing in with Gbox, the \emph{Ahead of you}
-count, the estimated against the actual wait, and deleting one's data
---- so that a student judges the step just performed rather than the
+count, the estimated against the actual wait, and deleting one's data),
+so that a student judges the step just performed rather than the
 system in general. It also asks how the student received the queue
 number, whether the system ever failed to recognise a student who had
 joined, whether it ever gave a number to the wrong person, and how
@@ -2062,8 +2062,8 @@ and the area under the ROC curve (AUC) is the probability that a
 randomly chosen genuine pair outscores a randomly chosen impostor pair;
 both describe the embedding model independently of any threshold. The
 decision rule itself is then evaluated at the deployed thresholds as an
-identification outcome for each probe --- correctly linked, linked to
-the wrong identity, or refused and escalated to staff --- and, in an
+identification outcome for each probe (correctly linked, linked to
+the wrong identity, or refused and escalated to staff) and, in an
 open-set test, by removing each person from the gallery and probing
 with their photographs, so that the rate at which a non-enrolled person
 is wrongly identified can be measured directly.
@@ -2426,8 +2426,8 @@ called, or to a notice when staff marked the number as skipped. At an
 estimated five minutes or less, and again at first in line, it notifies
 the phone, vibrates, and shows a message. It never
 shows the camera feed or any other student's status. Its wording follows
-one term for each step --- \emph{Get a Queue Number}, \emph{Request
-Number}, \emph{Face check}, \emph{Your number} --- and \emph{window}
+one term for each step (\emph{Get a Queue Number}, \emph{Request
+Number}, \emph{Face check}, \emph{Your number}) and \emph{window}
 throughout, following the TRC review. The \emph{public display board}
 renders the active queue in the waiting area and announces each call
 using the browser's built-in Web Speech API, so no audio leaves the
@@ -2464,7 +2464,7 @@ their track. A separate worker computes face embeddings locally with
 InsightFace \texttt{buffalo\_s} from the full-resolution frame,
 unidentified people first and identified people every two seconds, so
 tracking never waits for faces.
-Only the resulting metadata --- tracks, boxes, and embeddings --- and a
+Only the resulting metadata (tracks, boxes, and embeddings) and a
 compressed snapshot for the live view are sent to the backend, over
 requests authenticated by a camera token. Running the detector as its
 own process keeps camera work from blocking the dashboard or the API.
@@ -3232,8 +3232,8 @@ with the procedures in Section~2.7, and open-ended answers are read for
 problems the ratings do not capture.
 
 \textbf{Load Testing.} A Locust load test simulated simultaneous users
-of the backend --- students checking their status, the public display,
-staff analytics, and staff sign-ins --- and measured response time and
+of the backend (students checking their status, the public display,
+staff analytics, and staff sign-ins) and measured response time and
 error rate (Section~\ref{subsec:load-test}); recovery from overload was
 not tested.
 
@@ -3285,8 +3285,8 @@ digital kiosks. These are regular users of the office, not first-time
 visitors.
 
 The two groups answered different problem statements against the same
-five-point scale --- staff about running the queue, students about
-waiting in it --- so the weighted means of each group are reported side
+five-point scale (staff about running the queue, students about
+waiting in it), so the weighted means of each group are reported side
 by side. Every problem statement is worded as a problem, so agreement
 means the problem is real, and only the agreement half of
 Table~\ref{tab:likert} is used for them; its quality half reads
@@ -3432,13 +3432,13 @@ comfortable or very comfortable, 15 ($18.1\%$) were neutral, and 12
 register if it were optional rather than take a printed ticket. Their
 concerns were how face data would be stored or used (74, $89.2\%$),
 being recognised by a camera (60, $72.3\%$), and being misrecognised or
-given someone else's number (57, $68.7\%$) --- the concerns that the
+given someone else's number (57, $68.7\%$). These are the concerns that the
 consent notice, the retention policy, and the threshold-and-margin rule
 are designed to answer.
 
 \label{subsec:sop1-staff}
 
-Staff returned an overall weighted mean of $3.34$ (\emph{Neutral}) ---
+Staff returned an overall weighted mean of $3.34$ (\emph{Neutral}),
 substantially lower than the students, and the more informative result
 of the two. Table~\ref{tab:sop1-staff} gives the item-level figures.
 
@@ -3494,7 +3494,7 @@ section, and it is not a weakness in the data. Staff and students were
 asked about the same process and gave different answers because the
 process costs them different things. The student bears the uncertainty:
 standing within sight of a display, unable to estimate the wait,
-occasionally missing a turn. The staff member does not --- from behind
+occasionally missing a turn. The staff member does not: from behind
 the counter the queue is visible, its length is known, and the next
 number is whatever the system prints.
 
@@ -3502,8 +3502,8 @@ This explains why the problem has persisted. A cost that falls entirely
 on the people waiting is invisible to the people who would have to
 authorise fixing it. It also sets the design priority for
 \sysname{}: the features that address the highest-scoring student items
---- knowing the position in line, an estimated wait, and a notification
-before the turn arrives --- are directed at the group that reported the
+(knowing the position in line, an estimated wait, and a notification
+before the turn arrives) are directed at the group that reported the
 problem, not the group that administers it.
 
 \label{subsec:sop1-connectivity}
@@ -3548,8 +3548,8 @@ resolved here. First, the connectivity requirement is stated as a
 delimitation in Section~\ref{sec:scope} and as a limitation in
 Section~\ref{sec:conclusions}: \sysname{} as evaluated requires a
 working network path between the service office and the cloud backend.
-Second, offline-capable operation --- local inference with deferred
-synchronisation --- is recorded as the highest-priority recommendation
+Second, offline-capable operation (local inference with deferred
+synchronisation) is recorded as the highest-priority recommendation
 for future work, because the survey shows it is the problem the
 operators of the current system would most want solved.
 
@@ -3635,7 +3635,7 @@ removed. Separately, photographs stored in the \texttt{.jfif} format
 were being skipped by the image loader, silently dropping one person
 from the evaluation. Restoring that person raised the dataset from 16
 identities and 43 probes to the 17 identities and 45 probes reported
-here --- and, as the calibration below shows, it was the
+here. As the calibration below shows, it was the
 restored person who exposed the need for a stricter margin.
 
 \label{subsec:calibration}
@@ -3695,8 +3695,8 @@ queue-zone distance and score lower than posed photographs.
 \end{figure}
 
 The margin was first set at $0.10$. A sweep over enrolled probes could
-not test the case that matters most --- a person who is not enrolled at
-all --- so the open-set test reported below
+not test the case that matters most, a person who is not enrolled at
+all, so the open-set test reported below
 was added. It found one
 non-enrolled person accepted as an enrolled student with a margin of
 $0.110$, clearing $0.10$ by a hundredth. Across the corrected dataset,
@@ -3734,7 +3734,7 @@ separates genuine from impostor pairs almost completely
 $0.999907$; it is reported to six decimals deliberately, because at
 four it prints as $1.0000$ and would read as perfect separation, when
 the set in fact contains one inverted pair. The Equal Error Rate is
-$0.42\%$, reached at a threshold of $0.320$ --- close to the deployed
+$0.42\%$, reached at a threshold of $0.320$, close to the deployed
 $0.30$, which was chosen independently in the calibration above.
 
 \begin{table}[H]
@@ -3804,7 +3804,7 @@ $\tau_{\mathrm{margin}} = 0.15$.}
 Probe & Correctly linked & Wrong identity & Refused & Total \\
 \hline
 Enrolled student & $44$ ($97.8\%$) & $0$ ($0\%$) & $1$ ($2.2\%$) & $45$ \\
-Not enrolled (stranger) & --- & $0$ ($0\%$) & $45$ ($100\%$) & $45$ \\
+Not enrolled (stranger) & n/a & $0$ ($0\%$) & $45$ ($100\%$) & $45$ \\
 \hline
 \end{tabular}
 \end{table}
@@ -3814,8 +3814,8 @@ probes (rank-1 accuracy $100\%$), and 44 of them were linked
 automatically. The single refusal scored $0.321$ against the correct
 student, but its runner-up was only $0.027$ behind; the rule declined to
 choose between two candidates it could not separate and escalated to
-staff. That is the safe failure --- the student is delayed, not given
-someone else's number --- and no probe produced the unsafe one.
+staff. That is the safe failure (the student is delayed, not given
+someone else's number), and no probe produced the unsafe one.
 
 The margin requirement is necessary because the highest stranger score
 in the open-set test was $0.353$, above $\tau_{\mathrm{match}}$.
@@ -4026,7 +4026,7 @@ Timing is reported in two consecutive phases, shown in
 Figure~\ref{fig:sop2-issuance}. The first runs from the frame a person
 first appears in to the moment their presence in the queue zone is
 confirmed. The second runs from the moment the system was first able to
-act --- the later of that confirmation and the student's join intent ---
+act (the later of that confirmation and the student's join intent)
 to the number being issued, and averaged $4.80$~s across the seven.
 
 The second phase is deliberately not measured from first sighting. With
@@ -4052,8 +4052,8 @@ in the table, so any other interpretation can be recomputed.
 As the panel recommended, the backend was load-tested to see whether it
 stays responsive when many users poll it at once. The test used Locust
 to simulate 50 concurrent users for two minutes across three user
-classes --- students polling their queue status, the public display
-board, and staff viewing analytics --- together with staff logins, against
+classes (students polling their queue status, the public display
+board, and staff viewing analytics) together with staff logins, against
 a real seeded ticket rather than an invalid path. It was run against the
 backend on the development machine, so it measures the application
 itself and not the network path to the cloud deployment.
@@ -4152,9 +4152,9 @@ user types; the others used the realistic mix.} \\
 The test client recorded 9 and 75 dropped connections at 200 and 400
 users (0.13\% and 0.58\% of requests); these were socket resets between
 the load generator and the server on the same laptop, not responses from
-the backend. Before the changes --- the face index, a short-lived cache
+the backend. Before the changes (the face index, a short-lived cache
 for ticket validation, a background refresh of the waiting list, and a
-fix for leaked database connections --- the same 200-user run produced
+fix for leaked database connections), the same 200-user run produced
 more than a thousand errors and a 95th-percentile response time of one to
 three seconds. These runs exercise the application on one machine; they
 do not include the internet round trip to the cloud host, and a
@@ -4170,7 +4170,7 @@ with known identities, the system linked $97.8\%$ of enrolled students
 automatically, ranked the correct student first in every case, assigned
 no one to a wrong identity, and refused every one of 45 non-enrolled
 probes. In live operation at the queue-zone camera, every queue number
-issued --- seven of seven --- was minted by the system without staff or
+issued, seven of seven, was minted by the system without staff or
 student input, with a mean of $4.80$~s from the moment the system could
 act to the number being issued. The rule's defining property held in
 both settings: when it could not identify someone with confidence, it
@@ -4393,8 +4393,8 @@ therefore tested in a controlled replay. Lines were simulated with one to
 three windows open and the windows 60 to 95\% busy, each student's
 service time drawn from the 511 service times of the October 2026
 transactions. At every arrival, the system's own estimator was given
-what the live system knows --- which windows are serving and since when,
-and how many are waiting --- and its estimate was compared with the wait
+what the live system knows (which windows are serving and since when,
+and how many are waiting), and its estimate was compared with the wait
 the student then had (Table~\ref{tab:wait-replay}). Told the correct
 number of open windows, its MAE was 0.3 to 2.1 minutes, lower than a
 constant estimate and the people-ahead regression in every scenario, and
@@ -4807,8 +4807,8 @@ This section reports the user acceptance test of the completed system
 (Section~\ref{sec:datagathering}, Phase~4), held in two sessions on the
 NCF campus. On 16~November~2026 the session time was limited, so the
 queue-zone detector was not run: students tried the mobile application's
-steps --- signing in, giving consent, registering a face, and joining the
-queue --- and the camera step was shown on a diorama. The problems found
+steps (signing in, giving consent, registering a face, and joining the
+queue), and the camera step was shown on a diorama. The problems found
 that day were fixed, as described below, and on
 17~November~2026 the complete system was run with the camera, which
 issued queue numbers to the students who went through it. Both sessions
@@ -4853,8 +4853,8 @@ Existing accounts signed in to & $4$ & $2$ \\
 Face sign-ins accepted & $26$ of $39$ & $8$ of $8$ \\
 Queue numbers issued by the camera, called, and served & $0$ & $10$ \\
 Seconds from when a number could be issued to the number, median
-  & --- & $2.2$ \\
-\quad range & --- & $1.9$--$19.5$ \\
+  & n/a & $2.2$ \\
+\quad range & n/a & $1.9$--$19.5$ \\
 \hline
 \end{tabular}
 \end{table}
@@ -4991,8 +4991,8 @@ On the second day, 27 of the 37 ($73.0\%$) were comfortable or very
 comfortable, close to the $70.0\%$ of the September trial.
 
 Students most often liked joining and following the queue from the phone
-instead of lining up at the cashier --- ``Instead of just waiting, now you
-know when will you be called even [if] you['re] not in the cashier'' ---
+instead of lining up at the cashier (``Instead of just waiting, now you
+know when will you be called even [if] you['re] not in the cashier''),
 along with ease of use and face sign-in. On the first day, five students
 asked for face recognition to change (slow, unreliable, or replaced by an
 ID, PIN, or fingerprint) and six for interface changes: the
@@ -5148,9 +5148,9 @@ the completed system Strongly Agree (Excellent), with an overall
 weighted mean of $4.25$: usability $4.32$, clarity $4.27$, and
 reliability $4.17$ ($\alpha = 0.941$). On 16~November the detector was
 not run and the connection was poor; three of eighteen face
-registrations were lost, and three problems --- the server stalling
+registrations were lost, and three problems (the server stalling
 while photos were processed, a face sign-in that could open another
-student's account, and unclear error messages --- were fixed, with a
+student's account, and unclear error messages) were fixed, with a
 slow camera found in testing and a five-minute heads-up added. On
 17~November, with the camera running, all nineteen registrations were
 saved, every face sign-in was accepted, and the camera issued ten
@@ -5548,7 +5548,7 @@ of some rating grids fall outside the captured viewport.
 \label{app:queueflow-questionnaire}
 
 \begin{center}
-\textbf{Naga College Foundation, Inc. -- College of Computer Studies}\\[1em]
+\textbf{Naga College Foundation, Inc., College of Computer Studies}\\[1em]
 \textbf{Research Title:} \sysname{}: A Computer Vision-Based Smart Queue
 Management and Predictive Service Delivery System\\[0.5em]
 \textbf{Researchers:} Archie D. Balbin and Joshua Rovic P. Sanota
@@ -5573,13 +5573,13 @@ them.
   \item Respondent group:
         $\square$ Cashier Staff \quad
         $\square$ Student
-  \item For students only -- Year level:
+  \item (For students only) Year level:
         $\square$ 1st year \quad
         $\square$ 2nd year \quad
         $\square$ 3rd year \quad
         $\square$ 4th year \quad
         $\square$ 5th year or above
-  \item For students only -- How did you receive your queue number
+  \item (For students only) How did you receive your queue number
         during the session?\\
         $\square$ Automatically, after the camera recognised me \quad
         $\square$ From staff, because the system could not recognise me
