@@ -10,10 +10,10 @@
 This appendix records the design routines behind the implemented
 \sysname{} prototype. Section~\ref{sec:architecture} identifies the
 major layers and responsibilities, and
-Section~\ref{subsec:major-algorithms} summarises the four major
-algorithms; this appendix moves one level closer to the code by stating
-each routine's inputs, outputs, equations, parameter values, and
-numbered steps. The discussion follows the detection-to-ticket flow in
+Section~\ref{subsec:major-algorithms} states the four major
+algorithms and their steps; this appendix gives the equations and
+parameter values behind those steps and states the supporting
+procedures in full. The discussion follows the detection-to-ticket flow in
 Figure~\ref{fig:detection-ticket-pipeline}: camera-frame filtering,
 queue-zone confirmation, tracker maintenance, re-identification,
 queue-state updates, prediction, and ticket output. Algorithms~1 to~4
@@ -48,8 +48,7 @@ $B$ is
 
 \noindent used by the duplicate-suppression step (\S\ref{subsec:dedup}),
 the track-identifier remapping step (\S\ref{subsec:remap}), and the
-non-maximum suppression step internal to the tracker
-(\S\ref{subsec:cv-layer}).
+duplicate-box gate of the detector (\S\ref{subsec:cv-layer}).
 
 % =====================================================================
 \subsection{Computer Vision Layer}
@@ -57,7 +56,8 @@ non-maximum suppression step internal to the tracker
 
 The Computer Vision Layer runs as a separate Python process
 (\texttt{app/detector.py}) on the camera-connected machine. Each
-captured frame is fed to a YOLOv8n detector~\cite{jocher2023}
+third captured frame, reduced by the factor $s$, is fed to a YOLOv8n
+detector~\cite{jocher2023}
 configured for single-class person detection. Multi-object tracking is
 performed by ByteTrack~\cite{zhang2022bytetrack}, selected explicitly
 through the Ultralytics interface with \texttt{persist=True}; it assigns
@@ -66,11 +66,12 @@ across frames. The tracker receives detections down to
 $c_{\mathrm{trk}}$, but only those of at least $c_{\mathrm{new}}$ may
 start a new track: weaker ones can only continue a track in ByteTrack's
 second association stage, which keeps a partly hidden person on their
-own track, and a lost track is kept for $B$ frames. Raw YOLO output is
-then passed through five quality gates before any detection is forwarded
-to the Business Logic Layer, and each accepted bounding box is
-subsequently smoothed with an exponential moving average to remove
-per-frame jitter.
+own track, and a lost track is kept for $B$ frames. A detection the
+tracker has not claimed must reach $c_{\mathrm{det}}$. The detector then
+applies three of the five quality gates below, and each accepted
+bounding box is smoothed with an exponential moving average to remove
+per-frame jitter; the other two gates are applied in the backend when a
+person is confirmed.
 
 Face embeddings are computed by a separate worker so that tracking never
 waits for them. On each round it takes the newest tracked frame and
@@ -83,8 +84,10 @@ counted as a second sighting.
 
 \subsubsection{Detection quality gates}
 
-For a bounding box with corners $(x_1, y_1, x_2, y_2)$ in a frame of
-size $W_f \times H_f$, Gate~1 requires sufficient area:
+Gates~1, 2, and~5 are applied in the detector and Gates~3 and~4 in the
+backend (Algorithm~2). For a bounding box with corners
+$(x_1, y_1, x_2, y_2)$ in a tracking frame of size $W_f \times H_f$,
+Gate~1 requires sufficient area:
 
 \begin{equation}
 A \;=\; (x_2 - x_1)(y_2 - y_1) \;\geq\; A_{\min}.
@@ -103,18 +106,22 @@ f \;=\; \frac{A}{W_f \, H_f} \;\leq\; f_{\max}.
 r \;=\; \frac{y_2 - y_1}{x_2 - x_1} \;\geq\; r_{\min}.
 \end{equation}
 
-\noindent Gate~4 requires evidence of motion:
+\noindent Gate~4 requires the box to have moved. Over the centres
+buffered for a candidate, the larger of the horizontal and vertical
+ranges must reach $M_{\min}$,
 
 \begin{equation}
-M \;=\; \big|\{p : |g_t(p) - g_{t-1}(p)| > 25\}\big| \;\geq\; M_{\min}
+R \;=\; \max\!\big(\max_i c_{x,i} - \min_i c_{x,i},\;
+\max_i c_{y,i} - \min_i c_{y,i}\big) \;\geq\; M_{\min},
 \label{eq:motion}
 \end{equation}
 
-\noindent or, as an override for static high-confidence detections,
-$\text{conf} \geq c_{\mathrm{byp}}$. Gate~5 is standard
-non-maximum suppression applied internally by ByteTrack. Only
-detections that pass all five gates reach the queue tracker.
-Parameter values are listed in Table~\ref{tab:cv-params}.
+\noindent and the centres must not stand still on both axes
+(Equation~\ref{eq:motion-gate}). Gate~5 removes a box that duplicates
+a kept one: two boxes are duplicates when their IoU exceeds
+$\tau_{\mathrm{nms}}$ or their centres are closer than
+$f_{\mathrm{nms}}$ times their mean diagonal. Parameter values are
+listed in Table~\ref{tab:cv-params}.
 
 \subsubsection{Bounding-box smoothing}
 
@@ -127,48 +134,9 @@ exponential moving average before being forwarded:
 \end{equation}
 
 \noindent applied independently to $x_1$, $y_1$, $x_2$, and $y_2$.
-Algorithm~1 below formalises the complete detection processing routine,
-combining all five quality gates with bounding-box smoothing; its
-track-management step follows in Section~\ref{subsec:dedup}.
+The steps of Algorithm~1 are given in
+Section~\ref{subsec:major-algorithms}.
 
-\vspace{0.5em}
-\noindent\rule{\linewidth}{0.8pt}
-
-\noindent\textbf{\underline{Algorithm 1: Person Detection and Tracking ---
-Quality Filtering}}
-
-\noindent\textbf{Input:} \textit{currentFrame} $F_t$,
-\textit{previousGreyFrame} $G_{t-1}$, \textit{rawDetections} $D$ from YOLOv8n\\
-\noindent\textbf{Output:} \textit{filteredDetections} (quality-gated
-detections with smoothed bounding boxes, ready for queue-zone
-processing)
-
-\begin{enumerate}
-  \item \textbf{CONVERT} $F_t$ to greyscale to obtain $G_t$;
-        \textbf{INITIALIZE} $\mathcal{D}_{\mathrm{ok}} \gets \emptyset$
-  \item \textbf{FOR EACH} detection $d \in D$ with box
-        $(x_1,y_1,x_2,y_2)$ and confidence $\text{conf}$:
-  \item \quad \textbf{COMPUTE} $A = (x_2-x_1)(y_2-y_1)$,
-        $f = A/(W_fH_f)$, $r = (y_2-y_1)/(x_2-x_1)$
-  \item \quad \textbf{IF} $A < A_{\min}$ \textbf{OR} $f > f_{\max}$
-        \textbf{OR} $r < r_{\min}$ \textbf{THEN} skip $d$
-        (fails Gates 1--3)
-  \item \quad \textbf{COMPUTE} motion energy $M$ as the pixel count
-        where $|G_t(p) - G_{t-1}(p)| > 25$
-  \item \quad \textbf{IF} $M < M_{\min}$ \textbf{AND}
-        $\text{conf} < c_{\mathrm{byp}}$ \textbf{THEN} skip $d$
-        (fails Gate 4)
-  \item \quad \textbf{APPEND} $d$ to $\mathcal{D}_{\mathrm{ok}}$
-  \item \textbf{APPLY} ByteTrack NMS to $\mathcal{D}_{\mathrm{ok}}$
-        (Gate 5)
-  \item \textbf{FOR EACH} accepted detection \textbf{APPLY} EMA
-        smoothing: $\hat{b}_t \gets \alpha_{\mathrm{s}}\,b_t +
-        (1-\alpha_{\mathrm{s}})\,\hat{b}_{t-1}$ on each coordinate
-        independently
-  \item \textbf{RETURN} $\mathcal{D}_{\mathrm{ok}}$ with smoothed
-        bounding boxes
-\end{enumerate}
-\vspace{0.3em}
 
 \begin{table}[H]
 \centering
@@ -178,18 +146,25 @@ processing)
 \hline
 Symbol & Value & Description \\
 \hline
-$A_{\min}$       & $800\ \mathrm{px}^2$ & Minimum bounding-box area (Gate~1) \\
-$f_{\max}$       & $0.85$               & Maximum frame coverage (Gate~2) \\
-$r_{\min}$       & $0.60$               & Minimum portrait aspect ratio (Gate~3) \\
-$M_{\min}$       & $8\ \mathrm{px}$     & Minimum motion energy (Gate~4) \\
-$c_{\mathrm{byp}}$ & $0.70$             & Static-detection confidence bypass (Gate~4) \\
-$\alpha_{\mathrm{s}}$ & $0.50$          & Bounding-box EMA smoothing factor \\
+$s$                  & $0.75$               & Frame scale for tracking \\
+$c_{\mathrm{trk}}$   & $0.15$               & Lowest score passed to the tracker \\
+$c_{\mathrm{new}}$   & $0.55$               & Lowest score that starts a new track \\
+$c_{\mathrm{det}}$   & $0.55$               & Lowest score for a box the tracker did not claim \\
+$B$                  & $45$ frames          & Lost-track buffer \\
+$A_{\min}$           & $800\ \mathrm{px}^2$ & Minimum bounding-box area (Gate~1) \\
+$f_{\max}$           & $0.85$               & Maximum frame coverage (Gate~2) \\
+$r_{\min}$           & $0.60$               & Minimum portrait aspect ratio (Gate~3) \\
+$M_{\min}$           & $8\ \mathrm{px}$     & Minimum centre movement (Gate~4) \\
+$\tau_{\mathrm{nms}}$ & $0.55$              & Duplicate-box IoU (Gate~5) \\
+$f_{\mathrm{nms}}$   & $0.20$               & Duplicate-box centre fraction (Gate~5) \\
+$\alpha_{\mathrm{s}}$ & $0.50$              & Bounding-box EMA smoothing factor \\
+$T_{\mathrm{ref}}$   & $2.0\ \mathrm{s}$    & Face refresh for identified people \\
 \hline
 \end{tabular}
 \end{table}
 
 % =====================================================================
-\subsection{Queue Zone Membership and Candidate Confirmation}
+\subsection{Queue Zone Membership and Presence Confirmation}
 \label{subsec:candidate}
 
 A configurable rectangular region of interest, the queue zone, is
@@ -222,65 +197,39 @@ of the buffered centroid sequence:
 
 \begin{equation}
 \text{motion ok} \;\Longleftrightarrow\;
-\sigma_x + \sigma_y > \theta_{\mathrm{m}}
-\;\vee\;
-\overline{\text{conf}} \geq c_{\mathrm{byp}}.
+\overline{\text{conf}} \geq c_{\mathrm{byp}}
+\;\vee\; \text{face seen}
+\;\vee\; \big(R \geq M_{\min} \;\wedge\;
+(\sigma_x \geq \theta_{\mathrm{m}} \vee \sigma_y \geq \theta_{\mathrm{m}})\big),
 \label{eq:motion-gate}
 \end{equation}
 
-\vspace{0.5em}
-\noindent\rule{\linewidth}{0.8pt}
 
-\noindent\textbf{\underline{Algorithm 2: Candidate Confirmation}}
-
-\noindent\textbf{Input:} \textit{detection} $d$ with track ID
-$\mathrm{tid}$ and confidence $\text{conf}$, \textit{candidateBuffer}
-$C$, \textit{confirmationThreshold} $N_{\mathrm{conf}}$\\
-\noindent\textbf{Output:} \textit{assignmentDecision} (issue queue
-number, continue accumulating, or reject as static)
-
-\begin{enumerate}
-  \item \textbf{INCREMENT} $C[\mathrm{tid}].\text{count}$ by 1;
-        \textbf{APPEND} $(c_x, c_y)$ and $\text{conf}$ to
-        $C[\mathrm{tid}]$
-  \item \textbf{IF} $C[\mathrm{tid}].\text{count} < N_{\mathrm{conf}}$
-        \textbf{THEN RETURN} (continue accumulating)
-  \item \textbf{COMPUTE} $\sigma_x$, $\sigma_y$ over buffered
-        centroid sequence in $C[\mathrm{tid}]$
-  \item \textbf{COMPUTE} $\overline{\text{conf}} \gets
-        \mathrm{mean}(C[\mathrm{tid}].\text{confs})$
-  \item \textbf{IF} $\sigma_x + \sigma_y > \theta_{\mathrm{m}}$
-        \textbf{OR} $\overline{\text{conf}} \geq c_{\mathrm{byp}}$
-        \textbf{THEN:}
-  \item \quad \textbf{ASSIGN} next available queue number to
-        $\mathrm{tid}$; \textbf{GENERATE} ticket payload
-  \item \textbf{ELSE:}
-  \item \quad \textbf{DELETE} $C[\mathrm{tid}]$ (static object
-        rejected)
-  \item \textbf{RETURN} assignment decision
-\end{enumerate}
-\vspace{0.3em}
-
-\noindent The present build uses $N_{\mathrm{conf}} = 14$ updates. Counting
-updates alone made confirmation depend on how fast the detector reaches
-the backend: on the office computer it sends about 14 updates a second,
-but over the internet to the cloud backend only two to three, which
-stretched confirmation to five seconds or more. A candidate whose face
-the detector has already captured is therefore also confirmed by time:
-once it has been in the zone for at least $T_{\mathrm{conf}} = 1.0$~s and
-has at least $3$ updates carrying a face embedding, step~2 is passed
-without waiting for $N_{\mathrm{conf}}$. A candidate with no face still
-needs the full $N_{\mathrm{conf}}$ updates, so that the motion test has
-enough positions to reject a poster or a chair. The motion threshold
-$\theta_{\mathrm{m}} = 1.5\ \mathrm{px}$ rejects static mis-detections;
-the confidence bypass at $0.70$ admits a momentarily stationary person
-whose detection is unambiguous.
+\noindent where $R$ is tested once eight centres are buffered and
+$\sigma_x$, $\sigma_y$ once ten are. The steps of Algorithm~2 are given
+in Section~\ref{subsec:major-algorithms}. The present build uses
+$N_{\mathrm{conf}} = 20$ updates. Counting updates alone made
+confirmation depend on how fast the detector reaches the backend: over
+the internet to the cloud backend it sends only two to three updates a
+second, which stretched confirmation to several seconds. A candidate
+whose face the detector has already captured is therefore also
+confirmed by time: once it has been in the zone for at least
+$T_{\mathrm{conf}} = 1.0$~s and has at least $3$ updates carrying a face
+embedding, it does not wait for $N_{\mathrm{conf}}$. A candidate with no
+face still needs the full $N_{\mathrm{conf}}$ updates, so that the motion
+test has enough positions to reject a poster or a chair. The movement
+threshold $M_{\min} = 8$~px and the deviation threshold
+$\theta_{\mathrm{m}} = 1.5\ \mathrm{px}$ reject static mis-detections;
+the confidence bypass $c_{\mathrm{byp}} = 0.70$ admits a momentarily
+stationary person whose detection is unambiguous, and a captured face
+admits a student standing still to be recognised. For
+$T_{\mathrm{done}} = 10$~s after a student is served, a new candidate
+overlapping where that student stood is not confirmed, unless the
+student has asked for another number.
 
 % =====================================================================
-\subsection{Track-Identifier Remapping}
+\subsection{Track-Identifier Remapping and Duplicate Suppression}
 \label{subsec:remap}
-
-\subsection{Duplicate Suppression}
 \label{subsec:dedup}
 
 ByteTrack occasionally assigns a new $\mathrm{tid}$ to a person who
@@ -288,7 +237,7 @@ briefly left and re-entered the camera frame (handled by Part~A
 below), or assigns two distinct $\mathrm{tid}$ values to the same
 physical person within the same frame (a \emph{ghost track}, handled
 by Part~B). Both cases are resolved in the track-management step of
-Algorithm~1.
+Algorithm~1 (Section~\ref{subsec:major-algorithms}).
 
 Remapping uses IoU (Equation~\ref{eq:iou}) and centroid Euclidean
 distance:
@@ -321,8 +270,10 @@ d(p_i, p_j) < f_{\mathrm{dd}} \cdot \overline{D}(p_i, p_j),
 \end{equation}
 
 \noindent where $\overline{D}(p_i, p_j)$ is the mean diagonal of the
-two bounding boxes, and the younger of the two entries is dropped. The
-test is purely geometric. A person who has just been restored after an
+two bounding boxes. The entry kept is the one that holds a number, the
+lower if both do, otherwise the one seen first. The test is geometric,
+except that two entries whose face embeddings clearly differ
+($\mathrm{sim} < \tau_{\mathrm{match}}$) are never merged. A person who has just been restored after an
 absence carries 60 frames of immunity from this pass, so that somebody
 returning to the queue is not immediately removed as a duplicate of
 themselves. Parameter values are in Table~\ref{tab:dedup-params}.
@@ -345,50 +296,6 @@ $I_0$                               & $60\ \text{frames}$ & Re-entry immunity \\
 \end{tabular}
 \end{table}
 
-\vspace{0.5em}
-\noindent\rule{\linewidth}{0.8pt}
-
-\noindent\textbf{\underline{Algorithm 1 (continued): Track Management}}
-
-\noindent\textbf{Input:} \textit{incomingDetection} $d$ with new
-track ID $\mathrm{tid}_{\mathrm{new}}$, \textit{activeQueue}
-$\mathcal{Q}$, \textit{immunityTable} $I$\\
-\noindent\textbf{Output:} \textit{correctedTrackID}; updated
-$\mathcal{Q}$ with ghost tracks removed
-
-\noindent\textit{Part A --- Track-Identifier Remapping:}
-\begin{enumerate}
-  \item \textbf{SET} $\mathrm{bestID} \gets \mathrm{tid}_{\mathrm{new}}$;
-        $\mathrm{bestScore} \gets -\infty$
-  \item \textbf{FOR EACH} active person $p \in \mathcal{Q}$:
-  \item \quad \textbf{COMPUTE} IoU $u$ between $d.\mathrm{bbox}$ and
-        $p.\mathrm{bbox}$; \textbf{COMPUTE} centroid distance $\delta$
-  \item \quad \textbf{IF} $u \geq \tau_{\mathrm{iou}}^{\mathrm{rm}}$
-        \textbf{THEN} $s \gets u + 1.0$
-  \item \quad \textbf{ELSE IF} $\delta \leq d_{\max}$ \textbf{THEN}
-        $s \gets 1 - \delta/d_{\max}$
-  \item \quad \textbf{ELSE CONTINUE}
-  \item \quad \textbf{IF} $s > \mathrm{bestScore}$ \textbf{THEN}
-        \textbf{SET} $\mathrm{bestScore} \gets s$;
-        $\mathrm{bestID} \gets p.\mathrm{tid}$
-  \item \textbf{RETURN} $\mathrm{bestID}$
-\end{enumerate}
-
-\noindent\textit{Part B --- Per-Frame Duplicate Suppression:}
-\begin{enumerate}
-  \setcounter{enumi}{8}
-  \item \textbf{FOR EACH} ordered pair $(p_i, p_j) \in \mathcal{Q}
-        \times \mathcal{Q}$ with $i < j$:
-  \item \quad \textbf{IF} $I[p_i] > 0$ \textbf{OR} $I[p_j] > 0$
-        \textbf{THEN CONTINUE} (immunity active)
-  \item \quad \textbf{IF} appearance signatures exist \textbf{AND}
-        $\mathrm{sim}(p_i, p_j) < \tau_{\mathrm{bl}}$ \textbf{THEN
-        CONTINUE} (visually distinct)
-  \item \quad \textbf{IF} $\mathrm{dup}(p_i, p_j)$ holds
-        \textbf{THEN} drop the higher queue number; retain the lower
-  \item \textbf{DECREMENT} every positive entry of $I$ by 1
-\end{enumerate}
-\vspace{0.3em}
 
 % =====================================================================
 \subsection{Face-Based Identity Validation}
@@ -521,7 +428,8 @@ system checks whether that student already holds a pending or waiting
 entry. If so, nothing is issued. A student obtains a new number only
 after staff mark the previous one done, which prevents a
 recognized student from accumulating duplicate numbers by re-entering the
-camera's view.
+camera's view. A student whose number has just been served may ask for
+another at once, without first leaving the camera's view.
 
 \textbf{A separate numeric range.} System-issued numbers are drawn from a
 reserved range beginning at $N_{\mathrm{face}} = 5000$:
@@ -541,56 +449,13 @@ unenrolled face produces no accepted match, and walk-ins continue to
 take a ticket from the existing kiosk, which runs separately from
 \sysname{}.
 
-\vspace{0.5em}
-\noindent\rule{\linewidth}{0.8pt}
 
-\noindent\textbf{\underline{Algorithm 3: Face-Based Identity Validation
-and Number Issuance}}
-
-\noindent\textbf{Input:} \textit{faceCrop} $\mathbf{x}$ with detector
-confidence $c$, \textit{eligibleEnrolled} $\mathcal{E}$ (students not
-already served today), \textit{usedNumbers}
-$\mathcal{U}$\\
-\noindent\textbf{Output:} an issued \textit{queueNumber},
-\textsc{Bystander}, \textsc{AlreadyQueued}, or \textsc{Unrecognized}
-
-\begin{enumerate}
-  \item \textbf{IF} $c < \tau_{\mathrm{det}}$ \textbf{THEN RETURN}
-        \textsc{Unrecognized} (no usable face in this frame)
-  \item \textbf{COMPUTE} $e \gets f(\mathbf{x})$, the $512$-dimensional
-        unit-length embedding
-  \item \textbf{IF} $\mathcal{E} = \emptyset$ \textbf{THEN RETURN}
-        \textsc{Unrecognized}
-  \item \textbf{COMPUTE} $\mathrm{sim}(e,\, e_i^{\mathrm{enrol}})$ for
-        every $(s_i,\, e_i^{\mathrm{enrol}}) \in \mathcal{E}$
-  \item \textbf{RANK} the similarities; \textbf{SET} $s^{(1)}$ and
-        $s^{(2)}$ as the two highest, with $s^{(2)} \gets -1$ if
-        $|\mathcal{E}| = 1$, and $p^{(1)}$ as the best-matching student
-  \item \textbf{SET} $\mathrm{margin} \gets s^{(1)} - s^{(2)}$
-  \item \textbf{RECORD} the match event with $s^{(1)}$, $\mathrm{margin}$,
-        and the accept-or-reject outcome
-  \item \textbf{IF} $s^{(1)} < \tau_{\mathrm{match}}$
-        \textbf{OR} $\mathrm{margin} < \tau_{\mathrm{margin}}$
-        \textbf{THEN RETURN} \textsc{Unrecognized}
-        (below threshold, or ambiguous between candidates)
-  \item \textbf{IF} $p^{(1)}$ has not armed a join intent
-        \textbf{THEN} mark the person a bystander and
-        \textbf{RETURN} \textsc{Bystander} (recognition is not consent)
-  \item \textbf{IF} $p^{(1)}$ already holds a pending or waiting entry
-        \textbf{THEN RETURN} \textsc{AlreadyQueued}
-  \item \textbf{SET} $\mathrm{number} \gets
-        \min\{\, n \geq N_{\mathrm{face}} : n \notin \mathcal{U} \,\}$
-  \item \textbf{LINK} $\mathrm{number}$ to $p^{(1)}$;
-        \textbf{ADD} $\mathrm{number}$ to $\mathcal{U}$;
-        \textbf{CONSUME} the join intent
-  \item \textbf{RETURN} $\mathrm{number}$
-\end{enumerate}
-\vspace{0.3em}
-
-\noindent The set $\mathcal{E}$ is filtered by the caller to exclude
-students already served for the day, which performs the
-role the served-blacklist held in the earlier design without retaining any
-appearance data. Every evaluation, accepted or refused, is written to a
+\noindent The steps of Algorithm~3 are given in
+Section~\ref{subsec:major-algorithms}. The set $\mathcal{E}$ holds every
+enrolled student with an active signature, so a student whose number
+has been served can be matched again; what prevents duplicate numbers is
+that a student holds one active entry at a time and must ask for each
+number in the mobile application. Every evaluation, accepted or refused, is written to a
 recognition audit table together with its score and margin, which is the
 source of the accuracy results reported in Chapter~3.
 
@@ -836,41 +701,8 @@ windows. A Gradient Boosting predictor was also trained and evaluated
 offline (Section~\ref{sec:ml-training-protocol}); it is not part of the
 deployed system.
 
-\vspace{0.5em}
-\noindent\rule{\linewidth}{0.8pt}
-
-\noindent\textbf{\underline{Algorithm 4: Wait-Time Estimation}}
-
-\noindent\textbf{Input:} \textit{waitingLine} $\mathcal{Q}$ in queue
-order, \textit{windows} $k = 1,\ldots,c$ with their state (idle, serving
-since $t_k$, or closed until $r_k$), \textit{serviceTime}
-$\widehat{\mathrm{svc}}$ (from dynamic measurement),
-\textit{arrivalRate} $\lambda$\\
-\noindent\textbf{Output:} \textit{estimatedWait} $W_p$ for every waiting
-entry $p$, and the forecast waits $W^{(h)}$ for a student arriving in
-$h \in \{5, 15, 30\}$ minutes
-
-\begin{enumerate}
-  \item \textbf{FOR EACH} window $k$: \textbf{SET} $f_k \gets$ now if
-        idle; $\max(t_k + \widehat{\mathrm{svc}},\ \text{now} +
-        0.75\,\widehat{\mathrm{svc}})$ if serving; $r_k$ if closed
-  \item \textbf{FOR EACH} $p \in \mathcal{Q}$ in queue order:
-  \item \quad \textbf{SET} $k^{*} \gets \arg\min_k f_k$;
-        $W_p \gets f_{k^{*}} - \text{now}$
-  \item \quad \textbf{SET} $f_{k^{*}} \gets f_{k^{*}} +
-        \widehat{\mathrm{svc}}$
-  \item \textbf{FOR EACH} horizon $h$: \textbf{SET} $W^{(h)} \gets$ the
-        wait at position $|\mathcal{Q}| + 1 + \lambda h$, capped at
-        120~minutes
-  \item \textbf{IF} the fallback is selected \textbf{THEN} replace steps
-        1--4 with $W_p \gets W_{\mathrm{reg}}$, taking $a$ as the
-        number of people ahead of $p$ (Equation~\ref{eq:wait-regression})
-  \item \textbf{RECORD} with each issued number its $W_p$, the people
-        ahead, and $c$; when the number is called, \textbf{RECORD} the
-        call time, so that the real wait can be compared with $W_p$
-  \item \textbf{RETURN} $\{W_p\}$ and $\{W^{(h)}\}$
-\end{enumerate}
-\vspace{0.3em}
+\noindent The steps of Algorithm~4 are given in
+Section~\ref{subsec:major-algorithms}.
 
 % =====================================================================
 \subsection{Dynamic Service-Time Measurement}
@@ -980,19 +812,22 @@ deployed prototype.
 \hline
 Subsystem & Symbol & Value & Description \\
 \hline
-CV Layer        & $A_{\min}$                   & $800\ \mathrm{px}^2$ & Min.\ box area \\
-                & $f_{\max}$                   & $0.85$               & Max.\ frame fraction \\
-                & $r_{\min}$                   & $0.60$               & Min.\ portrait aspect \\
-                & $M_{\min}$                   & $8\ \mathrm{px}$     & Min.\ motion energy \\
-                & $c_{\mathrm{byp}}$           & $0.70$               & Static-conf bypass \\
-                & $\alpha_{\mathrm{s}}$        & $0.50$               & Bbox EMA factor \\
+CV Layer        & $s$                          & $0.75$               & Frame scale for tracking \\
                 & $c_{\mathrm{trk}}$           & $0.15$               & Min.\ score seen by tracker \\
-                & $c_{\mathrm{new}}$           & $0.55$               & Min.\ score for a new track \\
+                & $c_{\mathrm{new}}$, $c_{\mathrm{det}}$ & $0.55$     & Min.\ score for a new track \\
                 & $B$                          & $45$ frames          & Lost-track buffer \\
+                & $A_{\min}$                   & $800\ \mathrm{px}^2$ & Min.\ box area \\
+                & $f_{\max}$                   & $0.85$               & Max.\ frame fraction \\
+                & $\tau_{\mathrm{nms}}$, $f_{\mathrm{nms}}$ & $0.55$, $0.20$ & Duplicate-box gate \\
+                & $\alpha_{\mathrm{s}}$        & $0.50$               & Bbox EMA factor \\
 \hline
-Candidate conf. & $N_{\mathrm{conf}}$          & $14$ updates         & Confirmation window \\
+Presence conf.  & $r_{\min}$                   & $0.60$               & Min.\ portrait aspect \\
+                & $N_{\mathrm{conf}}$          & $20$ updates         & Confirmation window \\
                 & $T_{\mathrm{conf}}$          & $1.0\ \mathrm{s}$, $\geq 3$ face updates & Time rule, face seen \\
+                & $M_{\min}$                   & $8\ \mathrm{px}$     & Min.\ centre movement \\
                 & $\theta_{\mathrm{m}}$        & $1.5\ \mathrm{px}$   & Motion-gate $\sigma$ \\
+                & $c_{\mathrm{byp}}$           & $0.70$               & Static-conf bypass \\
+                & $T_{\mathrm{done}}$          & $10\ \mathrm{s}$    & Cooldown after service \\
 \hline
 Track mgmt.     & $\tau_{\mathrm{iou}}^{\mathrm{rm}}$ & $0.10$   & Remap IoU threshold \\
                 & $d_{\max}$                   & $180\ \mathrm{px}$   & Remap distance cap \\
