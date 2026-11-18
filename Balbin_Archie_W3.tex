@@ -902,10 +902,10 @@ evaluated using MAE and MAPE; and (5)~assesses user satisfaction across
 system usability, reliability, and clarity dimensions---directly
 responding to each of the study's specific objectives.
 
-\section{Theoretical Framework}
+\section{Theoretical Paradigm}
 \label{sec:theoretical}
 
-The theoretical framework is anchored on the problem documented under
+The theoretical paradigm is anchored on the problem documented under
 Statement of the Problem No.~1: students in a campus service line cannot
 see how long they will wait or how many people are ahead of them, and
 staff see the line only by looking at it. \sysname{} rests on one main
@@ -977,7 +977,7 @@ converge on the system.
   \draw[arr] (fr.north) -- (sys.south);
   \draw[arr] (ft.north) -- (ft.north |- sys.south);
   \end{tikzpicture}
-  \caption{Theoretical Framework of \sysname{}}
+  \caption{Theoretical Paradigm of \sysname{}}
   \label{fig:theoretical-framework}
 \end{figure}
 
@@ -1024,10 +1024,10 @@ estimates how long each will wait. Their outputs reach users through the
 staff dashboard, the mobile application, and the display board, which
 are assessed under Statement of the Problem No.~4.
 
-\section{Conceptual Framework}
+\section{Conceptual Paradigm}
 \label{sec:conceptual-framework}
 
-The conceptual framework follows the Input-Process-Output-Outcome (IPOO)
+The conceptual paradigm follows the Input-Process-Output-Outcome (IPOO)
 model. It traces how the camera feed, the students who have enrolled and
 asked to be queued, and the staff at the counter are turned by \sysname{}
 into a queue that both sides can see.
@@ -1103,7 +1103,7 @@ feedback that returns from the outcome to the input.
     node[pos=0.25, below, font=\footnotesize\sffamily]
     {FEEDBACK: service times, measured waits, window changes, and staff decisions};
   \end{tikzpicture}
-  \caption{Conceptual Framework of \sysname{}}
+  \caption{Conceptual Paradigm of \sysname{}}
   \label{fig:conceptual-framework}
 \end{figure}
 
@@ -2069,11 +2069,10 @@ five-point scale for each item:
 \textbf{User Acceptance Test.} The UAT ratings are summarised with the
 weighted mean (Equation~\ref{eq:weighted_mean}) for each statement, each
 dimension, and overall, and interpreted with Table~\ref{tab:likert}.
-The answers on how the number was received, on recognition failures and
-wrong numbers, and on comfort with face identification are reported as
-frequencies and percentages (Equation~\ref{eq:percentage}), as are the
-counts from the system's log: face signatures saved and face sign-ins
-accepted. Internal consistency is measured with Cronbach's alpha
+Comfort with face identification is reported as frequencies and
+percentages (Equation~\ref{eq:percentage}), as are the counts from the
+system's log: face signatures saved, face sign-ins accepted, and numbers
+issued. Internal consistency is measured with Cronbach's alpha
 computed on all UAT respondents as one group, for each dimension and for
 all fifteen statements.
 
@@ -2333,7 +2332,10 @@ page. The \emph{student mobile application}, built in Flutter, opens on a
 \sysname{} loading screen and handles sign-in with the student's NCF Gbox
 account or face, the data-privacy consent, voluntary face enrolment, and
 the request for a number. Face sign-in opens only the account last used
-on that phone, and only if Algorithm~3's clear best match is that account. The request is made by tapping \emph{Get a
+on the phone, which the login screen names, and only when Algorithm~3's
+clear best match is that account. Face registration shows large
+instructions and the upload's progress, and resends the same photos when
+a send gets no answer. The request is made by tapping \emph{Get a
 Queue Number} and filling in a payment-slip form laid out like the
 cashier's paper Payment Slip (Tuition, Books, Special Exam with the
 subject, and Others with a description, each with an amount, and a
@@ -2378,8 +2380,12 @@ ByteTrack~\cite{zhang2022bytetrack} persistent tracking, and passes each
 detection through five quality gates --- minimum bounding-box area,
 maximum frame coverage, portrait aspect ratio, motion energy, and
 non-maximum suppression --- before smoothing its box with an exponential
-moving average. For each tracked person whose face is visible, it then
-computes the face embedding locally with InsightFace \texttt{buffalo\_s}.
+moving average. ByteTrack also takes weaker detections, but only to
+continue a person it already follows, so a partly hidden person keeps
+their track. A separate worker computes face embeddings locally with
+InsightFace \texttt{buffalo\_s} from the full-resolution frame,
+unidentified people first and identified people every two seconds, so
+tracking never waits for faces.
 Only the resulting metadata --- tracks, boxes, and embeddings --- and a
 compressed snapshot for the live view are sent to the backend, over
 requests authenticated by a camera token. Running the detector as its
@@ -2547,6 +2553,9 @@ the sticky-assignment rule: the active queue is sorted by queue number,
 and each unassigned person at a position no greater than the number of
 open windows is given the smallest free window
 (\S\ref{subsec:counters}). The setting survives a reset of the queue.
+With staff calling, the wait estimate counts only windows held by staff
+or serving a student. A student just served who asks for another number
+in front of the camera is taken at once as a new arrival.
 
 The \emph{Ticket Service} is a background worker that consumes
 ticket-generation jobs. The \emph{Ticket Printer} produces the short
@@ -2797,7 +2806,7 @@ drawn from the baseline survey of students and staff and from
 conversations with the cashier staff while the wait-time data were
 being collected. The user needs, expected workflows, dashboard actions,
 and ticket conventions identified in this way were used to prioritize
-features and align development goals with the conceptual framework
+features and align development goals with the conceptual paradigm
 presented in Chapter~1.
 
 \textbf{System Design.} This phase focuses on the architecture and
@@ -2840,7 +2849,7 @@ before Build; Test validates the deliverable against those criteria;
 and Review captures adviser feedback together with measured performance,
 which then propagates into the Plan phase of the following sprint.
 This per-sprint feedback loop instantiates, at the development level,
-the Feedback stage described in the conceptual framework of
+the Feedback stage described in the conceptual paradigm of
 Section~\ref{sec:conceptual-framework}.
 
 % Figure 2.3 removed per panel recommendation.
@@ -2878,17 +2887,15 @@ suite that drives the student and cashier flows through the queue logic
 without writing to the live database. No test footage was recorded, so
 alpha-testing defects are not reported quantitatively. Defects in
 detection, tracking, recognition, ticket generation, dashboard
-rendering, and mobile-client status retrieval were identified and
-resolved before external users were exposed to the system.
+rendering, and mobile-client status retrieval were resolved before
+external users saw the system.
 
 \textbf{Beta Testing.} Under the shortened evaluation protocol, beta
 testing took the form of a supervised trial in which volunteer students
 used the system on a test installation on the NCF campus, since the
 system was not deployed at the cashiering office, and the cashier staff
-were given the staff dashboard to use. The developers observed the
-interaction, and the same trial, rather than a separate two-week period
-of regular operation, provided the structured evaluation described
-below.
+were given the staff dashboard to use. The developers observed, and
+this trial took the place of a two-week period of regular operation.
 
 \textbf{User Acceptance Testing.} The final check is whether the people
 who would use \sysname{} accept the completed system, including the
@@ -2896,22 +2903,20 @@ features added after the pre-final defense: the consent step, the
 payment-slip form, calling by window, the turn and skipped notices, and
 the retention controls. In the UAT, students use the deployed system
 and then rate each step on the UAT questionnaire
-(Appendix~\ref{app:uat}), so that a step can be judged without knowing
-how the system works inside, and the system's own log of the session
-shows where a step failed. The UAT is conducted by the BS Computer
+(Appendix~\ref{app:uat}), and the system's own log of the session shows
+where a step failed. The UAT is conducted by the BS Computer
 Science researchers together with a BS Information Systems student, and
 its results are evaluated by a
 statistician (Section~\ref{sec:datagathering}, Phase~4).
 
 \textbf{Performance Testing: Queue Assignment Accuracy and
 Re-Identification Reliability.} The original design measured both
-against an independent observer's manual ground-truth log of every
+against an independent observer's ground-truth log of every
 actual queue entrant and every re-entry event, using the formula in
 Section~2.7. That log was not kept (Section~\ref{sec:datagathering}).
 Recognition accuracy is instead measured offline on held-out
-photographs of known identity, which provide the ground truth the live
-record lacks, and the live results are taken from the system's own
-record of recognition decisions and issued numbers
+photographs of known identity, and the live results are taken from the
+system's own record of recognition decisions and issued numbers
 (Section~\ref{sec:sop2-results}).
 
 \textbf{Performance Testing: Prediction MAE and MAPE.} The original
@@ -2924,18 +2929,16 @@ transactions, using the formulas in Section~2.7.
 \textbf{Performance Testing: Latency and Ticket Flow.} The time from a
 person's arrival in the queue zone to an issued number is measured from
 the timestamps the system logs (Section~\ref{subsec:sop2-issuance}).
-Latency from the first detection that passes the quality gates
-(\S\ref{subsec:cv-layer}), and the check that each ticket's short code,
-QR link, and JWT resolve to its queue status, were not measured
-separately; both are recommended in Chapter~4.
+Latency from the first gated detection (\S\ref{subsec:cv-layer}) and
+the check that each ticket's short code, QR link, and JWT resolve to its
+status were not measured separately; both are recommended in Chapter~4.
 
 \textbf{Usability Evaluation.} Immediately after the supervised trial
 session, the questionnaire in Section~2.5 is administered to the
-respondent groups of Section~2.3. Its reliability, like that of the
-baseline questionnaire (Section~\ref{sec:sop1-results}), is measured
-with Cronbach's alpha, $0.70$ or more being acceptable (Section~2.5).
-Responses are analysed with the procedures in Section~2.7, and the
-open-ended answers are read for problems the ratings do not capture.
+respondent groups of Section~2.3; its reliability is measured with
+Cronbach's alpha ($0.70$ or more acceptable), responses are analysed
+with the procedures in Section~2.7, and open-ended answers are read for
+problems the ratings do not capture.
 
 \textbf{Load Testing.} A Locust load test simulated simultaneous users
 of the backend --- students checking their status, the public display,
@@ -4016,7 +4019,7 @@ transaction ends.
 
 \begin{table}[H]
 \centering
-\caption{Wait-time prediction error on unseen days (leave-one-day-out,
+\caption[Wait-time prediction error on unseen days ($N = 166$)]{Wait-time prediction error on unseen days (leave-one-day-out,
 $N = 166$). MAE and RMSE are in minutes; MAPE excludes the 18
 zero-minute waits.}
 \label{tab:sop3-offline}
@@ -4109,10 +4112,51 @@ calendar, and the number of people ahead is information that \sysname{}
 knows in real time. A predictor of this form, refitted on October 2026
 transactions, is the deployed system's benchmark and fallback; the
 default estimate simulates the line window by window (Algorithm~4).
-That simulation has not yet been measured against real waits: every
-number issued now records its estimate and, when called, its real wait,
-so its live MAE and MAPE will come from the system's own log once
-numbers are issued in regular use. The results also show that the analytical formula must be
+
+The system's own log could not test that simulation: almost every number
+issued so far had nobody ahead, and in the second UAT session the open
+windows were set wrongly (Section~\ref{sec:uat-results}). It was
+therefore tested in a controlled replay. Lines were simulated with one to
+three windows open and the windows 60 to 95\% busy, each student's
+service time drawn from the 511 service times of the October 2026
+transactions. At every arrival, the system's own estimator was given
+what the live system knows --- which windows are serving and since when,
+and how many are waiting --- and its estimate was compared with the wait
+the student then had (Table~\ref{tab:wait-replay}). Told the correct
+number of open windows, its MAE was 0.3 to 2.1 minutes, lower than a
+constant estimate and the people-ahead regression in every scenario, and
+about three to six times lower than the constant when the windows were
+85 to 95\% busy. Told three windows while one served, as in the UAT, its
+MAE rose to 4.8 minutes, little better than the constant. The replay
+assumes that students come when called and staff serve without breaks,
+so these errors are a lower bound. Under staff calling, the estimate now
+counts only the windows a staff member holds.
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption[Controlled replay of the wait estimate]{Controlled replay of the wait estimate (mean absolute error in
+minutes; 5 runs of 4,000 arrivals per scenario).}
+\label{tab:wait-replay}
+\begin{tabular}{lcccccc}
+\hline
+Windows serving & Busy & Mean wait & Estimate & Within 2 min & Constant & Regression \\
+\hline
+1 & 60\% & 1.8 & 0.61 & 93\% & 1.73 & 1.51 \\
+1 & 85\% & 6.5 & 1.26 & 78\% & 5.12 & 4.58 \\
+1 & 95\% & 19.2 & 2.14 & 59\% & 13.39 & 14.06 \\
+2 & 85\% & 3.0 & 0.74 & 93\% & 2.52 & 2.03 \\
+2 & 95\% & 9.4 & 1.17 & 82\% & 6.70 & 6.47 \\
+3 & 85\% & 1.9 & 0.58 & 97\% & 1.65 & 1.33 \\
+3 & 95\% & 6.1 & 0.88 & 91\% & 4.45 & 4.04 \\
+\hline
+1, told 3 & 60\% & 1.8 & 1.53 & 70\% & 1.73 & 1.67 \\
+1, told 3 & 85\% & 6.5 & 4.81 & 36\% & 5.12 & 5.43 \\
+\hline
+\end{tabular}
+\end{table}
+
+The results also show that the analytical formula must be
 calibrated against observed waits before its output is shown to
 students. Three limitations qualify these findings: the evaluation covers three service
 days and 166 transactions; the number of people ahead was reconstructed
@@ -4537,7 +4581,7 @@ Measure & 16 Nov & 17 Nov \\
 Queue-zone detector running & No & Yes \\
 New student accounts & $18$ & $19$ \\
 \quad with a face signature saved & $15$ & $19$ \\
-Account creation to saved face signature, median & $83$~s & $69$~s \\
+Sign-up to saved face signature, median & $83$~s & $69$~s \\
 \quad range & $28$~s--$20.5$~min & $28$~s--$3.0$~min \\
 Existing accounts signed in to & $4$ & $2$ \\
 Face sign-ins accepted & $26$ of $39$ & $8$ of $8$ \\
@@ -4667,20 +4711,15 @@ C5-s. I understood what information the system keeps about me and how
 \end{tabular}
 \end{table}
 
-\subsection{Number Issuance, Recognition, and Comfort as Reported}
+\subsection{Comfort with Face Identification and Open-Ended Responses}
 \label{subsec:uat-issuance}
 
-Asked how they received their number, 63 students ($79.7\%$) answered
-automatically after the camera recognised them, three ($3.8\%$) from
-staff, and thirteen ($16.5\%$) that they received none. The log shows ten
-numbers, all on the second day and all issued by the camera, so most of
-these answers describe what students saw in the demonstration or took the
-face sign-in for recognition at the queue area, not a number they were
-issued. Likewise, 24 students ($30.4\%$) reported a recognition failure,
-and four ($5.1\%$) a number given to the wrong person, which the log does
-not show: no number was issued on the first day, and on the second no
-face sign-in was refused or opened another account. These questions need
-to name the step they ask about.
+The questionnaire's three questions on how the number was received, on
+recognition failures, and on numbers given to the wrong person are not
+reported: students who watched the demonstration answered them as well,
+so their answers cannot be read as what happened to each respondent.
+Issuance and recognition are reported from the system's log instead
+(Table~\ref{tab:uat-log}).
 
 Asked how comfortable they were with being identified by face, fourteen
 students ($17.7\%$) answered very comfortable, 29 ($36.7\%$)
@@ -4747,22 +4786,21 @@ application now notifies the phone, vibrates, and shows a message when
 the estimated wait falls to five minutes or less, and again at first in
 line.
 
-One problem remains. During the second session the dashboard had three
+The second session's log showed one more problem. The dashboard had three
 windows set open while only Window~1 served, so the line simulation gave
 every number an estimated wait of zero, while the real waits reached
-139~seconds. The estimate is only as good as the count of open windows,
-and C4-s cannot be read as a measure of its accuracy.
+139~seconds; C4-s therefore cannot be read as a measure of the
+estimate's accuracy. With staff calling, the estimate now counts only
+the windows a staff member holds (Section~\ref{sec:sop3-results}).
 
 Taken together, students accept the completed system, and they rated it
 higher once they saw the camera issue numbers. After the fixes, the
 second session's log shows no lost registrations, no refused or wrong
-face sign-ins, and numbers issued within about two seconds for most
-students. The evidence is still limited: ten students received numbers,
-on campus and without cashier staff, and the wait estimate was not
-tested against real waits. This supports the recommendations to take the
-open windows from the windows staff have taken, to repeat the test with
-cashier staff at the office, and to make the system work offline
-(Section~\ref{sec:recommendations}).
+face sign-ins, and numbers issued within about two seconds for most of
+the ten students who went through the camera. The evidence comes from a
+campus session without cashier staff, which supports the recommendations
+to repeat the test with cashier staff at the office and to make the
+system work offline (Section~\ref{sec:recommendations}).
 
 % ----------------------------------------------------------------
 % 3.5  Summary of Findings
@@ -4831,8 +4869,12 @@ the evaluation, and presents the recommendations that follow.
         current-wait formula over-predicted, with an MAE of $4.10$
         minutes. The Gradient Boosting predictor was therefore not
         deployed; the system estimates the wait by simulating the line,
-        with the people-ahead regression as its fallback, and the
-        simulation's live accuracy is still to be measured.
+        with the people-ahead regression as its fallback. In a
+        controlled replay with real service times, the simulation's MAE
+        was $0.3$ to $2.1$ minutes when told the correct number of open
+        windows, lower than either baseline, and $4.8$ minutes when told
+        three windows while one served; its live accuracy is still to be
+        measured.
 
   \item \textbf{User satisfaction (Statement of the Problem No.~4).}
         Twenty students who used \sysname{} in the supervised trial
@@ -4899,7 +4941,9 @@ become more accurate when they are driven by the number of people ahead,
 which supports the design decision to measure the queue live rather than
 predict from the calendar. They also show that the analytical formula
 must be calibrated against observed waits before its estimates are shown
-to students.
+to students. The deployed line simulation is accurate when it knows
+which windows are serving, and misleading when it does not, so the count
+of serving windows matters more than the model.
 
 \textbf{Statement of the Problem No.~4.} On first experience, both
 groups are satisfied with \sysname{}, the students highly so. Students
@@ -5060,10 +5104,6 @@ rest of the system.
         screen, replace the tab-switching animation, add a dark mode, and
         show the face-scan instructions larger, above the circle, with a
         sign of progress while the face is checked.
-  \item \textbf{Take the open windows from the windows staff have taken},
-        so the wait estimate counts only windows that are serving; in the
-        UAT three were set open while one served, and every estimate was
-        zero.
   \item \textbf{Build an iOS version}, since students with iPhones could
         only watch the test.
   \item \textbf{Make the stored face signature stand out on the consent
@@ -5073,10 +5113,9 @@ rest of the system.
         with cashier staff at the dashboard}, more students receiving
         numbers, and the open windows set correctly, so that calling by
         window and the estimated against the actual wait are tested by
-        the people who use them; record which respondents used the app
-        themselves, and word the recognition questions so that they name
-        the step, since students took the face sign-in for recognition at
-        the queue area.
+        the people who use them, and record which respondents used the
+        app themselves, so that questions about receiving a number are
+        answered only by those who received one.
   \item \textbf{Send the turn notifications from the server}, so that
         the five-minute heads-up added after the user acceptance test
         also reaches a student whose app has been closed; two cashier

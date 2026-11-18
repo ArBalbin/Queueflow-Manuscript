@@ -59,13 +59,27 @@ The Computer Vision Layer runs as a separate Python process
 (\texttt{app/detector.py}) on the camera-connected machine. Each
 captured frame is fed to a YOLOv8n detector~\cite{jocher2023}
 configured for single-class person detection. Multi-object tracking is
-performed by ByteTrack~\cite{zhang2022bytetrack}, the default tracker
-when the Ultralytics interface is invoked with \texttt{persist=True};
-ByteTrack assigns a persistent track identifier $\mathrm{tid}$ to each
-detected person across frames. Raw YOLO output is then passed through
-five quality gates before any detection is forwarded to the Business
-Logic Layer, and each accepted bounding box is subsequently smoothed
-with an exponential moving average to remove per-frame jitter.
+performed by ByteTrack~\cite{zhang2022bytetrack}, selected explicitly
+through the Ultralytics interface with \texttt{persist=True}; it assigns
+a persistent track identifier $\mathrm{tid}$ to each detected person
+across frames. The tracker receives detections down to
+$c_{\mathrm{trk}}$, but only those of at least $c_{\mathrm{new}}$ may
+start a new track: weaker ones can only continue a track in ByteTrack's
+second association stage, which keeps a partly hidden person on their
+own track, and a lost track is kept for $B$ frames. Raw YOLO output is
+then passed through five quality gates before any detection is forwarded
+to the Business Logic Layer, and each accepted bounding box is
+subsequently smoothed with an exponential moving average to remove
+per-frame jitter.
+
+Face embeddings are computed by a separate worker so that tracking never
+waits for them. On each round it takes the newest tracked frame and
+chooses at most two people: first those the backend has not identified,
+the least-tried first, then identified people whose last embedding is
+older than $T_{\mathrm{ref}}$. Faces are cut from the full-resolution
+camera frame rather than the frame reduced for tracking, and each
+embedding is sent to the backend once, so that a repeated one is never
+counted as a second sighting.
 
 \subsubsection{Detection quality gates}
 
@@ -709,7 +723,10 @@ $t_k$; or the reopening time, if staff closed it until then. The
 waiting entries are taken in queue order. Each is given to the window
 with the smallest $f_k$, its turn starts at $f_k$, and $f_k$ then
 advances by $\widehat{\mathrm{svc}}$. A student's estimated wait is the
-start of their turn minus now. The $0.75\,\widehat{\mathrm{svc}}$ floor
+start of their turn minus now. The windows simulated are those that
+serve: under automatic calling, every open window; under staff calling,
+only the windows a staff member holds and any where a student is being
+served, or one window if none is held. The $0.75\,\widehat{\mathrm{svc}}$ floor
 reflects the cashier log: a transaction that had already run past its
 usual length still took, on average, three quarters of a service time
 more. This estimator replaced the M/M/c baseline below for the
@@ -969,6 +986,9 @@ CV Layer        & $A_{\min}$                   & $800\ \mathrm{px}^2$ & Min.\ bo
                 & $M_{\min}$                   & $8\ \mathrm{px}$     & Min.\ motion energy \\
                 & $c_{\mathrm{byp}}$           & $0.70$               & Static-conf bypass \\
                 & $\alpha_{\mathrm{s}}$        & $0.50$               & Bbox EMA factor \\
+                & $c_{\mathrm{trk}}$           & $0.15$               & Min.\ score seen by tracker \\
+                & $c_{\mathrm{new}}$           & $0.55$               & Min.\ score for a new track \\
+                & $B$                          & $45$ frames          & Lost-track buffer \\
 \hline
 Candidate conf. & $N_{\mathrm{conf}}$          & $14$ updates         & Confirmation window \\
                 & $T_{\mathrm{conf}}$          & $1.0\ \mathrm{s}$, $\geq 3$ face updates & Time rule, face seen \\
@@ -987,6 +1007,7 @@ Face identity   & $\tau_{\mathrm{match}}$      & $0.30$               & Absolute
                 & $d_{\mathrm{emb}}$           & $512$                & Embedding dimension \\
                 & $n_{\mathrm{enrol}}$         & $1$--$5$             & Enrolment photographs \\
                 & $N_{\mathrm{face}}$          & $5000$               & System-minted range start \\
+                & $T_{\mathrm{ref}}$           & $2.0\ \mathrm{s}$    & Face refresh, identified people \\
 \hline
 Prediction      & $\alpha_{\mathrm{H}}$        & $0.4$                & Holt's level smoothing \\
                 & $\beta_{\mathrm{H}}$         & $0.2$                & Holt's trend smoothing \\
